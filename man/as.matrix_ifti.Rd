@@ -2,22 +2,51 @@
 % Please edit documentation in R/as.matrix_ifti.R
 \name{as.matrix_ifti}
 \alias{as.matrix_ifti}
-\title{Convert CIFTI, NIFTI, or GIFTI file input to \eqn{T} by \eqn{V} matrix}
+\title{Convert CIFTI, NIFTI, or GIFTI input to \eqn{T \times V} matrix}
 \usage{
-as.matrix_ifti(x, sortSub = FALSE, verbose = FALSE)
+as.matrix_ifti(
+  x,
+  meta = FALSE,
+  sortSub = FALSE,
+  TbyV = TRUE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{The object to coerce to a matrix}
 
-\item{sortSub}{Sort subcortex by labels? Default: \code{FALSE}}
+\item{meta}{Return metadata too? Default: \code{FALSE}.}
+
+\item{sortSub}{For CIFTI format input only. Sort subcortex by labels?
+Default: \code{FALSE}}
+
+\item{TbyV}{Return the data matrix in \eqn{T \times V} form? Default:
+\code{TRUE}. If \code{FALSE}, return in \eqn{V \times T} form instead.
+Using this argument may be faster than transposing after the function call.}
 
 \item{verbose}{Print updates? Default: \code{FALSE}}
+
+\item{...}{If \code{x} is a file path, additional arguments to the function
+used to read in \code{x} can be specified here. For example, if \code{x}
+is a path to a CIFTI file, \code{...} might specify which \code{idx} and
+\code{brainstructures} to read in.}
 }
 \value{
-x as a matrix.
+If \code{!meta}, \code{x} as a matrix. If \code{meta}, a list of
+length two: the first entry is \code{x} as a matrix, and the second entry is
+the metadata of \code{x}.
 }
 \description{
-Convert input data to \eqn{T} by \eqn{V} matrix. Reads in a CIFTI, NIFTI,
-or GIFTI file. Transposes CIFTI and xifti object input. Masks NIFTI and
-nifti object input.
+Convert CIFTI, NIFTI, or GIFTI input to a \eqn{T \times V} matrix by
+reading it in with the corresponding package, and then separating the data
+from the metadata. Also works with the intermediate R objects created from
+reading these files: \code{"xifti"} objects from \code{ciftiTools},
+\code{"gifti"} objects from \code{gifti},
+\code{"nifti"} or \code{"niftiExtension"} objects from \code{oro.nifti}, and
+\code{"niftiImage"} objects from \code{RNifti}.
+
+For CIFTI files, only intents supported by \code{ciftiTools} are supported:
+\code{dscalar}, \code{dtseries}, and \code{dlabel}. For NIFTI file or
+NIFTI-intermediate R object input, the data will be vectorized/masked.
 }
