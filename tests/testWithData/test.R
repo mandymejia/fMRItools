@@ -74,7 +74,7 @@ testthat::expect_equal(
 )
 z <- as.matrix_ifti(read_cifti(ciftiTools.files()$cifti["dlabel"]), meta=TRUE)
 testthat::expect_equal(
-  infer_format_ifti(ciftiTools:::template_xifti()),
+  infer_format_ifti(ciftiTools::template_xifti()),
   c("xifti", NA)
 )
 

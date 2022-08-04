@@ -25,9 +25,10 @@ stopband. Basically a convenience wrapper for the \code{gsignal::cheby2}
 function.
 }
 \examples{
-library(gsignal)
-n_voxels = 1e4
-n_timepoints = 100
-X = cbind(arima.sim(n=100, list(ar=.6)), arima.sim(n=100, list(ar=.6)))
-Y = bandstop_filter(X, .72, .31, .43)
+if (requireNamespace("gsignal", quietly=TRUE)) {
+ n_voxels = 1e4
+ n_timepoints = 100
+ X = cbind(arima.sim(n=100, list(ar=.6)), arima.sim(n=100, list(ar=.6)))
+ Y = bandstop_filter(X, .72, .31, .43)
+}
 }

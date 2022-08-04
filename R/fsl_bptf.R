@@ -20,31 +20,36 @@
 #' }
 #' 
 fsl_bptf <- function(orig_data, HP_sigma=2000) {
-  T_ <- nrow(orig_data)
 
-  orig_data <- nuisance_regression(orig_data, cbind(1, seq(T_)))
+  orig_data <- as.matrix(orig_data)
+  stopifnot(is.numeric(orig_data))
+  stopifnot(is_1(HP_sigma))
+
+  nT <- nrow(orig_data)
+
+  orig_data <- nuisance_regression(orig_data, cbind(1, seq(nT)))
 
   HP_filt_size <- ceiling(HP_sigma*3)#round(HP_sigma*8)
   HP_lin <- seq(-HP_filt_size/2, HP_filt_size/2, length.out=HP_filt_size)
   HP_gfilt <- exp( -(HP_lin^2) / (2*(HP_sigma^2)) )
   HP_gfilt <- HP_gfilt/sum(HP_gfilt)
 
-  filt_data <- matrix(NA, nrow=T_, ncol=ncol(orig_data))
+  filt_data <- matrix(NA, nrow=nT, ncol=ncol(orig_data))
   back <- floor((HP_filt_size-1)/2)
   front <- ceiling((HP_filt_size-1)/2)
-  for (t in seq(T_)) {
-    if ((t-back < 1) && (t+front > T_)) {
-      trunc_HP_gfilt <- HP_gfilt[seq(back-t+2, HP_filt_size-(t+front-T_))]
+  for (t in seq(nT)) {
+    if ((t-back < 1) && (t+front > nT)) {
+      trunc_HP_gfilt <- HP_gfilt[seq(back-t+2, HP_filt_size-(t+front-nT))]
       trunc_HP_gfilt <- trunc_HP_gfilt/sum(trunc_HP_gfilt)
       filt_data[t,] <- trunc_HP_gfilt %*% orig_data
     } else if (t-back < 1) {
       trunc_HP_gfilt <- HP_gfilt[seq(back-t+2, HP_filt_size)]
       trunc_HP_gfilt <- trunc_HP_gfilt/sum(trunc_HP_gfilt)
       filt_data[t,] <- trunc_HP_gfilt %*% orig_data[seq(t+front),]
-    } else if (t+front > T_) {
-      trunc_HP_gfilt <- HP_gfilt[seq(HP_filt_size-(t+front-T_))]
+    } else if (t+front > nT) {
+      trunc_HP_gfilt <- HP_gfilt[seq(HP_filt_size-(t+front-nT))]
       trunc_HP_gfilt <- trunc_HP_gfilt/sum(trunc_HP_gfilt)
-      filt_data[t,] <- trunc_HP_gfilt %*% orig_data[seq(t-back, T_),]
+      filt_data[t,] <- trunc_HP_gfilt %*% orig_data[seq(t-back, nT),]
     } else {
       filt_data[t,] <- HP_gfilt %*% orig_data[seq(t-back, t+front),]
     }

@@ -3,7 +3,7 @@
 my_wb <- "~/Desktop/workbench"
 
 library(testthat)
-library(fMRIscrub)
+library(fMRItools)
 library(ciftiTools)
 
 if (interactive()) { ciftiTools.setOption("wb_path", my_wb) }

@@ -14,11 +14,12 @@
 #' @export
 #' 
 #' @examples
-#' library(gsignal)
-#' n_voxels = 1e4
-#' n_timepoints = 100
-#' X = cbind(arima.sim(n=100, list(ar=.6)), arima.sim(n=100, list(ar=.6)))
-#' Y = bandstop_filter(X, .72, .31, .43)
+#' if (requireNamespace("gsignal", quietly=TRUE)) {
+#'  n_voxels = 1e4
+#'  n_timepoints = 100
+#'  X = cbind(arima.sim(n=100, list(ar=.6)), arima.sim(n=100, list(ar=.6)))
+#'  Y = bandstop_filter(X, .72, .31, .43)
+#' }
 bandstop_filter <- function(x, TR, f1, f2, Rs=20){
 
   if (!requireNamespace("gsignal", quietly = TRUE)) {
@@ -27,9 +28,9 @@ bandstop_filter <- function(x, TR, f1, f2, Rs=20){
 
   if (is.vector(x)) { x <- as.matrix(x) }
   stopifnot(nrow(x)>5)
-  is_pos_num <- function(q){ length(q)==1 && is.numeric(q) && q>0 }
-  stopifnot(is_pos_num(TR))
-  stopifnot(is_pos_num(f1)); stopifnot(is_pos_num(f2))
+  stopifnot(is_posNum(TR))
+  stopifnot(is_posNum(f1))
+  stopifnot(is_posNum(f2))
   stopifnot(f1 < f2)
 
   nf <- c(f1, f2) * TR * 2

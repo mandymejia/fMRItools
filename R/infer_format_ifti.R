@@ -12,7 +12,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   Bformat <- Bformat2 <- NA
 
   # Define some file extensions to look out for
-  cii_ext_supported <- paste0(".", ciftiTools:::supported_intents()$extension)
+  cii_ext_supported <- paste0(".", ciftiTools::supported_intents()$extension)
   cii_ext_notsupport <- paste0(
     ".", c(
       "dconn", "pconn", "ptseries", "dtraj", "pscalar", 
@@ -57,9 +57,9 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   } else if (inherits(BOLD, "xifti")) {
     Bformat <- "xifti"
     if (!is.null(BOLD$meta$cifti$intent)) {
-      Bformat2 <- ciftiTools:::supported_intents()$extension[match(
+      Bformat2 <- ciftiTools::supported_intents()$extension[match(
         BOLD$meta$cifti$intent,
-        ciftiTools:::supported_intents()$value
+        ciftiTools::supported_intents()$value
       )]
       Bformat2 <- gsub("\\.nii$", "", Bformat2)
     }

@@ -35,10 +35,10 @@ as.matrix_ifti <- function(
 
   x_meta <- NULL
 
-  stopifnot(is.logical(meta) && length(meta)==1)
-  stopifnot(is.logical(sortSub) && length(sortSub)==1)
-  stopifnot(is.logical(TbyV) && length(TbyV)==1)
-  stopifnot(is.logical(verbose) && length(verbose)==1)
+  stopifnot(is_1(meta, "logical"))
+  stopifnot(is_1(sortSub, "logical"))
+  stopifnot(is_1(TbyV, "logical"))
+  stopifnot(is_1(verbose, "logical"))
 
   # Get the format of `x`
   format <- infer_format_ifti(x)

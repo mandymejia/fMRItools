@@ -7,6 +7,10 @@
 #' 
 #' @export
 dct_bases <- function(T_, n){
+
+  stopifnot(is_posNum(T_))
+  stopifnot(is_posNum(n))
+
   b <- matrix(NA, T_, n)
   idx <- (seq(T_)-1)/(T_-1)
   for (ii in seq(n)) { b[,ii] <- cos(idx*pi*ii) }
@@ -35,7 +39,11 @@ dct_bases <- function(T_, n){
 #' 
 #' @export
 dct_convert <- function(T_, TR, n=NULL, f=NULL){
+
+  stopifnot(is_posNum(T_))
+  stopifnot(is_posNum(TR))
   stopifnot(xor(is.null(n), is.null(f)))
+
   if (is.null(n)) {
     return(f * 2 * T_ * TR)
   } else if (is.null(f)) {
@@ -65,6 +73,10 @@ Hz2dct <- function(T_, TR, f){
 #' 
 #' @keywords internal
 fft_detrend <- function(X, N) {
+
+  stopifnot(is.numeric(X) && (length(dim(X))==2))
+  stopifnot(is_posNum(N))
+
   T_ <- nrow(X)
   Y <- mvfft(X)
   Y[seq(N),] <- 0
@@ -84,10 +96,11 @@ fft_detrend <- function(X, N) {
 #' 
 #' @export 
 detrend <- function(X, TR, f=.008, method=c("DCT", "FFT")) {
+
   X <- as.matrix(X)
-  is_pos_num <- function(q){ is.numeric(q) && length(q)==1 && q > 0 }
-  stopifnot(is_pos_num(TR))
-  stopifnot(is_pos_num(f))
+  stopifnot(is.numeric(X))
+  stopifnot(is_posNum(TR))
+  stopifnot(is_posNum(f))
   method <- match.arg(method, c("DCT", "FFT"))
   
   T_ <- nrow(X)
