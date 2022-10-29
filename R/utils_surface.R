@@ -396,12 +396,12 @@ mask_vertices_faces <- function(vertices, faces, mask){
 #' @inheritParams mask_Param_vertices
 #' @param boundary_width a positive integer. Vertices no more than this number
 #'  of edges from any vertex in the input mask will be placed in the boundary mask.
-#'
+#'  Default: \code{1}.
 #' @return The boundary mask, a length-V logical vector. TRUE indicates vertices
 #'  within the boundary mask.
 #'
 #' @keywords internal
-boundary_mask <- function(faces, mask, boundary_width){
+boundary_mask <- function(faces, mask, boundary_width=1){
   s <- ncol(faces)
   v <- max(faces)
   # For quads, boundary_mask() would count opposite vertices on a face as
