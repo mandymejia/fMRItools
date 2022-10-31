@@ -9,10 +9,6 @@
 #' @return The (modified) design matrix
 #' 
 #' @keywords internal
-#' 
-# @examples 
-# dmat <- cbind(1, seq(5), cos(seq(5)/15))
-# validate_design_matrix(dmat, 5)
 validate_design_matrix <- function(design, T_=NULL) {
   class(design) <- "numeric"
   if (identical(design, 1)) { design <- matrix(1, nrow=T_) }

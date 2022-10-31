@@ -19,6 +19,8 @@
 #'    \item{Jenkinson, M., Beckmann, C. F., Behrens, T. E. J., Woolrich, M. W. & Smith, S. M. FSL. NeuroImage 62, 782-790 (2012).}
 #' }
 #' 
+#' @examples 
+#' fsl_bptf(matrix(rnorm(700), nrow=100))
 fsl_bptf <- function(orig_data, HP_sigma=2000) {
 
   orig_data <- as.matrix(orig_data)

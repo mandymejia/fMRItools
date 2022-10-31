@@ -17,6 +17,7 @@
 #'  dimensionality (\code{Q}).
 #' 
 #' @export
+#' 
 #' @examples
 #' nT <- 30
 #' nV <- 400

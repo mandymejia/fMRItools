@@ -31,3 +31,8 @@ The SVD decomposition
 Efficient PCA for a tall matrix (many more rows than columns). Uses the SVD
 of the covariance matrix.
 }
+\examples{
+U <- matrix(rnorm(900), nrow=300, ncol=3)
+V <- matrix(rnorm(15), nrow=3, ncol=5)
+PCA(U \%*\% V)
+}

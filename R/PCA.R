@@ -21,6 +21,10 @@
 #' 
 #' @return The SVD decomposition
 #' 
+#' @examples 
+#' U <- matrix(rnorm(900), nrow=300, ncol=3)
+#' V <- matrix(rnorm(15), nrow=3, ncol=5)
+#' PCA(U %*% V)
 PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
 
   stopifnot(is.matrix(X) && is.numeric(X))

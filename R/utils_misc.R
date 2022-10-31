@@ -46,9 +46,9 @@ skew_pos <- function(x){
 sign_flip <- function(x){
   stopifnot(is.list(x))
   stopifnot(("S" %in% names(x)) & ("M" %in% names(x)))
-  spos <- skew_pos(x$M)
+  spos <- skew_pos(x$S)
   x$M[,!spos] <- -x$M[,!spos]
-  x$S[,!spos] <- x$S[,!spos]
+  x$S[,!spos] <- -x$S[,!spos]
   x
 }
 

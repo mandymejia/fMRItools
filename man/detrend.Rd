@@ -22,3 +22,6 @@ Detrended \code{X}
 \description{
 Detrending with DCT or FFT
 }
+\examples{
+detrend(matrix(rnorm(700), nrow=100), TR=.72)
+}

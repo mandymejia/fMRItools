@@ -9,6 +9,11 @@
 #' @return The data after nuisance regression.
 #' 
 #' @export
+#' 
+#' @examples 
+#' Y <- matrix(rnorm(700), nrow=100)
+#' design <- cbind(seq(100), 1)
+#' nuisance_regression(Y, design)
 nuisance_regression <- function(Y, design){
   # Z <- design
 	# if(nrow(Y) != nrow(Z)) stop('Y and Z must have same number of rows')

@@ -30,3 +30,6 @@ https://github.com/rordenlab/niimath/blob/master/src/core32.c
 }
 }
 
+\examples{
+fsl_bptf(matrix(rnorm(700), nrow=100))
+}

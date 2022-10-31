@@ -15,3 +15,6 @@ The \eqn{T} by \eqn{T} hat matrix
 \description{
 Get the hat matrix from a design matrix using the QR decomposition.
 }
+\examples{
+hat_matrix(cbind(seq(100), 1))
+}

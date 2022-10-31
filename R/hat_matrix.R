@@ -7,6 +7,9 @@
 #' @return The \eqn{T} by \eqn{T} hat matrix
 #' 
 #' @export
+#' 
+#' @examples 
+#' hat_matrix(cbind(seq(100), 1))
 hat_matrix <- function(design){
   design <- as.matrix(design)
   # https://stackoverflow.com/questions/19100600/extract-maximal-set-of-independent-columns-from-a-matrix

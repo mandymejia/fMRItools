@@ -95,6 +95,9 @@ fft_detrend <- function(X, N) {
 #' @return Detrended \code{X}
 #' 
 #' @export 
+#' 
+#' @examples 
+#' detrend(matrix(rnorm(700), nrow=100), TR=.72)
 detrend <- function(X, TR, f=.008, method=c("DCT", "FFT")) {
 
   X <- as.matrix(X)

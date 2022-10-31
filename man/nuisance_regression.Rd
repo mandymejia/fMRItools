@@ -18,3 +18,8 @@ The data after nuisance regression.
 Performs nuisance regression. The data and design matrix must both be
 centered, or an intercept must be included in the design matrix!
 }
+\examples{
+Y <- matrix(rnorm(700), nrow=100)
+design <- cbind(seq(100), 1)
+nuisance_regression(Y, design)
+}
