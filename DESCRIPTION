@@ -1,6 +1,6 @@
 Package: fMRItools
 Type: Package
-Title: Routines for common fMRI processing tasks
+Title: Routines for Common fMRI Processing Tasks
 Version: 0.1.0
 Authors@R: c(
     person(given = "Amanda",
@@ -25,11 +25,8 @@ License: GPL-3
 Encoding: UTF-8
 Imports:
     stats,
-    utils,
     pesel,
-    robustbase,
-    Matrix,
-    matrixStats
+    robustbase
 Suggests:
     ciftiTools,
     gifti, 
