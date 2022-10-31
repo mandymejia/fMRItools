@@ -60,8 +60,8 @@ as.matrix_ifti <- function(
       x$data$subcort <- x$data$subcort[order(x$meta$subcort$labels),]
     }
     if (meta) {
-      x_meta <- list(
-        data=lapply(x$data, nrow), 
+      x_meta <- c(
+        list(brainstructures_nV=lapply(x$data, nrow)), 
         x[names(x)[names(x)!="data"]]
       )
     }

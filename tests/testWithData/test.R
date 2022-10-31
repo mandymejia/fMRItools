@@ -15,7 +15,7 @@ roxygen2::roxygenize()
 
 # file paths
 # [Edit this] path to the data directory.
-my_data <- "/Volumes/GoogleDrive/My Drive/MEJIA_LAB-Damon/Data"
+my_data <- "/Users/ddpham/Library/CloudStorage/GoogleDrive-ddpham@iu.edu/My Drive/MEJIA_LAB-Damon/Data"
 
 subjects <- c(100307, 100408, 100610)
 rs_cii_fnames <- file.path(my_data, "HCP-RestingState", c(
@@ -74,7 +74,7 @@ testthat::expect_equal(
 )
 z <- as.matrix_ifti(read_cifti(ciftiTools.files()$cifti["dlabel"]), meta=TRUE)
 testthat::expect_equal(
-  infer_format_ifti(ciftiTools::template_xifti()),
+  infer_format_ifti(ciftiTools:::template_xifti()),
   c("xifti", NA)
 )
 
