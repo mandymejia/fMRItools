@@ -68,8 +68,7 @@ scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
 #'
 #' @return Scale to units of percent local signal change and centers
 #'
-#' @importFrom matrixStats rowVars 
-#'
+#' @importFrom stats var
 #' @export
 scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transpose = TRUE){
 
@@ -107,7 +106,7 @@ scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transp
 		}
 		BOLD <- t(100*BOLD / v_means)
 	} else if (scale == "sd") {
-		v_sd <- sqrt(rowVars(BOLD, na.rm=TRUE))
+		v_sd <- sqrt(apply(BOLD, 1, var, na.rm=TRUE))
 		v_sd[is.na(v_sd)] <- 0
 		if (min(v_sd) < 1e-6) {
 			stop("Some local sds are less than 1e-6. Please set `scale_BOLD = 'none' or set `varTol` > 1e-3 in the call to BayesGLM.")
