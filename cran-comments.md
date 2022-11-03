@@ -15,6 +15,10 @@ No downstream dependencies on CRAN.
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
 
-## First submission
+## New package
 
-This is the first submission of `fMRItools` to CRAN.
+Once accepted, `fMRItools` will be a new package on CRAN.
+
+#### First submission, revision
+
+The call to `ciftiTools.getOption` in the test script has been removed. 
