@@ -1,4 +1,4 @@
 library(testthat)
-library(ciftiTools)
+library(fMRItools)
 
-test_check("ciftiTools")
+test_check("fMRItools")
