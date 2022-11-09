@@ -22,7 +22,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   gii_ext_supported <- c("func", "label")
   nii_classes <- c(oro.nifti="niftiExtension", RNifti="niftiImage", oro.nifti="nifti")
 
-  # Character vector: CIFTI, GIFTI, or NIFTI
+  # Character vector: CIFTI, GIFTI, NIFTI, or RDS
   if (is.character(BOLD) && length(BOLD)==1) {
     if (any(endsWith(BOLD, cii_ext_supported))) {
       for (cc in cii_ext_supported) {
@@ -51,6 +51,8 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
       }
     } else if (any(endsWith(BOLD, c(".nii", ".nii.gz")))) {
       Bformat <- "NIFTI"
+    } else if (any(endsWith(BOLD, c(".rds", ".RDS")))) {
+      Bformat <- "RDS"
     }
 
   # xifti, gifti, or nifti data object
