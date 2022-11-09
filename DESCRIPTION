@@ -1,7 +1,7 @@
 Package: fMRItools
 Type: Package
 Title: Routines for Common fMRI Processing Tasks
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c(
     person(given = "Amanda",
            family = "Mejia",
@@ -14,12 +14,11 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-7563-4727"))
     )
 Maintainer: Amanda Mejia <mandy.mejia@gmail.com>
-Description: Supports fMRI analysis tasks including 
-    reading in CIFTI, GIFTI and NIFTI data, 
-    temporal filtering, nuisance regression, and 
-    aCompCor (anatomical Components Correction) 
-    (Muschelli et al (2014)
-    <doi:10.1016/j.neuroimage.2014.03.028>).
+Description: Supports fMRI (functional magnetic resonance imaging) 
+    analysis tasks including reading in 'CIFTI', 'GIFTI' and 
+    'NIFTI' data, temporal filtering, nuisance regression, and 
+    aCompCor (anatomical Components Correction) (Muschelli et al.
+    (2014) <doi:10.1016/j.neuroimage.2014.03.028>).
 Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
