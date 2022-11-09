@@ -19,6 +19,7 @@ Passes all the tests in `tests/run_fMRItools_tests.R`
 
 Once accepted, `fMRItools` will be a new package on CRAN.
 
-#### First submission, revision
+#### First submission, revision num. 2 (0.1.3)
 
-The call to `ciftiTools.getOption` in the test script has been removed. 
+DESCRIPTION has been revised to explain acronyms and format file paths.
+A slight change was made to the function `infer_format_ifti`.
