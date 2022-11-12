@@ -74,3 +74,22 @@ unmask_mat <- function(dat, mask){
   mdat[mask,] <- dat
   mdat
 }
+
+#' Row medians
+#' 
+#' Use \code{robustbase::rowMedians} package if available, \code{apply} if not.
+#'
+#' @param x The data matrix
+#' @param na.rm Ignore NA values? Default: \code{FALSE}
+#' 
+#' @return The row medians of \code{x}.
+#' 
+#' @importFrom stats median
+#' @keywords internal
+rowMedians2 <- function(x, na.rm = FALSE, ...) {
+  if (!requireNamespace("robustbase", quietly=TRUE)) {
+    robustbase::rowMedians(x, na.rm=na.rm, ...)
+  } else {
+    apply(x, 1, median, na.rm=na.rm, ...)
+  }
+}

@@ -23,14 +23,14 @@ Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
 Imports:
-    stats,
-    pesel,
-    robustbase
+    stats
 Suggests:
     ciftiTools,
     gifti, 
     knitr,
     rmarkdown,
+    robustbase,
+    pesel,
     RNifti,
     oro.nifti,
     gsignal,

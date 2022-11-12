@@ -16,7 +16,6 @@
 #'  save on memory. Note that the directions will be with respect to \code{X},
 #'  not its covariance matrix.
 #' 
-#' @importFrom pesel pesel
 #' @export
 #' 
 #' @return The SVD decomposition
@@ -46,7 +45,10 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
   
   # Determine PCA dimensionality
   if(is.null(Q)){
-    Q <- suppressWarnings(pesel(X, npc.max=Q_max, method='homogenous'))$nPCs
+    if (!requireNamespace("pesel", quietly = TRUE)) {
+      stop("Package \"pesel\" needed to read input data. Please install it", call. = FALSE)
+    }
+    Q <- suppressWarnings(pesel::pesel(X, npc.max=Q_max, method='homogenous'))$nPCs
   }
   if (Vdim == "Q") { Vdim <- Q }
   if (Vdim > Q) { warning("Vdim > Q, so setting Vdim to Q."); Vdim <- Q }
