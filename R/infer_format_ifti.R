@@ -2,24 +2,36 @@
 #'
 #' @param BOLD The fMRI data
 #' @param verbose Print the format? Default: \code{FALSE}.
-#' @return The format: \code{"CIFTI"} file path, \code{"xifti"} object,
+#' @return A length-two vector. The first element indicates the format:
+#'  \code{"CIFTI"} file path, \code{"xifti"} object,
 #'  \code{"GIFTI"} file path, \code{"gifti"} object,  
 #'  \code{"NIFTI"} file path, \code{"nifti"} object, 
-#'  or \code{"data"}.
-#' @keywords internal
+#'  \code{"RDS"} file path, or \code{"data"}. The second element indicates 
+#'  the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
+#' 
+#' @export
 infer_format_ifti <- function(BOLD, verbose=FALSE){
 
   Bformat <- Bformat2 <- NA
 
   # Define some file extensions to look out for
-  cii_ext_supported <- paste0(".", ciftiTools::supported_intents()$extension)
+  # CIFTI: copied from `ciftiTools::supported_intents()`
+  cii_supp_int <- data.frame(rbind(
+    c("dtseries.nii", "NIFTI_INTENT_CONNECTIVITY_DENSE_SERIES",  3002, "ConnDenseSeries"),
+    c("dscalar.nii",  "NIFTI_INTENT_CONNECTIVITY_DENSE_SCALARS", 3006, "ConnDenseScalar"),
+    c("dlabel.nii",   "NIFTI_INTENT_CONNECTIVITY_DENSE_LABELS",  3007, "ConnDenseLabel")
+  ))
+  colnames(cii_supp_int) <- c("extension", "intent_code", "value", "intent_name")
+  cii_ext_supported <- paste0(".", cii_supp_int$extension)
   cii_ext_notsupport <- paste0(
     ".", c(
       "dconn", "pconn", "ptseries", "dtraj", "pscalar", 
       "pdconn", "dpconn", "pconnseries", "pconnscalar"
     ), ".nii"
   )
+  # GIFTI
   gii_ext_supported <- c("func", "label")
+  # NIFTI
   nii_classes <- c(oro.nifti="niftiExtension", RNifti="niftiImage", oro.nifti="nifti")
 
   # Character vector: CIFTI, GIFTI, NIFTI, or RDS
@@ -59,9 +71,9 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   } else if (inherits(BOLD, "xifti")) {
     Bformat <- "xifti"
     if (!is.null(BOLD$meta$cifti$intent)) {
-      Bformat2 <- ciftiTools::supported_intents()$extension[match(
+      Bformat2 <- cii_supp_int$extension[match(
         BOLD$meta$cifti$intent,
-        ciftiTools::supported_intents()$value
+        cii_supp_int$value
       )]
       Bformat2 <- gsub("\\.nii$", "", Bformat2)
     }
