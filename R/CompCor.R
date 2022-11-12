@@ -111,8 +111,6 @@ CompCor.noise_comps <- function(X_noise, center, scale, noise_nPC){
 #' 
 #'  If the data ROI is not all \code{TRUE}, the entry \code{"ROI_data"} will have
 #'  the ROI mask for the data.
-#'
-#' @importFrom robustbase rowMedians2
 #' 
 #' @section References:
 #'  \itemize{

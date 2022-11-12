@@ -13,17 +13,15 @@
 #' @param drop_const Drop
 #'
 #' @return The input matrix with its columns centered and scaled.
-#'
-#' @importFrom robustbase rowMedians
 scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
   # Transpose.
   mat <- t(mat)
 
   #	Center.
-  mat <- mat - c(rowMedians(mat, na.rm=TRUE))
+  mat <- mat - c(rowMedians2(mat, na.rm=TRUE))
 
   # Scale.
-  mad <- 1.4826 * rowMedians(abs(mat), na.rm=TRUE)
+  mad <- 1.4826 * rowMedians2(abs(mat), na.rm=TRUE)
   mad <- as.numeric(mad)
   const_mask <- mad < TOL
   if (any(const_mask)) {
