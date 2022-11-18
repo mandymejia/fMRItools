@@ -11,7 +11,11 @@ Authors@R: c(
            family = "Pham",
            email = "damondpham@gmail.com",
            role = c("aut"),
-           comment = c(ORCID = "0000-0001-7563-4727"))
+           comment = c(ORCID = "0000-0001-7563-4727")),
+    person(given = "Mark",
+           family = "Fiecas",
+           email = "mfiecas@umn.edu",
+           role = c("ctb"))
     )
 Maintainer: Amanda Mejia <mandy.mejia@gmail.com>
 Description: Supports fMRI (functional magnetic resonance imaging) 
@@ -23,7 +27,9 @@ Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
 Imports:
-    stats
+    stats,
+    fda,
+    quantreg
 Suggests:
     ciftiTools,
     gifti, 
@@ -38,7 +44,7 @@ Suggests:
     testthat (>= 3.0.0),
     covr
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 URL: https://github.com/mandymejia/fMRItools
 BugReports: https://github.com/mandymejia/fMRItools/issues
 LazyData: true
