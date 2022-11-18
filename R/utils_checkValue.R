@@ -138,14 +138,16 @@ is_1 <- function(x, dtype=c("numeric", "logical", "character")){
   xFUN(x) && (length(x)==1)
 }
 
-#' Is this object a positive number?
+#' Is this object a positive number? (Or non-negative)
 #' 
 #' @param x The value to check
-#' @return \code{TRUE} if \code{x} is a single positive number
+#' @param zero_ok Is a value of zero ok?
+#' @return Logical indicating if \code{x} is a single positive or non-negative 
+#'  number
 #' @keywords internal
 #' 
-is_posNum <- function(x){
-  is_1(x) && (x>0)
+is_posNum <- function(x, zero_ok=FALSE){
+  is_1(x) && ((x>0) || (x==0 && zero_ok))
 }
 
 #' All integers?

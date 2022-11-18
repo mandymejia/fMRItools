@@ -63,15 +63,24 @@ colCenter <- function(X) {
   X - rep(colMeans(X), rep.int(nrow(X), ncol(X)))
 }
 
-#' Unmask a matrix
+#' Unmask matrix data
 #'
 #' @param dat The data
 #' @param mask The mask
+#' @param mask_dim Rows, \code{1}, (default) or columns, \code{2}
 #' @keywords internal
-unmask_mat <- function(dat, mask){
-  stopifnot(nrow(dat) == sum(mask))
-  mdat <- matrix(NA, nrow=length(mask), ncol=ncol(dat))
-  mdat[mask,] <- dat
+unmask_mat <- function(dat, mask, mask_dim=1){
+  stopifnot(is_posNum(mask_dim))
+  stopifnot(mask_dim %in% c(1,2))
+  if (mask_dim==1) {
+    stopifnot(nrow(dat) == sum(mask))
+    mdat <- matrix(NA, nrow=length(mask), ncol=ncol(dat))
+    mdat[mask,] <- dat
+  } else if (mask_dim==2) {
+    stopifnot(ncol(dat) == sum(mask))
+    mdat <- matrix(NA, nrow=nrow(dat), ncol=length(mask))
+    mdat[,mask] <- dat
+  }
   mdat
 }
 

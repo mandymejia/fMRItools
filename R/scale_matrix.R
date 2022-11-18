@@ -12,6 +12,7 @@
 #'  Default: \code{1e-8}
 #' @param drop_const Drop
 #'
+#' @export
 #' @return The input matrix with its columns centered and scaled.
 scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
   # Transpose.

@@ -2,16 +2,18 @@
 % Please edit documentation in R/utils_misc.R
 \name{unmask_mat}
 \alias{unmask_mat}
-\title{Unmask a matrix}
+\title{Unmask matrix data}
 \usage{
-unmask_mat(dat, mask)
+unmask_mat(dat, mask, mask_dim = 1)
 }
 \arguments{
 \item{dat}{The data}
 
 \item{mask}{The mask}
+
+\item{mask_dim}{Rows, \code{1}, (default) or columns, \code{2}}
 }
 \description{
-Unmask a matrix
+Unmask matrix data
 }
 \keyword{internal}

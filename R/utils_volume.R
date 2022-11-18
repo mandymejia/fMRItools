@@ -199,7 +199,6 @@ vox_locations <- function(mask, trans_mat, trans_units=NULL){
 #' Un-applies a mask to vectorized data to yield its volumetric representation.
 #'  The mask and data should have compatible dimensions: the number of rows in
 #'  \code{dat} should equal the number of locations within the \code{mask}.
-#'  This is used for the subcortical CIFTI data.
 #' 
 #' @param dat Data matrix with locations along the rows and measurements along 
 #'  the columns. If only one set of measurements were made, this may be a 
@@ -210,9 +209,9 @@ vox_locations <- function(mask, trans_mat, trans_units=NULL){
 #'
 #' @return The 3D or 4D unflattened volume array
 #'
-#' @export
+#' @keywords internal
 #' 
-unmask_subcortex <- function(dat, mask, fill=NA) {
+unmask_3D <- function(dat, mask, fill=NA) {
 
   # Check that dat is a vector or matrix.
   if (is.vector(dat) || is.factor(dat)) { dat <- matrix(dat, ncol=1) }

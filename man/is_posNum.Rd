@@ -2,17 +2,20 @@
 % Please edit documentation in R/utils_checkValue.R
 \name{is_posNum}
 \alias{is_posNum}
-\title{Is this object a positive number?}
+\title{Is this object a positive number? (Or non-negative)}
 \usage{
-is_posNum(x)
+is_posNum(x, zero_ok = FALSE)
 }
 \arguments{
 \item{x}{The value to check}
+
+\item{zero_ok}{Is a value of zero ok?}
 }
 \value{
-\code{TRUE} if \code{x} is a single positive number
+Logical indicating if \code{x} is a single positive or non-negative
+number
 }
 \description{
-Is this object a positive number?
+Is this object a positive number? (Or non-negative)
 }
 \keyword{internal}
