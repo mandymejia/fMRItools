@@ -1,4 +1,4 @@
-#' despike_3D from AFNI step 1: residuals
+#' 3dDespike from AFNI, step 1
 #' 
 #' Compute the quantile regression that \code{\link{despike_3D}} is based on.
 #' 
@@ -27,7 +27,7 @@ despike_3D.qreg <- function(Yt){
   quantile.reg <- quantreg::rq(Yt~basis-1)
 }
 
-#' despike_3D from AFNI step 2: interpolate
+#' 3dDespike from AFNI, step 2
 #' 
 #' Identify and interpolate the outliers for \code{\link{despike_3D}}.
 #' 
@@ -48,9 +48,11 @@ despike_3D.interpolate <- function(qreg, c1=2.5, c2=4){
   fitted(qreg) + s*mad(qreg_resid)
 }
 
-#' despike_3D from AFNI
+#' 3dDespike from AFNI
 #' 
-#' Identify and interpolate outliers. 
+#' Identify and interpolate outliers. See 
+#'  \href{https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html}{the
+#'  AFNI documentation for 3dDespike} for additional information.
 #' 
 #' @param Yt The data vector.
 #' @param c1 spike threshold. Default: \code{2.5}.
