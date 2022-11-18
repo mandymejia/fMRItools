@@ -19,3 +19,11 @@ Identify and interpolate outliers. See
 \href{https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html}{the
 AFNI documentation for 3dDespike} for additional information.
 }
+\examples{
+if (requireNamespace("fda", quietly=TRUE) && requireNamespace("quantreg", quietly=TRUE)) {
+ y <- rnorm(99) + cos(seq(99)/15)*3
+ y[20] <- 20
+ despike_3D(y)
+}
+
+}

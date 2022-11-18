@@ -59,6 +59,13 @@ despike_3D.interpolate <- function(qreg, c1=2.5, c2=4){
 #' @param c2 upper range of the acceptable deviation from the fit. Default: 
 #'  \code{4}. 
 #' 
+#' @examples
+#' if (requireNamespace("fda", quietly=TRUE) && requireNamespace("quantreg", quietly=TRUE)) {
+#'  y <- rnorm(99) + cos(seq(99)/15)*3
+#'  y[20] <- 20
+#'  despike_3D(y)
+#' }
+#'
 #' @export
 despike_3D <- function(Yt, c1=2.5, c2=4){
   qreg <- despike_3D.qreg(Yt)
