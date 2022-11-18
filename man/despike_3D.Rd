@@ -7,7 +7,7 @@
 despike_3D(Yt, c1 = 2.5, c2 = 4)
 }
 \arguments{
-\item{Yt}{The data}
+\item{Yt}{The data vector.}
 
 \item{c1}{spike threshold. Default: \code{2.5}.}
 

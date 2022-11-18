@@ -7,7 +7,7 @@
 despike_3D.qreg(Yt)
 }
 \arguments{
-\item{Yt}{The data}
+\item{Yt}{The data vector.}
 }
 \value{
 the quantile regression
