@@ -45,7 +45,7 @@ neighbor_counts <- function(arr, pad=FALSE){
 #'  voxels replaced with the value \code{out_of_mask_val[1]}.
 #'
 #' @export
-erode_vol <- function(vol, n_erosion=1, out_of_mask_val=NA){
+erode_mask_vol <- function(vol, n_erosion=1, out_of_mask_val=NA){
   stopifnot(is_integer(n_erosion, nneg=TRUE))
   stopifnot(length(dim(vol)) == 3)
   if (n_erosion==0) { return(vol) }
@@ -211,7 +211,7 @@ vox_locations <- function(mask, trans_mat, trans_units=NULL){
 #'
 #' @keywords internal
 #' 
-unmask_3D <- function(dat, mask, fill=NA) {
+unmask_vol <- function(dat, mask, fill=NA) {
 
   # Check that dat is a vector or matrix.
   if (is.vector(dat) || is.factor(dat)) { dat <- matrix(dat, ncol=1) }

@@ -202,7 +202,7 @@ format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_
         if (is.array(ROI_noise[[ii]])) {
           stopifnot(all(dim(ROI_noise[[ii]]) == dim(X)[1:3]))
           ROI_noise[[ii]][,,] <- as.logical(ROI_noise[[ii]]) * 1
-          ROI_noise[[ii]] <- erode_vol(ROI_noise[[ii]], noise_erosion[[ii]], c(-1, 0, NA, NaN))
+          ROI_noise[[ii]] <- erode_mask_vol(ROI_noise[[ii]], noise_erosion[[ii]], c(-1, 0, NA, NaN))
           X_noise[[ii]] <- t(matrix(X[ROI_noise[[ii]] > 0], ncol=T_))
 
         } else if (is.matrix(ROI_noise[[ii]])) {
