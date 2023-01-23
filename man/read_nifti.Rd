@@ -20,4 +20,3 @@ neither package is available an error is raised.
 For \code{oro.nifti::readNIFTI} the argument
 \code{reorient=FALSE} will be used.
 }
-\keyword{internal}

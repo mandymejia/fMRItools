@@ -31,4 +31,3 @@ For vectors of the same lengths, the result is \code{all(a == b)}.
 \details{
 Attributes are ignored.
 }
-\keyword{internal}

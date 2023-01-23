@@ -8,7 +8,7 @@
 #' 
 #' @param nifti_fname The file name of the NIFTI.
 #' @return The NIFTI
-#' @keywords internal
+#' @export
 read_nifti <- function(nifti_fname){
   if (requireNamespace("RNifti", quietly = TRUE)) {
     return(RNifti::readNifti(nifti_fname))

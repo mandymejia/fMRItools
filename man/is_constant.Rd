@@ -18,4 +18,3 @@ Is \code{x} constant?
 \description{
 Is this numeric vector constant?
 }
-\keyword{internal}

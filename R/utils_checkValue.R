@@ -84,7 +84,7 @@ match_input <- function(
 #'
 #' @return Logical. Do \code{user} and \code{expected} match?
 #' 
-#' @keywords internal
+#' @export
 #' 
 match_exactly <- function(
   user, expected,
@@ -172,7 +172,7 @@ is_integer <- function(x, nneg=FALSE){
 #' Check if a data vector or matrix is all integers.
 #'
 #' @param x The data vector or matrix
-#' @keywords internal
+#' @export
 #'
 #' @return Logical. Is \code{x} all integers?
 #'
@@ -190,7 +190,7 @@ all_integers <- function(x){
 #' 
 #' @return Is \code{x} constant? 
 #' 
-#' @keywords internal
+#' @export
 is_constant <- function(x, TOL=1e-8) {
   stopifnot(is.numeric(x))
   abs(max(x) - min(x)) < TOL
