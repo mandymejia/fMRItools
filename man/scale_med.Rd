@@ -4,16 +4,18 @@
 \alias{scale_med}
 \title{Robust scaling}
 \usage{
-scale_med(mat, TOL = 1e-08, drop_const = TRUE)
+scale_med(mat, TOL = 1e-08, drop_const = TRUE, doRows = FALSE)
 }
 \arguments{
-\item{mat}{A numerical matrix.}
+\item{mat}{A numeric matrix. Its columns will be centered and scaled.}
 
-\item{TOL}{minimum MAD to consider a column non-constant.
+\item{TOL}{Columns with MAD below this value will be considered constant.
 Default: \code{1e-8}}
 
-\item{drop_const}{Drop constant-valued columns? Default: \code{TRUE}. If
-\code{FALSE}, keep but set their value to \code{NA}.}
+\item{drop_const}{Drop constant columns? Default: \code{TRUE}. If
+\code{FALSE}, set to \code{NA} instead.}
+
+\item{doRows}{Center and scale the rows instead? Default: \code{FALSE}.}
 }
 \value{
 The input matrix with its columns centered and scaled.
@@ -23,7 +25,7 @@ Centers and scales the columns of a matrix robustly
 }
 \details{
 Centers each column on its median, and scales each column by its median
-absolute deviation (MAD). Constant-valued columns are set to \code{NA}
-(or removed if \code{drop_const}) and a warning is raised. If all
-MADs are zero, an error is raised.
+absolute deviation (MAD). If there are constant-valued columns, they are
+removed if \code{drop_const} or set to \code{NA} if \code{!drop_const}, and
+a warning is raised. If all columns are constant, an error is raised.
 }

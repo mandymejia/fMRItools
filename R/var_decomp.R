@@ -1,6 +1,12 @@
 #' Compute variance decomposition
-#' @param x measurements by subjects by variables
-#' @param verbose If \code{TRUE}, display progress of algorithm
+#' 
+#' Calculate the various ANOVA sums of squares for repeated measures data.  
+#'
+#' @param x The data as a 3D array: measurements by subjects by variables.
+#'  (Alternatively, a matrix that is measurements by subjects, if only one 
+#'  variable exists.)
+#' @param verbose If \code{TRUE}, display progress of algorithm. Default:
+#'  \code{FALSE}.
 #' @export
 #' @return The variance decomposition
 var_decomp <- function(x, verbose=FALSE) {
@@ -8,7 +14,9 @@ var_decomp <- function(x, verbose=FALSE) {
   # Get data dimensions.
   if (verbose) { cat("\tChecking data dimensions and missing values presence.\n") }
   d <- dim(x)
-  if (length(d) == 2) { x <- array(x, dim=c(dim(x), 1)); d <- dim(x) }
+  if (length(d) == 2) { 
+    x <- array(x, dim=c(dim(x), 1)); d <- dim(x)
+  }
   stopifnot(length(d) == 3)
 	nM <- d[1]
   nS <- d[2]

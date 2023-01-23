@@ -4,7 +4,9 @@
 #'  SVD. If dimensionality is not specified, it is estimated using the method 
 #'  described in Minka (2008).
 #'
-#' @param X \eqn{V \times T} fMRI timeseries data matrix, centered by columns.
+#' @param X A numeric matrix, with each column being a centered timeseries. 
+#'  For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain 
+#'  locations.
 #' @param Q Number of latent dimensions to estimate. If \code{NULL} (default), 
 #'  estimated using PESEL (Sobczyka et al. 2020).
 #' @param Q_max Maximal number of principal components for automatic 

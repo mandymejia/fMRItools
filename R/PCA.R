@@ -1,11 +1,13 @@
 #' PCA for tall matrix
 #' 
 #' Efficient PCA for a tall matrix (many more rows than columns). Uses the SVD
-#'  of the covariance matrix.
+#'  of the covariance matrix. The dimensionality of the result can be preset
+#'  with \code{Q} or estimated with PESEL. 
 #' 
-#' @param X \eqn{V \times T} fMRI timeseries data matrix.
+#' @param X The tall numeric matrix for which to compute the PCA. For fMRI data, 
+#'  \code{X} should be \code{V} brain locations by \code{T} timepoints.
 #' @param center Center the columns of \code{X}? Default: \code{TRUE}. Set to
-#'  \code{FALSE} if already centered. 
+#'  \code{FALSE} if already centered. Centered data is required to compute PCA. 
 #' @param Q Number of latent dimensions to estimate. If \code{NULL} (default), 
 #'  estimated using PESEL (Sobczyka et al. 2020).
 #' @param Q_max Maximal number of principal components for automatic 

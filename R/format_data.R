@@ -25,7 +25,9 @@
 #' @keywords internal
 format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_erosion=NULL){
 
-  # TO DO: explain how to use ROI_data
+  # [TO DO]: Use `as.matrix_ifti`
+  # [TO DO]: Separate out the `ROI_noise` stuff
+  # [TO DO]: explain how to use ROI_data
 
   # if X is a file, read it.
   if (is.character(X)) {
@@ -109,7 +111,7 @@ format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_
       }
     } else if (X_type == "xifti") {
       ROI_data <- rep(TRUE, V_)
-    } else { stop("Internal error: unrecognized `X_type`") }
+    } else { stop("Internal error: `X_type` not recognized.") }
     if (sum(ROI_data) == 0) { warning("The data ROI was empty.\n") }
   }
 

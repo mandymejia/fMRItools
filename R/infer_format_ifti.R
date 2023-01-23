@@ -6,7 +6,8 @@
 #'  \code{"CIFTI"} file path, \code{"xifti"} object,
 #'  \code{"GIFTI"} file path, \code{"gifti"} object,  
 #'  \code{"NIFTI"} file path, \code{"nifti"} object, 
-#'  \code{"RDS"} file path, or \code{"data"}. The second element indicates 
+#'  \code{"RDS"} file path, or \code{"data"}. 
+#'  The second element indicates 
 #'  the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
 #' 
 #' @export
@@ -34,7 +35,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   # NIFTI
   nii_classes <- c(oro.nifti="niftiExtension", RNifti="niftiImage", oro.nifti="nifti")
 
-  # Character vector: CIFTI, GIFTI, NIFTI, or RDS
+  # Character: CIFTI, GIFTI, NIFTI, or RDS
   if (is.character(BOLD) && length(BOLD)==1) {
     if (any(endsWith(BOLD, cii_ext_supported))) {
       for (cc in cii_ext_supported) {
@@ -115,9 +116,9 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
     } else if (BOLD_dims_lens==2) {
       Bformat <- "data"
     } else if (BOLD_dims_lens==1) {
-      warning("`BOLD` should not be vectorized.")
+      warning("`BOLD` should not be vectorized, if it's numeric data.")
     } else {
-      warning("`BOLD` should be TxV or a 4D array.")
+      warning("`BOLD` should be TxV or a 4D array, if it's numeric data.")
     }
   } 
   
@@ -132,9 +133,10 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   c(Bformat, Bformat2)
 }
 
-#' Infer fMRI data format for a vector of inputs
+#' Infer fMRI data format for several inputs
 #' 
-#' Vectorized version of \code{\link{infer_format_ifti}}
+#' Vectorized version of \code{\link{infer_format_ifti}}. Expects all inputs
+#'  to have the same format.
 #' 
 #' Raises an error if the elements of \code{BOLD} do not share the same format.
 #'
@@ -150,7 +152,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
 #' @export
 infer_format_ifti_vec <- function(BOLD, verbose=FALSE){
   BOLD <- as.list(BOLD)
-  Bformat <- lapply(BOLD, infer_format_ifti, verbose=verbose)
+  Bformat <- lapply(BOLD, infer_format_ifti)
   Bformat <- unique(Bformat)
   if (length(Bformat)>1) {
     stop(paste(
@@ -158,5 +160,6 @@ infer_format_ifti_vec <- function(BOLD, verbose=FALSE){
       paste(lapply(Bformat, paste, collapse=", "), collapse="; ")
     ))
   }
+  if (verbose) { cat("Inferred input format:", Bformat[[1]], "\n") }
   Bformat[[1]]
 }

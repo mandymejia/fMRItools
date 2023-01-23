@@ -15,8 +15,8 @@ nuisance_regression(Y, design)
 The data after nuisance regression.
 }
 \description{
-Performs nuisance regression. The data and design matrix must both be
-centered, or an intercept must be included in the design matrix!
+Performs nuisance regression. Important note: the data and design matrix must
+both be centered, or an intercept must be included in the design matrix.
 }
 \examples{
 Y <- matrix(rnorm(700), nrow=100)

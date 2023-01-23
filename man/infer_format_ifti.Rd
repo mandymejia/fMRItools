@@ -16,7 +16,8 @@ A length-two vector. The first element indicates the format:
 \code{"CIFTI"} file path, \code{"xifti"} object,
 \code{"GIFTI"} file path, \code{"gifti"} object,
 \code{"NIFTI"} file path, \code{"nifti"} object,
-\code{"RDS"} file path, or \code{"data"}. The second element indicates
+\code{"RDS"} file path, or \code{"data"}.
+The second element indicates
 the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
 }
 \description{

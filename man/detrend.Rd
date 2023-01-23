@@ -7,12 +7,13 @@
 detrend(X, TR, f = 0.008, method = c("DCT", "FFT"))
 }
 \arguments{
-\item{X}{\eqn{T \times V} numeric matrix. Each column is a voxel or vertex
-time series.}
+\item{X}{A numeric matrix, with each column being a timeseries to detrend.
+For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain
+locations.}
 
-\item{TR}{TR of the fMRI scan, in seconds (the time between timepoints)}
+\item{TR}{The time step between adjacent rows of \code{X}, in seconds}
 
-\item{f}{Hz of highpass filter. Default: \code{.008}}
+\item{f}{The frequency of the highpass filter, in Hertz. Default: \code{.008}}
 
 \item{method}{\code{"DCT"} (default) or \code{"FFT"}.}
 }

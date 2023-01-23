@@ -1,7 +1,7 @@
 #' Nuisance regression
 #'
-#' Performs nuisance regression. The data and design matrix must both be
-#'  centered, or an intercept must be included in the design matrix!
+#' Performs nuisance regression. Important note: the data and design matrix must
+#'  both be centered, or an intercept must be included in the design matrix.
 #'
 #' @param Y The \eqn{T \times V} or \eqn{V \times T} data.
 #' @param design The \eqn{T \times Q} matrix of nuisance regressors.

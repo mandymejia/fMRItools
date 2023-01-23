@@ -2,7 +2,7 @@
 % Please edit documentation in R/infer_format_ifti.R
 \name{infer_format_ifti_vec}
 \alias{infer_format_ifti_vec}
-\title{Infer fMRI data format for a vector of inputs}
+\title{Infer fMRI data format for several inputs}
 \usage{
 infer_format_ifti_vec(BOLD, verbose = FALSE)
 }
@@ -20,7 +20,8 @@ A length-two vector. The first element indicates the format:
 the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
 }
 \description{
-Vectorized version of \code{\link{infer_format_ifti}}
+Vectorized version of \code{\link{infer_format_ifti}}. Expects all inputs
+to have the same format.
 }
 \details{
 Raises an error if the elements of \code{BOLD} do not share the same format.

@@ -3,27 +3,22 @@
 #' Centers and scales the columns of a matrix robustly
 #'
 #' Centers each column on its median, and scales each column by its median
-#' absolute deviation (MAD). Constant-valued columns are set to \code{NA}
-#' (or removed if \code{drop_const}) and a warning is raised. If all 
-#' MADs are zero, an error is raised.
+#' 	absolute deviation (MAD). If there are constant-valued columns, they are
+#' 	removed if \code{drop_const} or set to \code{NA} if \code{!drop_const}, and
+#' 	a warning is raised. If all columns are constant, an error is raised.
 #'
-#' @param mat A numerical matrix.
-#' @param TOL minimum MAD to consider a column non-constant.
+#' @param mat A numeric matrix. Its columns will be centered and scaled.
+#' @param TOL Columns with MAD below this value will be considered constant.
 #'  Default: \code{1e-8}
-#' @param drop_const Drop constant-valued columns? Default: \code{TRUE}. If
-#' 	\code{FALSE}, keep but set their value to \code{NA}.
+#' @param drop_const Drop constant columns? Default: \code{TRUE}. If 
+#' 	\code{FALSE}, set to \code{NA} instead. 
+#' @param doRows Center and scale the rows instead? Default: \code{FALSE}.
 #'
 #' @export
 #' @return The input matrix with its columns centered and scaled.
-scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
-	# Check arguments.
-	if (length(dim(mat)) == 1) { mat <- as.matrix(mat) }
-	stopifnot(class(mat)=="logical")
-	stopifnot(is_posNum(TOL))
-	stopifnot(is_1(drop_const, "logical"))
-
+scale_med <- function(mat, TOL=1e-8, drop_const=TRUE, doRows=FALSE){
   # Transpose.
-  mat <- t(mat)
+  if (!doRows) { mat <- t(mat) }
 
   #	Center.
   mat <- mat - c(rowMedians2(mat, na.rm=TRUE))

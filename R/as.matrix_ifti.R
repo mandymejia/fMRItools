@@ -1,7 +1,7 @@
 #' Convert CIFTI, NIFTI, or GIFTI input to \eqn{T \times V} matrix
 #' 
 #' Convert CIFTI, NIFTI, or GIFTI input to a \eqn{T \times V} matrix by 
-#'  reading it in with the corresponding package, and then separating the data
+#'  reading it in with the corresponding package and then separating the data
 #'  from the metadata. Also works with the intermediate R objects created from
 #'  reading these files: \code{"xifti"} objects from \code{ciftiTools}, 
 #'  \code{"gifti"} objects from \code{gifti}, 
@@ -10,16 +10,16 @@
 #'  
 #'  For CIFTI files, only intents supported by \code{ciftiTools} are supported: 
 #'  \code{dscalar}, \code{dtseries}, and \code{dlabel}. For NIFTI file or
-#'  NIFTI-intermediate R object input, the data will be vectorized/masked. 
+#'  NIFTI-intermediate R objects, the data will be vectorized/masked. 
 #' 
 #' @param x The object to coerce to a matrix
 #' @param meta Return metadata too? Default: \code{FALSE}.
 #' @param sortSub For CIFTI format input only. Sort subcortex by labels? 
-#'  Default: \code{FALSE}
+#'  Default: \code{FALSE} (sort by array index).
 #' @param TbyV Return the data matrix in \eqn{T \times V} form? Default:
 #'  \code{TRUE}. If \code{FALSE}, return in \eqn{V \times T} form instead.
 #'  Using this argument may be faster than transposing after the function call. 
-#' @param verbose Print updates? Default: \code{FALSE}
+#' @param verbose Print updates? Default: \code{FALSE}.
 #' @param ... If \code{x} is a file path, additional arguments to the function
 #'  used to read in \code{x} can be specified here. For example, if \code{x}
 #'  is a path to a CIFTI file, \code{...} might specify which \code{idx} and
@@ -61,7 +61,10 @@ as.matrix_ifti <- function(
     }
     if (meta) {
       x_meta <- c(
-        list(brainstructures_nV=lapply(x$data, nrow)), 
+        list(
+          brainstructures_nV=lapply(x$data, nrow),
+          sortSub=sortSub
+        ), 
         x[names(x)[names(x)!="data"]]
       )
     }
@@ -71,11 +74,11 @@ as.matrix_ifti <- function(
   # Handle GIFTI input.
   } else if (format %in% c("GIFTI", "gifti")) {
     if (!is.na(format2) && format2 == "surf") { stop(
-      "`x` represents surface data, not BOLD/fMRI data."
+      "`x` represents surface geometry data, not BOLD/fMRI data."
     ) }
     if (format == "GIFTI") {
       if (!requireNamespace("gifti", quietly = TRUE)) {
-        stop("Package \"gifti\" needed to read `X`. Please install it", call. = FALSE)
+        stop("Package \"gifti\" needed to read `x`. Please install it", call. = FALSE)
       }
       x <- gifti::read_gifti(x)
     }
@@ -101,7 +104,6 @@ as.matrix_ifti <- function(
     if (verbose) {cat("NIFTI dimensions:\n"); print(dim(x))}
   }
 
-  # CIFTI: add sortSub metadata
   out <- if (meta) {
     list(data=x, meta=x_meta)
   } else {

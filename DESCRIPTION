@@ -27,7 +27,7 @@ Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
 Imports:
-    stats,
+    stats
 Suggests:
     ciftiTools,
     gifti, 

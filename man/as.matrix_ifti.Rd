@@ -19,13 +19,13 @@ as.matrix_ifti(
 \item{meta}{Return metadata too? Default: \code{FALSE}.}
 
 \item{sortSub}{For CIFTI format input only. Sort subcortex by labels?
-Default: \code{FALSE}}
+Default: \code{FALSE} (sort by array index).}
 
 \item{TbyV}{Return the data matrix in \eqn{T \times V} form? Default:
 \code{TRUE}. If \code{FALSE}, return in \eqn{V \times T} form instead.
 Using this argument may be faster than transposing after the function call.}
 
-\item{verbose}{Print updates? Default: \code{FALSE}}
+\item{verbose}{Print updates? Default: \code{FALSE}.}
 
 \item{...}{If \code{x} is a file path, additional arguments to the function
 used to read in \code{x} can be specified here. For example, if \code{x}
@@ -39,7 +39,7 @@ the metadata of \code{x}.
 }
 \description{
 Convert CIFTI, NIFTI, or GIFTI input to a \eqn{T \times V} matrix by
-reading it in with the corresponding package, and then separating the data
+reading it in with the corresponding package and then separating the data
 from the metadata. Also works with the intermediate R objects created from
 reading these files: \code{"xifti"} objects from \code{ciftiTools},
 \code{"gifti"} objects from \code{gifti},
@@ -48,5 +48,5 @@ reading these files: \code{"xifti"} objects from \code{ciftiTools},
 
 For CIFTI files, only intents supported by \code{ciftiTools} are supported:
 \code{dscalar}, \code{dtseries}, and \code{dlabel}. For NIFTI file or
-NIFTI-intermediate R object input, the data will be vectorized/masked.
+NIFTI-intermediate R objects, the data will be vectorized/masked.
 }

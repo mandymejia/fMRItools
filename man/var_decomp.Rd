@@ -7,13 +7,16 @@
 var_decomp(x, verbose = FALSE)
 }
 \arguments{
-\item{x}{measurements by subjects by variables}
+\item{x}{The data as a 3D array: measurements by subjects by variables.
+(Alternatively, a matrix that is measurements by subjects, if only one
+variable exists.)}
 
-\item{verbose}{If \code{TRUE}, display progress of algorithm}
+\item{verbose}{If \code{TRUE}, display progress of algorithm. Default:
+\code{FALSE}.}
 }
 \value{
 The variance decomposition
 }
 \description{
-Compute variance decomposition
+Calculate the various ANOVA sums of squares for repeated measures data.
 }

@@ -70,7 +70,6 @@ is.fname <- function(x){
   is_1(x, "character") && file.exists(x) && !dir.exists(x)
 }
 
-
 #' Format a path for \code{\link{system}}
 #' 
 #' Right now, it uses \code{shQuote}
