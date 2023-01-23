@@ -24,10 +24,11 @@ vec2image <- function(vec_data, template_image) {
 #'
 #' Does the vector have a positive skew?
 #'
-#' @param x The numeric vector for which to calculate the skew. Can also be a matrix,
-#'  in which case the skew of each column will be calculated.
-#' @return \code{TRUE} if the skew is positive or zero. \code{FALSE} if the skew is negative.
-#' @keywords internal
+#' @param x The numeric vector for which to calculate the skew. Can also be a 
+#'  matrix, in which case the skew of each column will be calculated.
+#' @return \code{TRUE} if the skew is positive or zero. \code{FALSE} if the 
+#'  skew is negative.
+#' @export
 #'
 #' @importFrom stats median
 skew_pos <- function(x){
@@ -39,47 +40,64 @@ skew_pos <- function(x){
 #'
 #' Flips all source signal estimates (S) to positive skew
 #'
-#' @param x The ICA results with entries \code{S} and \code{M}
+#' @param x The ICA results: a list with entries \code{"S"} and \code{"M"}
 #' @return \code{x} but with positive skew source signals
-#' @keywords internal
+#' @export
 #'
 sign_flip <- function(x){
+  # Check arguments.
   stopifnot(is.list(x))
   stopifnot(("S" %in% names(x)) & ("M" %in% names(x)))
+  stopifnot(is.matrix(x$M) && is.matrix(x$S))
+  stopifnot(ncol(x$M) == ncol(x$S))
+
   spos <- skew_pos(x$S)
   x$M[,!spos] <- -x$M[,!spos]
   x$S[,!spos] <- -x$S[,!spos]
   x
 }
 
-#' Center cols
+#' Center matrix columns
 #'
-#' Efficiently center columns of a matrix. (Faster than \code{scale})
+#' Efficiently center columns of a matrix. (Faster than \code{base::scale}.)
 #'
-#' @param X The data matrix. Its columns will be centered
+#' @param X The data matrix. Its columns will be centered.
 #' @return The centered data
-#' @keywords internal
+#' @export
 colCenter <- function(X) {
   X - rep(colMeans(X), rep.int(nrow(X), ncol(X)))
 }
 
 #' Unmask matrix data
+#' 
+#' Insert empty rows or columns to a matrix. For example, medial wall vertices 
+#'  can be added back to the cortex data matrix. 
 #'
-#' @param dat The data
-#' @param mask The mask
-#' @param mask_dim Rows, \code{1}, (default) or columns, \code{2}
-#' @keywords internal
-unmask_mat <- function(dat, mask, mask_dim=1){
+#' @param x The data matrix to unmask.
+#' @param mask The logical mask: the number of \code{TRUE} values should match
+#'  the size of the (\code{mask_dim})th dimension in \code{dat}.
+#' @param mask_dim Rows, \code{1} (default), or columns, \code{2}.
+#' @param fill The fill value for the inserted rows/columns. Default: \code{NA}.
+#' 
+#' @return The unmasked matrix.
+#' @export
+unmask_mat <- function(x, mask, mask_dim=1, fill=NA){
+  # Argument checks.
+  stopifnot(is.matrix(x))
+  stopifnot(is.logical(mask))
   stopifnot(is_posNum(mask_dim))
   stopifnot(mask_dim %in% c(1,2))
+  stopifnot(length(fill) == 1)
+
+  # Unmask.
   if (mask_dim==1) {
-    stopifnot(nrow(dat) == sum(mask))
-    mdat <- matrix(NA, nrow=length(mask), ncol=ncol(dat))
-    mdat[mask,] <- dat
+    stopifnot(nrow(x) == sum(mask))
+    mdat <- matrix(fill, nrow=length(mask), ncol=ncol(x))
+    mdat[mask,] <- x
   } else if (mask_dim==2) {
-    stopifnot(ncol(dat) == sum(mask))
-    mdat <- matrix(NA, nrow=nrow(dat), ncol=length(mask))
-    mdat[,mask] <- dat
+    stopifnot(ncol(x) == sum(mask))
+    mdat <- matrix(fill, nrow=nrow(x), ncol=length(mask))
+    mdat[,mask] <- x
   }
   mdat
 }

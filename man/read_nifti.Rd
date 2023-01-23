@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_nifti.R
 \name{read_nifti}
 \alias{read_nifti}
-\title{Wrapper to common functions for reading NIFTIs}
+\title{Wrapper to functions for reading NIFTIs}
 \usage{
 read_nifti(nifti_fname)
 }
@@ -15,5 +15,9 @@ The NIFTI
 \description{
 Tries \code{RNifti::readNifti}, then \code{oro.nifti::readNIfTI}. If
 neither package is available an error is raised.
+}
+\details{
+For \code{oro.nifti::readNIFTI} the argument
+\code{reorient=FALSE} will be used.
 }
 \keyword{internal}

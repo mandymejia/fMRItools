@@ -12,7 +12,8 @@ scale_med(mat, TOL = 1e-08, drop_const = TRUE)
 \item{TOL}{minimum MAD to consider a column non-constant.
 Default: \code{1e-8}}
 
-\item{drop_const}{Drop}
+\item{drop_const}{Drop constant-valued columns? Default: \code{TRUE}. If
+\code{FALSE}, keep but set their value to \code{NA}.}
 }
 \value{
 The input matrix with its columns centered and scaled.

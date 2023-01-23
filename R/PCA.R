@@ -25,7 +25,7 @@
 #' V <- matrix(rnorm(15), nrow=3, ncol=5)
 #' PCA(U %*% V)
 PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
-
+  # Check arguments.
   stopifnot(is.matrix(X) && is.numeric(X))
   stopifnot(is_1(center, "logical"))
   stopifnot(is.null(Q) || is_1(Q))
@@ -43,7 +43,7 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
     if (max(abs(colMeans(X))) > TOL) stop('Columns of X must be centered')
   }
   
-  # Determine PCA dimensionality
+  # Determine PCA dimensionality.
   if(is.null(Q)){
     if (!requireNamespace("pesel", quietly = TRUE)) {
       stop("Package \"pesel\" needed to read input data. Please install it", call. = FALSE)
@@ -53,7 +53,7 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
   if (Vdim == "Q") { Vdim <- Q }
   if (Vdim > Q) { warning("Vdim > Q, so setting Vdim to Q."); Vdim <- Q }
 
-  # Perform dimension reduction
+  # Perform dimension reduction.
   out <- svd(crossprod(X) / (nV-1), nu=Q, nv=0)
 
   # Compute directions. (out$v would have the directions for XtX, not X.)

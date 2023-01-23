@@ -3,26 +3,26 @@
 \name{pad_vol}
 \alias{pad_vol}
 \alias{uncrop_vol}
-\title{Pad a 3D Array}
+\title{Pad 3D Array}
 \usage{
 pad_vol(x, padding, fill = NA)
 
 uncrop_vol(x, padding, fill = NA)
 }
 \arguments{
-\item{x}{A 3D array, e.g. \code{unmask_subcortex(xifti$data$subcort, xifti$meta$subcort$mask)}.}
+\item{x}{A 3D array, e.g.
+\code{unmask_vol(xifti$data$subcort, xifti$meta$subcort$mask)}.}
 
-\item{padding}{A \eqn{d \times 2} matrix indicating the number of
-slices to add at the beginning and end of each of the d dimensions, e.g.
-\code{xifti$meta$subcort$mask_padding}.}
+\item{padding}{A \eqn{3 \times 2} matrix indicating the number of
+slices to add at the beginning (first column) and end (second column) of
+each of dimension, e.g. \code{xifti$meta$subcort$mask_padding}.}
 
-\item{fill}{Values to pad with. Default: \code{NA}.}
+\item{fill}{Value to pad with. Default: \code{NA}.}
 }
 \value{
 The padded array
 }
 \description{
 Pad a 3D array by a certain amount in each direction, along each dimension.
-This effectively undoes a crop.
+This operation is like the opposite of cropping.
 }
-\keyword{internal}

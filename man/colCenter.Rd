@@ -2,17 +2,16 @@
 % Please edit documentation in R/utils_misc.R
 \name{colCenter}
 \alias{colCenter}
-\title{Center cols}
+\title{Center matrix columns}
 \usage{
 colCenter(X)
 }
 \arguments{
-\item{X}{The data matrix. Its columns will be centered}
+\item{X}{The data matrix. Its columns will be centered.}
 }
 \value{
 The centered data
 }
 \description{
-Efficiently center columns of a matrix. (Faster than \code{scale})
+Efficiently center columns of a matrix. (Faster than \code{base::scale}.)
 }
-\keyword{internal}

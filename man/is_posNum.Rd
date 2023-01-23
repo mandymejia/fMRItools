@@ -18,4 +18,3 @@ number
 \description{
 Is this object a positive number? (Or non-negative)
 }
-\keyword{internal}

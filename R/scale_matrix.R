@@ -10,11 +10,18 @@
 #' @param mat A numerical matrix.
 #' @param TOL minimum MAD to consider a column non-constant.
 #'  Default: \code{1e-8}
-#' @param drop_const Drop
+#' @param drop_const Drop constant-valued columns? Default: \code{TRUE}. If
+#' 	\code{FALSE}, keep but set their value to \code{NA}.
 #'
 #' @export
 #' @return The input matrix with its columns centered and scaled.
 scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
+	# Check arguments.
+	if (length(dim(mat)) == 1) { mat <- as.matrix(mat) }
+	stopifnot(class(mat)=="logical")
+	stopifnot(is_posNum(TOL))
+	stopifnot(is_1(drop_const, "logical"))
+
   # Transpose.
   mat <- t(mat)
 
@@ -40,10 +47,10 @@ scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
   mat[const_mask,] <- NA
   mat[!const_mask,] <- mat[!const_mask,] / mad
 
+  if (drop_const) { mat <- mat[!const_mask,] }
+
   # Revert transpose.
   mat <- t(mat)
-
-  if (drop_const) { mat <- mat[!const_mask,] }
 
   mat
 }

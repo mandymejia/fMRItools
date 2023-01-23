@@ -3,8 +3,8 @@
 #' Performs nuisance regression. The data and design matrix must both be
 #'  centered, or an intercept must be included in the design matrix!
 #'
-#' @param Y The \eqn{T} by \eqn{V} or \eqn{V} by \eqn{T} data.
-#' @param design The \eqn{T} by \eqn{Q} matrix of nuisance regressors.
+#' @param Y The \eqn{T \times V} or \eqn{V \times T} data.
+#' @param design The \eqn{T \times Q} matrix of nuisance regressors.
 #'
 #' @return The data after nuisance regression.
 #' 
@@ -15,6 +15,7 @@
 #' design <- cbind(seq(100), 1)
 #' nuisance_regression(Y, design)
 nuisance_regression <- function(Y, design){
+  # # Old, less efficient version.
   # Z <- design
 	# if(nrow(Y) != nrow(Z)) stop('Y and Z must have same number of rows')
  	# invZtZ <- solve(t(Z) %*% Z)  #(Z'Z)^{-1}
@@ -30,23 +31,4 @@ nuisance_regression <- function(Y, design){
   } else {
     stop("Y and design are not of compatible dimensions.")
   }
-}
-
-#' Check design matrix
-#' 
-#' @param design The design matrix
-#' 
-#' @return The (modified) design matrix
-#' 
-#' @keywords internal
-check_design_matrix <- function(design, T_=nrow(design)) {
-  class(design) <- "numeric"
-  if (identical(design, 1)) { design <- matrix(1, nrow=T_) }
-  design <- as.matrix(design)
-  stopifnot(nrow(design) == T_)
-  # Set constant columns (intercept regressor) to 1, and scale the other columns.
-  design_const_mask <- apply(design, 2, is_constant)
-  design[,design_const_mask] <- 1
-  design[,!design_const_mask] <- scale(design[,!design_const_mask])
-  design
 }

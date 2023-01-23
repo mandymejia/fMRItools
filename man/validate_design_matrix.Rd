@@ -8,6 +8,9 @@ validate_design_matrix(design, T_ = NULL)
 }
 \arguments{
 \item{design}{The design matrix}
+
+\item{T_}{the expected number of rows in \code{design}. Default:
+\code{NULL} (no expected value to validate).}
 }
 \value{
 The (modified) design matrix
@@ -17,4 +20,3 @@ Coerces \code{design} to a numeric matrix, and optionally checks that the
 number of rows is as expected. Sets constant-valued columns to 1, and scales
 all other columns.
 }
-\keyword{internal}

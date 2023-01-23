@@ -4,16 +4,22 @@
 \alias{unmask_mat}
 \title{Unmask matrix data}
 \usage{
-unmask_mat(dat, mask, mask_dim = 1)
+unmask_mat(x, mask, mask_dim = 1, fill = NA)
 }
 \arguments{
-\item{dat}{The data}
+\item{x}{The data matrix to unmask.}
 
-\item{mask}{The mask}
+\item{mask}{The logical mask: the number of \code{TRUE} values should match
+the size of the (\code{mask_dim})th dimension in \code{dat}.}
 
-\item{mask_dim}{Rows, \code{1}, (default) or columns, \code{2}}
+\item{mask_dim}{Rows, \code{1} (default), or columns, \code{2}.}
+
+\item{fill}{The fill value for the inserted rows/columns. Default: \code{NA}.}
+}
+\value{
+The unmasked matrix.
 }
 \description{
-Unmask matrix data
+Insert empty rows or columns to a matrix. For example, medial wall vertices
+can be added back to the cortex data matrix.
 }
-\keyword{internal}

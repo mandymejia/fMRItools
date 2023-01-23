@@ -7,9 +7,13 @@
 crop_vol(x)
 }
 \arguments{
-\item{x}{The 3D array to crop.}
+\item{x}{The numeric 3D array to crop.}
+}
+\value{
+A list of length two: \code{"data"}, the cropped array, and
+\code{"padding"}, the number of slices removed from each edge of each
+dimension.
 }
 \description{
 Remove empty (zero-valued) edge slices from a 3D array.
 }
-\keyword{internal}

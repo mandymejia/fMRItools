@@ -35,4 +35,3 @@ be matched to any expected value. \code{ciftiTools} uses this function to
 match keyword arguments for a function call. Another use is to match
 brainstructure labels ("left", "right", or "subcortical").
 }
-\keyword{internal}

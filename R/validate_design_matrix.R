@@ -5,10 +5,12 @@
 #'  all other columns. 
 #' 
 #' @param design The design matrix
+#' @param T_ the expected number of rows in \code{design}. Default:
+#'  \code{NULL} (no expected value to validate).
 #' 
 #' @return The (modified) design matrix
 #' 
-#' @keywords internal
+#' @export
 validate_design_matrix <- function(design, T_=NULL) {
   class(design) <- "numeric"
   if (identical(design, 1)) { design <- matrix(1, nrow=T_) }

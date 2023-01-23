@@ -18,7 +18,7 @@
 #'
 #' @return The matched user inputs.
 #'
-#' @keywords internal
+#' @export
 #'
 match_input <- function(
   user, expected,
@@ -126,7 +126,7 @@ match_exactly <- function(
 #' @param dtype The data type. Default: \code{"numeric"}. Also can be 
 #'  \code{"logical"} or \code{"character"}
 #' @return \code{TRUE} if \code{x} is \code{dtype} and length one. 
-#' @keywords internal
+#' @export
 #'
 is_1 <- function(x, dtype=c("numeric", "logical", "character")){
   dtype <- match.arg(dtype, c("numeric", "logical", "character"))
@@ -144,10 +144,27 @@ is_1 <- function(x, dtype=c("numeric", "logical", "character")){
 #' @param zero_ok Is a value of zero ok?
 #' @return Logical indicating if \code{x} is a single positive or non-negative 
 #'  number
-#' @keywords internal
+#' @export
 #' 
 is_posNum <- function(x, zero_ok=FALSE){
   is_1(x) && ((x>0) || (x==0 && zero_ok))
+}
+
+#' Is this an integer?
+#' 
+#' @param x The putative integer
+#' @param nneg Require \code{x>=0} (non-negative) too?
+#' @return Logical indicating whether \code{x} is an integer
+#' 
+#' @export
+is_integer <- function(x, nneg=FALSE){
+  out <- FALSE
+  if (is_1(x)) {
+    if (x%%1==0) {
+      if (x>=0 || !nneg) { out <- TRUE }
+    }
+  } 
+  out
 }
 
 #' All integers?
@@ -163,23 +180,6 @@ all_integers <- function(x){
   if (!is.numeric(x)) { return(FALSE) }
   non_integer <- max(abs(x - round(x)))
   non_integer==0 && !is.na(non_integer)
-}
-
-#' Is this an integer?
-#' 
-#' @param x The putative integer
-#' @param nneg Require \code{x>=0} (non-negative) too?
-#' @return Logical indicating whether \code{x} is an integer
-#' 
-#' @keywords internal
-is_integer <- function(x, nneg=FALSE){
-  out <- FALSE
-  if (is_1(x)) {
-    if (x%%1==0) {
-      if (x>=0 || !nneg) { out <- TRUE }
-    }
-  } 
-  out
 }
 
 #' Is this numeric vector constant?

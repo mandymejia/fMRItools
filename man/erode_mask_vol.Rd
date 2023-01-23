@@ -2,23 +2,26 @@
 % Please edit documentation in R/utils_volume.R
 \name{erode_mask_vol}
 \alias{erode_mask_vol}
-\title{Erode volumetric mask}
+\title{Erode 3D mask}
 \usage{
 erode_mask_vol(vol, n_erosion = 1, out_of_mask_val = NA)
 }
 \arguments{
-\item{vol}{The volume to erode. Out-of-mask voxels should be indicated by a
-value in \code{out_of_mask_val}.}
+\item{vol}{The 3D array to erode. The mask to erode is defined by all values
+not in \code{out_of_mask_val}.}
 
-\item{n_erosion}{The number of layers to erode the mask by.}
+\item{n_erosion}{The number of layers to erode the mask by. Default:
+\code{1}.}
 
 \item{out_of_mask_val}{A voxel is not included in the mask if and only if its
-value is in this vector. The first value in this vector will be used to replace
-the eroded voxels. Default: \code{NA}.}
+value is in this vector. The first value of this vector will be used to
+replace eroded voxels. Default: \code{NA}. If \code{vol} is simply a logical
+array with \code{TRUE} values for in-mask voxels, use
+\code{out_of_mask_val=FALSE}.}
 }
 \value{
-The eroded \code{vol}. It is the same as \code{vol} but with eroded
-voxels replaced with the value \code{out_of_mask_val[1]}.
+The eroded \code{vol}. It is the same as \code{vol}, but eroded
+voxels are replaced with \code{out_of_mask_val[1]}.
 }
 \description{
 Erode a volumetric mask by a certain number of voxel layers. For each layer,
@@ -27,6 +30,6 @@ from the mask.
 }
 \details{
 Diagonal voxels are not considered adjacent, i.e. the voxel at (0,0,0) is not
-adjacent to the voxel at (1,1,0) or (1,1,1), although it is adjacent to
+adjacent to the voxels at (1,1,0) or (1,1,1), although it is adjacent to
 (1,0,0).
 }
