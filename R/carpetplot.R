@@ -104,7 +104,7 @@ carpetplot <- function(
 
 #' Stacked carpetplot
 #' 
-#' Stacks carpetplots on top of one anotherr by rbinding the matrices. 
+#' Stacks carpetplots on top of one another by rbinding the matrices. 
 #' 
 #' @param x_list List of data matrices
 #' @param center,scale Center and scale the data? If \code{x} is fMRI data 

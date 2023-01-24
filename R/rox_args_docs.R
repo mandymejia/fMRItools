@@ -9,7 +9,7 @@
 #'  (The vectorized data will be \eqn{T timepoints} by \eqn{V_{in-mask} voxels})
 #' 
 #'  Or, a \code{ciftiTools} \code{"xifti"} object or a file path to a CIFTI
-#'  (The vectorized data will be \eqn{T timepoints} by \eqn{V_{left+right+sub} greyordinates}).
+#'  (The vectorized data will be \eqn{T timepoints} by \eqn{V_{left+right+sub} grayordinates}).
 #' @param ROI_data Indicates the data ROI. Allowed arguments depend on \code{X}:
 #' 
 #'  If \code{X} is a matrix, this must be a length \eqn{V} logical vector, where
@@ -53,7 +53,7 @@
 #'  be mutually exclusive with each other, and with \code{ROI_data}. 
 #' 
 #'  (If \code{X} is a \code{"xifti"}, entries must be data matrices, since no 
-#'  greyordinate locations in \code{X} are appropriate noise ROIs).
+#'  grayordinate locations in \code{X} are appropriate noise ROIs).
 #' @name data_CompCor_Params
 #' @keywords internal
 NULL

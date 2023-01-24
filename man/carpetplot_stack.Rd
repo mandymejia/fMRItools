@@ -41,5 +41,5 @@ carpetplots. Default: zero (no gap).}
 \code{NULL}, invisibly
 }
 \description{
-Stacks carpetplots on top of one anotherr by rbinding the matrices.
+Stacks carpetplots on top of one another by rbinding the matrices.
 }
