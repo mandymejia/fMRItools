@@ -4,7 +4,7 @@
 #'  This operation is like the opposite of cropping. 
 #'
 #' @param x A 3D array, e.g. 
-#'  \code{unmask_vol(xifti$data$subcort, xifti$meta$subcort$mask)}.
+#'  \code{unvec_vol(xifti$data$subcort, xifti$meta$subcort$mask)}.
 #' @param padding A \eqn{3 \times 2} matrix indicating the number of 
 #'  slices to add at the beginning (first column) and end (second column) of 
 #'  each of dimension, e.g. \code{xifti$meta$subcort$mask_padding}.
@@ -14,6 +14,14 @@
 #'
 #' @export
 #' 
+#' @examples
+#' x <- array(seq(24), dim=c(2,3,4))
+#' y <- pad_vol(x, array(1, dim=c(3,2)), 0)
+#' stopifnot(all(dim(y) == dim(x)+2))
+#' stopifnot(sum(y) == sum(x))
+#' z <- crop_vol(y)$data
+#' stopifnot(identical(dim(x), dim(z)))
+#' stopifnot(max(abs(z - x))==0)
 pad_vol <- function(x, padding, fill=NA){
   # Argument checks.
   stopifnot(length(dim(x)) == 3)
@@ -259,7 +267,7 @@ vox_locations <- function(mask, trans_mat, trans_units=NULL){
 #'
 #' @export
 #' 
-unmask_vol <- function(dat, mask, fill=NA) {
+unvec_vol <- function(dat, mask, fill=NA) {
 
   # Check that dat is a vector or matrix.
   if (is.vector(dat) || is.factor(dat)) { dat <- matrix(dat, ncol=1) }

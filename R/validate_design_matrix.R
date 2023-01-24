@@ -11,7 +11,7 @@
 #' @return The (modified) design matrix
 #' 
 #' @export
-validate_design_matrix <- function(design, T_=NULL) {
+validate_design_mat <- function(design, T_=NULL) {
   class(design) <- "numeric"
   if (identical(design, 1)) { design <- matrix(1, nrow=T_) }
   design <- as.matrix(design)

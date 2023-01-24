@@ -144,10 +144,10 @@ CompCor <- function(
     design <- do.call(cbind, out2$noise_comps)
     if (!(is.null(nuisance) || isFALSE(nuisance) || identical(nuisance, 0))) {
       if (nrow(nuisance) != T_) { stop("`nuisance` does not have the same number of timepoints as `X`.") }
-      nuisance <- validate_design_matrix(nuisance)
+      nuisance <- validate_design_mat(nuisance)
       design <- cbind(design, nuisance)
     }
-    design <- validate_design_matrix(cbind(1, design), T_)
+    design <- validate_design_mat(cbind(1, design), T_)
     out1$X <- nuisance_regression(out1$X, design)
 
     # # Normalize data.

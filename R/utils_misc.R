@@ -1,23 +1,54 @@
-#' Transform vector data to an image
+#' Transform vector data to image
 #'
-#' This fills in parts of a template with values from \code{vec_data}.
+#' From a \eqn{v \times p} matrix of vectorized data and an \eqn{m \times n} 
+#'  image mask with \eqn{v} in-mask locations, create a list of \eqn{p}
+#'  \eqn{m \times n} data arrays in which the mask locations are filled
+#'  in with the vectorized data values.
+#'  
+#' Consider using \code{abind::abind} to merge the result into a single
+#'  array.
 #'
-#' @param vec_data A V by p matrix, where V is the number of voxels within a
-#'   mask and p is the number of vectors to transform into matrix images
-#' @param template_image A binary matrix in which V entries are 1 and the rest
-#'   of the entries are zero
+#' @param x \eqn{v \times p} matrix, where \eqn{v} is the number of 
+#'  voxels within a mask and \eqn{p} is the number of vectors to transform into
+#'  matrix images.
+#' @param mask \eqn{m \times n} logical matrix in which \code{v} 
+#'  entries are \code{TRUE} and the rest are \code{FALSE}.
+#' @param fill_value Out-of-mask value in the output image. Default: 
+#'  \code{NA}.
 #'
-#' @return A list of masked values from \code{vec_data}
+#' @return A list of masked values from \code{x}
 #' 
+#' @examples
+#' x <- unvec_mat(
+#'  cbind(seq(3), seq(2,4), seq(3,5)), 
+#'  matrix(c(rep(TRUE, 3), FALSE), ncol=2),
+#'  0
+#' )
+#' y <- array(c(1,2,3,0,2,3,4,0,3,4,5,0), dim=c(2,2,3))
+#' stopifnot(identical(x[[1]], y[,,1]))
+#' stopifnot(identical(x[[2]], y[,,2]))
+#' stopifnot(identical(x[[3]], y[,,3]))
+#'
 #' @export
-vec2image <- function(vec_data, template_image) {
-  each_col <- sapply(split(vec_data, col(vec_data)), function(vd) {
-    out <- template_image
-    out[out == 1] <- vd
-    out[out == 0] <- NA
-    return(out)
+unvec_mat <- function(x, mask, fill_value=NA) {
+  # Check arguments.
+  if (length(dim(x))==1) { x <- as.matrix(x) }
+  stopifnot(is.matrix(x))
+  stopifnot(is.matrix(mask))
+  if (is.numeric(mask)) {
+    class(mask) <- "logical"
+  } else {
+    stopifnot(is.logical(mask))
+  }
+  stopifnot(nrow(x) == sum(mask))
+  #stopifnot(length(fill_value)==1)
+
+  sapply(split(x, col(x)), function(vd) {
+    out <- mask
+    out[mask] <- vd
+    out[!mask] <- fill_value
+    out
   }, simplify = F)
-  return(each_col)
 }
 
 #' Positive skew?

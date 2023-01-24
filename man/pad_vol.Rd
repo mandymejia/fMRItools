@@ -11,7 +11,7 @@ uncrop_vol(x, padding, fill = NA)
 }
 \arguments{
 \item{x}{A 3D array, e.g.
-\code{unmask_vol(xifti$data$subcort, xifti$meta$subcort$mask)}.}
+\code{unvec_vol(xifti$data$subcort, xifti$meta$subcort$mask)}.}
 
 \item{padding}{A \eqn{3 \times 2} matrix indicating the number of
 slices to add at the beginning (first column) and end (second column) of
@@ -25,4 +25,13 @@ The padded array
 \description{
 Pad a 3D array by a certain amount in each direction, along each dimension.
 This operation is like the opposite of cropping.
+}
+\examples{
+x <- array(seq(24), dim=c(2,3,4))
+y <- pad_vol(x, array(1, dim=c(3,2)), 0)
+stopifnot(all(dim(y) == dim(x)+2))
+stopifnot(sum(y) == sum(x))
+z <- crop_vol(y)$data
+stopifnot(identical(dim(x), dim(z)))
+stopifnot(max(abs(z - x))==0)
 }
