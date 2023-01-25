@@ -18,4 +18,3 @@ is_1(x, dtype = c("numeric", "logical", "character"))
 \description{
 Is this object the expected data type, and length one?
 }
-\keyword{internal}

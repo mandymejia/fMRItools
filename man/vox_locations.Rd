@@ -2,18 +2,23 @@
 % Please edit documentation in R/utils_volume.R
 \name{vox_locations}
 \alias{vox_locations}
-\title{Get spatial locations of each voxel}
+\title{Get coordinates of each voxel in a mask}
 \usage{
 vox_locations(mask, trans_mat, trans_units = NULL)
 }
 \arguments{
-\item{mask, trans_mat, trans_units}{The subcortical metadata}
+\item{mask}{3D logical mask}
+
+\item{trans_mat}{Transformation matrix from array indices to spatial
+coordinates.}
+
+\item{trans_units}{Units for the spatial coordinates (optional).}
 }
 \value{
-A list: \code{coords} and \code{units}
+A list: \code{coords} and \code{trans_units}.
 }
 \description{
-Use subcortical metadata (mask, transformation matrix and units) to get
-voxel locations in 3D space.
+Made for obtaining voxel locations in 3D space from the subcortical metadata
+of CIFTI data: the volumetric mask, the transformation matrix and the
+spatial units.
 }
-\keyword{internal}

@@ -1,84 +1,40 @@
-#' Count each voxel's neighbors with value \code{TRUE}
-#'
-#' For each voxel in a 3D logical array, count the number of immediate neighbors
-#'  with value \code{TRUE}.
-#'
-#' @param arr The 3D logical array.
-#' @param pad Pad value for edge.
-#' 
-#' @return An array with the same dimensions as \code{arr}. Each voxel value
-#'  will be the number of its immediate neighbors (0 to 6) which are \code{TRUE}.
-#' 
-#' @keywords internal
-neighbor_counts <- function(arr, pad=FALSE){
-  stopifnot(length(dim(arr)) == 3)
-  stopifnot(all(unique(arr) %in% c(TRUE, FALSE)))
-  arrPad <- pad_vol(arr, matrix(1, 3, 2), fill=pad)
-  dPad <- dim(arrPad)
-  # Look up, down, left, right, forward, behind (not diagonally)
-  arrPad[1:(dPad[1]-2),2:(dPad[2]-1),2:(dPad[3]-1)] +
-    arrPad[3:(dPad[1]),2:(dPad[2]-1),2:(dPad[3]-1)] +
-    arrPad[2:(dPad[1]-1),1:(dPad[2]-2),2:(dPad[3]-1)] +
-    arrPad[2:(dPad[1]-1),3:(dPad[2]),2:(dPad[3]-1)] +
-    arrPad[2:(dPad[1]-1),2:(dPad[2]-1),1:(dPad[3]-2)] +
-    arrPad[2:(dPad[1]-1),2:(dPad[2]-1),3:(dPad[3])]
-}
-
-#' Erode volumetric mask
-#'
-#' Erode a volumetric mask by a certain number of voxel layers. For each layer,
-#'  any in-mask voxel adjacent to at least one out-of-mask voxel is removed
-#'  from the mask. 
-#'
-#' Diagonal voxels are not considered adjacent, i.e. the voxel at (0,0,0) is not
-#'  adjacent to the voxel at (1,1,0) or (1,1,1), although it is adjacent to 
-#'  (1,0,0).
-#'
-#' @param vol The volume to erode. Out-of-mask voxels should be indicated by a 
-#'  value in \code{out_of_mask_val}.
-#' @param n_erosion The number of layers to erode the mask by.
-#' @param out_of_mask_val A voxel is not included in the mask if and only if its
-#'  value is in this vector. The first value in this vector will be used to replace
-#'  the eroded voxels. Default: \code{NA}.
-#'
-#' @return The eroded \code{vol}. It is the same as \code{vol} but with eroded
-#'  voxels replaced with the value \code{out_of_mask_val[1]}.
-#'
-#' @export
-erode_vol <- function(vol, n_erosion=1, out_of_mask_val=NA){
-  stopifnot(is_integer(n_erosion, nneg=TRUE))
-  stopifnot(length(dim(vol)) == 3)
-  if (n_erosion==0) { return(vol) }
-  mask <- !array(vol %in% out_of_mask_val, dim=dim(vol))
-  for (ii in seq(n_erosion)) {
-    to_erode <- mask & neighbor_counts(mask, pad=TRUE) < 6
-    mask[to_erode] <- FALSE
-    vol[to_erode] <- out_of_mask_val[1]
-  }
-  vol
-}
-
-#' Pad a 3D Array
+#' Pad 3D Array
 #'
 #' Pad a 3D array by a certain amount in each direction, along each dimension.
-#'  This effectively undoes a crop.
+#'  This operation is like the opposite of cropping. 
 #'
-#' @param x A 3D array, e.g. \code{unmask_subcortex(xifti$data$subcort, xifti$meta$subcort$mask)}.
-#' @param padding A \eqn{d \times 2} matrix indicating the number of 
-#'  slices to add at the beginning and end of each of the d dimensions, e.g.
-#'  \code{xifti$meta$subcort$mask_padding}.
-#' @param fill Values to pad with. Default: \code{NA}.
+#' @param x A 3D array, e.g. 
+#'  \code{unvec_vol(xifti$data$subcort, xifti$meta$subcort$mask)}.
+#' @param padding A \eqn{3 \times 2} matrix indicating the number of 
+#'  slices to add at the beginning (first column) and end (second column) of 
+#'  each of dimension, e.g. \code{xifti$meta$subcort$mask_padding}.
+#' @param fill Value to pad with. Default: \code{NA}.
 #'
 #' @return The padded array
 #'
-#' @keywords internal
+#' @export
 #' 
+#' @examples
+#' x <- array(seq(24), dim=c(2,3,4))
+#' y <- pad_vol(x, array(1, dim=c(3,2)), 0)
+#' stopifnot(all(dim(y) == dim(x)+2))
+#' stopifnot(sum(y) == sum(x))
+#' z <- crop_vol(y)$data
+#' stopifnot(identical(dim(x), dim(z)))
+#' stopifnot(max(abs(z - x))==0)
 pad_vol <- function(x, padding, fill=NA){
-  stopifnot(length(dim(x))==3)
-  new_dim <- vector("numeric", 3)
-  for (ii in seq_len(3)) {
-    new_dim[ii] <- dim(x)[ii] + padding[ii,1] + padding[ii,2]
-  }
+  # Argument checks.
+  stopifnot(length(dim(x)) == 3)
+  stopifnot(length(dim(padding)) == 2)
+  stopifnot(all(dim(padding) == c(3,2)))
+  class(padding) <- "numeric"
+  stopifnot(all(vapply(c(padding), is_integer, nneg=TRUE, TRUE)))
+  stopifnot(length(fill) == 1)
+
+  # Get dimensions of new array.
+  new_dim <- dim(x) + padding[,1] + padding[,2]
+
+  # Get new array.
   y <- array(fill, dim=new_dim)
   y[
     seq(padding[1,1]+1, padding[1,1]+dim(x)[1]),
@@ -94,27 +50,108 @@ uncrop_vol <- function(x, padding, fill=NA){
   pad_vol(x, padding, fill)
 }
 
-#' Convert coordinate list to volume
+#' Sum of each voxel's neighbors
+#'
+#' For each voxel in a 3D logical or numeric array, sum the values of the six
+#'  neighboring voxels. 
+#' 
+#' Diagonal voxels are not considered adjacent, i.e. the voxel at (0,0,0) is not
+#'  adjacent to the voxels at (1,1,0) or (1,1,1), although it is adjacent to 
+#'  (1,0,0).
+#'
+#' @param arr The 3D array.
+#' @param pad In order to compute the sum, the array is temporarily padded along
+#'  each edge with the value of \code{pad}. \code{0} (default) will mean that
+#'  edge voxels reflect the sum of 3-5 neighbors whereas non-edge voxels reflect
+#'  the sum of 6 neighbors. An alternative is to use a value of \code{NA} so 
+#'  that edge voxels are \code{NA}-valued because they did not have a complete
+#'  set of six neighbors. Perhaps another option is to use \code{mean(arr)}.
+#' 
+#' @return An array with the same dimensions as \code{arr}. Each voxel value
+#'  will be the sum across the immediate neighbors. If \code{arr} was a logical
+#'  array, this value will be between 0 and 6.
+#' 
+#' @export
+sum_neighbors_vol <- function(arr, pad=0){
+  # Argument checks.
+  stopifnot(length(dim(arr)) == 3)
+  class(arr) <- "numeric"
+  stopifnot(length(pad) == 1)
+
+  # Pad array by one voxel at the start and end of each dim.
+  arrPad <- pad_vol(arr, matrix(1, 3, 2), fill=pad)
+  dPad <- dim(arrPad)
+  # Look up, down, left, right, forward, behind (not diagonally)
+  arrPad[1:(dPad[1]-2),2:(dPad[2]-1),2:(dPad[3]-1)] +
+    arrPad[3:(dPad[1]),2:(dPad[2]-1),2:(dPad[3]-1)] +
+    arrPad[2:(dPad[1]-1),1:(dPad[2]-2),2:(dPad[3]-1)] +
+    arrPad[2:(dPad[1]-1),3:(dPad[2]),2:(dPad[3]-1)] +
+    arrPad[2:(dPad[1]-1),2:(dPad[2]-1),1:(dPad[3]-2)] +
+    arrPad[2:(dPad[1]-1),2:(dPad[2]-1),3:(dPad[3])]
+}
+
+#' Erode 3D mask
+#'
+#' Erode a volumetric mask by a certain number of voxel layers. For each layer,
+#'  any in-mask voxel adjacent to at least one out-of-mask voxel is removed
+#'  from the mask. 
+#'
+#' Diagonal voxels are not considered adjacent, i.e. the voxel at (0,0,0) is not
+#'  adjacent to the voxels at (1,1,0) or (1,1,1), although it is adjacent to 
+#'  (1,0,0).
+#'
+#' @param vol The 3D array to erode. The mask to erode is defined by all values
+#'  not in \code{out_of_mask_val}.
+#' @param n_erosion The number of layers to erode the mask by. Default: 
+#'  \code{1}.
+#' @param out_of_mask_val A voxel is not included in the mask if and only if its
+#'  value is in this vector. The first value of this vector will be used to 
+#'  replace eroded voxels. Default: \code{NA}. If \code{vol} is simply a logical
+#'  array with \code{TRUE} values for in-mask voxels, use
+#'  \code{out_of_mask_val=FALSE}.
+#'
+#' @return The eroded \code{vol}. It is the same as \code{vol}, but eroded
+#'  voxels are replaced with \code{out_of_mask_val[1]}.
+#'
+#' @export
+erode_mask_vol <- function(vol, n_erosion=1, out_of_mask_val=NA){
+  # Argument checks.
+  stopifnot(length(dim(vol)) == 3)
+  stopifnot(is_integer(n_erosion, nneg=TRUE))
+  if (n_erosion == 0) { return(vol) }
+
+  # Erode.
+  mask <- !array(vol %in% out_of_mask_val, dim=dim(vol))
+  for (ii in seq(n_erosion)) {
+    to_erode <- mask & (sum_neighbors_vol(mask, pad=1) < 6)
+    mask[to_erode] <- FALSE
+    vol[to_erode] <- out_of_mask_val[1]
+  }
+  vol
+}
+
+#' Convert coordinate list to 3D array
 #' 
 #' Converts a sparse coordinate list to its non-sparse volumetric representation.
 #' 
-#' @param coords The sparse coordinate list. Should be a data.frame or matrix
-#'  with voxels along the rows and three or four columns. The first three 
+#' @param coords The sparse coordinate list. Should be a \code{"data.frame"} or 
+#'  matrix with voxels along the rows and three or four columns. The first three 
 #'  columns should be integers indicating the spatial coordinates of the voxel.
 #'  If the fourth column is present, it will be the value used for that voxel.
 #'  If it is absent, the value will be \code{TRUE} or \code{1} if \code{fill}
-#'  is not those values, and \code{FALSE} or \code{0} if \code{fill} is. The
-#'  data type will be the same as that of \code{fill}.
-#'  \code{fill}. The fourth column must be logical or numeric.
-#' @param fill Fill value for the volume. Must be logical or numeric. Default: 
+#'  is not one of those values, and \code{FALSE} or \code{0} if \code{fill} is. 
+#'  The data type will be the same as that of \code{fill}. The fourth column 
+#'  must be logical or numeric.
+#' @param fill Logical or numeric fill value for the volume. Default: 
 #'  \code{FALSE}.
 #' 
 #' @return The volumetric data
 #'
-#' @keywords internal
+#' @export
 #' 
 coordlist_to_vol <- function(coords, fill=FALSE){
-  stopifnot(length(fill)==1)
+  # Check arguments.
+  stopifnot(length(fill) == 1)
   if (is.logical(fill)) {
     logical_vals <- TRUE
   } else if (is.numeric(fill)) {
@@ -145,15 +182,21 @@ coordlist_to_vol <- function(coords, fill=FALSE){
 #' 
 #' Remove empty (zero-valued) edge slices from a 3D array.
 #'
-#' @param x The 3D array to crop.
-#'
-#' @keywords internal
+#' @param x The numeric 3D array to crop.
+#' @return A list of length two: \code{"data"}, the cropped array, and
+#'  \code{"padding"}, the number of slices removed from each edge of each 
+#'  dimension.
+#' 
+#' @export
 #' 
 crop_vol <- function(x) {
+  # Argument checks.
   d <- length(dim(x))
-
+  stopifnot(d == 3)
   if (all(unique(as.vector(x)) %in% c(NA, 0))) { stop("The array is empty.") }
 
+  # For each dimension, get the first and last non-empty slice.
+  # This chunk of code is generalizable to arrays with up to 15 dimensions.
   padding <- matrix(NA, nrow=d, ncol=2)
   rownames(padding) <- strsplit(rep("ijklmnopqrstuvwxyz", ceiling(d/15)), "")[[1]][1:d]
   empty_slice <- vector("list", d)
@@ -172,34 +215,46 @@ crop_vol <- function(x) {
       0
     )
   }
+
+  # Crop.
+  # This can easily be generalized to support arrays with number of dimensions 
+  #   other than 3. But for now, it only works for 3D arrays.
   x <- x[!empty_slice[[1]], !empty_slice[[2]], !empty_slice[[3]]]
 
-  return(list(data=x, padding=padding))
+  list(data=x, padding=padding)
 }
 
-#' Get spatial locations of each voxel
+#' Get coordinates of each voxel in a mask
 #' 
-#' Use subcortical metadata (mask, transformation matrix and units) to get
-#'  voxel locations in 3D space.
+#' Made for obtaining voxel locations in 3D space from the subcortical metadata
+#'  of CIFTI data: the volumetric mask, the transformation matrix and the 
+#'  spatial units.
 #' 
-#' @param mask,trans_mat,trans_units The subcortical metadata
-#' @return A list: \code{coords} and \code{units}
+#' @param mask 3D logical mask
+#' @param trans_mat Transformation matrix from array indices to spatial
+#'  coordinates.
+#' @param trans_units Units for the spatial coordinates (optional).
+#' @return A list: \code{coords} and \code{trans_units}.
 #' 
-#' @keywords internal
+#' @export
 #' 
 vox_locations <- function(mask, trans_mat, trans_units=NULL){
-  list(
-    coords = (cbind(which(mask, arr.ind=TRUE), 1) %*% trans_mat)[,seq(3)],
-    trans_units = NULL
-  )
+  # Argument checks.
+  stopifnot(dim(mask) == 3)
+  stopifnot(class(mask) == "logical")
+  stopifnot(dim(class(trans_mat)) == 2)
+  stopifnot(class(trans_mat) == "numeric")
+  stopifnot(dim(trans_mat)[1] == 4)
+
+  coords <- (cbind(which(mask, arr.ind=TRUE), 1) %*% trans_mat)[,seq(3)]
+  list(coords = coords, trans_units = trans_units)
 }
 
-#' Undo a volumetric mask
+#' Convert vectorized data back to volume
 #' 
 #' Un-applies a mask to vectorized data to yield its volumetric representation.
 #'  The mask and data should have compatible dimensions: the number of rows in
 #'  \code{dat} should equal the number of locations within the \code{mask}.
-#'  This is used for the subcortical CIFTI data.
 #' 
 #' @param dat Data matrix with locations along the rows and measurements along 
 #'  the columns. If only one set of measurements were made, this may be a 
@@ -212,7 +267,7 @@ vox_locations <- function(mask, trans_mat, trans_units=NULL){
 #'
 #' @export
 #' 
-unmask_subcortex <- function(dat, mask, fill=NA) {
+unvec_vol <- function(dat, mask, fill=NA) {
 
   # Check that dat is a vector or matrix.
   if (is.vector(dat) || is.factor(dat)) { dat <- matrix(dat, ncol=1) }

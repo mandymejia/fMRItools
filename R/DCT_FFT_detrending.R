@@ -86,10 +86,11 @@ fft_detrend <- function(X, N) {
 
 #' Detrending with DCT or FFT
 #' 
-#' @param X \eqn{T \times V} numeric matrix. Each column is a voxel or vertex
-#'  time series.
-#' @param TR TR of the fMRI scan, in seconds (the time between timepoints)
-#' @param f Hz of highpass filter. Default: \code{.008}
+#' @param X A numeric matrix, with each column being a timeseries to detrend. 
+#'  For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain 
+#'  locations.
+#' @param TR The time step between adjacent rows of \code{X}, in seconds
+#' @param f The frequency of the highpass filter, in Hertz. Default: \code{.008}
 #' @param method \code{"DCT"} (default) or \code{"FFT"}.
 #' 
 #' @return Detrended \code{X}

@@ -2,27 +2,40 @@
 #'
 #' @param BOLD The fMRI data
 #' @param verbose Print the format? Default: \code{FALSE}.
-#' @return The format: \code{"CIFTI"} file path, \code{"xifti"} object,
+#' @return A length-two vector. The first element indicates the format:
+#'  \code{"CIFTI"} file path, \code{"xifti"} object,
 #'  \code{"GIFTI"} file path, \code{"gifti"} object,  
 #'  \code{"NIFTI"} file path, \code{"nifti"} object, 
-#'  or \code{"data"}.
-#' @keywords internal
+#'  \code{"RDS"} file path, or \code{"data"}. 
+#'  The second element indicates 
+#'  the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
+#' 
+#' @export
 infer_format_ifti <- function(BOLD, verbose=FALSE){
 
   Bformat <- Bformat2 <- NA
 
   # Define some file extensions to look out for
-  cii_ext_supported <- paste0(".", ciftiTools::supported_intents()$extension)
+  # CIFTI: copied from `ciftiTools::supported_intents()`
+  cii_supp_int <- data.frame(rbind(
+    c("dtseries.nii", "NIFTI_INTENT_CONNECTIVITY_DENSE_SERIES",  3002, "ConnDenseSeries"),
+    c("dscalar.nii",  "NIFTI_INTENT_CONNECTIVITY_DENSE_SCALARS", 3006, "ConnDenseScalar"),
+    c("dlabel.nii",   "NIFTI_INTENT_CONNECTIVITY_DENSE_LABELS",  3007, "ConnDenseLabel")
+  ))
+  colnames(cii_supp_int) <- c("extension", "intent_code", "value", "intent_name")
+  cii_ext_supported <- paste0(".", cii_supp_int$extension)
   cii_ext_notsupport <- paste0(
     ".", c(
       "dconn", "pconn", "ptseries", "dtraj", "pscalar", 
       "pdconn", "dpconn", "pconnseries", "pconnscalar"
     ), ".nii"
   )
+  # GIFTI
   gii_ext_supported <- c("func", "label")
+  # NIFTI
   nii_classes <- c(oro.nifti="niftiExtension", RNifti="niftiImage", oro.nifti="nifti")
 
-  # Character vector: CIFTI, GIFTI, NIFTI, or RDS
+  # Character: CIFTI, GIFTI, NIFTI, or RDS
   if (is.character(BOLD) && length(BOLD)==1) {
     if (any(endsWith(BOLD, cii_ext_supported))) {
       for (cc in cii_ext_supported) {
@@ -59,9 +72,9 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   } else if (inherits(BOLD, "xifti")) {
     Bformat <- "xifti"
     if (!is.null(BOLD$meta$cifti$intent)) {
-      Bformat2 <- ciftiTools::supported_intents()$extension[match(
+      Bformat2 <- cii_supp_int$extension[match(
         BOLD$meta$cifti$intent,
-        ciftiTools::supported_intents()$value
+        cii_supp_int$value
       )]
       Bformat2 <- gsub("\\.nii$", "", Bformat2)
     }
@@ -103,9 +116,9 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
     } else if (BOLD_dims_lens==2) {
       Bformat <- "data"
     } else if (BOLD_dims_lens==1) {
-      warning("`BOLD` should not be vectorized.")
+      warning("`BOLD` should not be vectorized, if it's numeric data.")
     } else {
-      warning("`BOLD` should be TxV or a 4D array.")
+      warning("`BOLD` should be TxV or a 4D array, if it's numeric data.")
     }
   } 
   
@@ -118,4 +131,35 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
 
   # Return result.
   c(Bformat, Bformat2)
+}
+
+#' Infer fMRI data format for several inputs
+#' 
+#' Vectorized version of \code{\link{infer_format_ifti}}. Expects all inputs
+#'  to have the same format.
+#' 
+#' Raises an error if the elements of \code{BOLD} do not share the same format.
+#'
+#' @param BOLD The vector of fMRI data, expected to be of one format
+#' @param verbose Print the format? Default: \code{FALSE}.
+#' @return A length-two vector. The first element indicates the format:
+#'  \code{"CIFTI"} file path, \code{"xifti"} object,
+#'  \code{"GIFTI"} file path, \code{"gifti"} object,  
+#'  \code{"NIFTI"} file path, \code{"nifti"} object, 
+#'  \code{"RDS"} file path, or \code{"data"}. The second element indicates 
+#'  the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
+#' 
+#' @export
+infer_format_ifti_vec <- function(BOLD, verbose=FALSE){
+  BOLD <- as.list(BOLD)
+  Bformat <- lapply(BOLD, infer_format_ifti)
+  Bformat <- unique(Bformat)
+  if (length(Bformat)>1) {
+    stop(paste(
+      "The formats are not identical: ", 
+      paste(lapply(Bformat, paste, collapse=", "), collapse="; ")
+    ))
+  }
+  if (verbose) { cat("Inferred input format:", Bformat[[1]], "\n") }
+  Bformat[[1]]
 }

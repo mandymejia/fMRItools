@@ -2,17 +2,24 @@
 % Please edit documentation in R/scale_matrix.R
 \name{scale_design_mat}
 \alias{scale_design_mat}
-\title{Scale the design matrix}
+\title{Scale a design matrix}
 \usage{
-scale_design_mat(design_mat)
+scale_design_mat(x, doRows = FALSE)
 }
 \arguments{
-\item{design_mat}{The original (unscaled) design matrix that is T x K, where
-T is the number of time points, and k is the number of task covariates}
+\item{x}{A \eqn{T \times K} numeric matrix. In the context of a
+design matrix for a GLM analysis of task fMRI, \eqn{T} is the number of time
+points and \eqn{K} is the number of task covariates.}
+
+\item{doRows}{Scale the rows instead? Default: \code{FALSE}.}
 }
 \value{
-A scaled design matrix
+The scaled design matrix
 }
 \description{
-Scale the design matrix
+Scale the columns of a matrix by dividing each column by its
+highest-magnitude value, and then subtracting its mean.
+}
+\examples{
+scale_design_mat(cbind(seq(7), 1, rnorm(7)))
 }

@@ -2,21 +2,21 @@
 % Please edit documentation in R/utils_volume.R
 \name{coordlist_to_vol}
 \alias{coordlist_to_vol}
-\title{Convert coordinate list to volume}
+\title{Convert coordinate list to 3D array}
 \usage{
 coordlist_to_vol(coords, fill = FALSE)
 }
 \arguments{
-\item{coords}{The sparse coordinate list. Should be a data.frame or matrix
-with voxels along the rows and three or four columns. The first three
+\item{coords}{The sparse coordinate list. Should be a \code{"data.frame"} or
+matrix with voxels along the rows and three or four columns. The first three
 columns should be integers indicating the spatial coordinates of the voxel.
 If the fourth column is present, it will be the value used for that voxel.
 If it is absent, the value will be \code{TRUE} or \code{1} if \code{fill}
-is not those values, and \code{FALSE} or \code{0} if \code{fill} is. The
-data type will be the same as that of \code{fill}.
-\code{fill}. The fourth column must be logical or numeric.}
+is not one of those values, and \code{FALSE} or \code{0} if \code{fill} is.
+The data type will be the same as that of \code{fill}. The fourth column
+must be logical or numeric.}
 
-\item{fill}{Fill value for the volume. Must be logical or numeric. Default:
+\item{fill}{Logical or numeric fill value for the volume. Default:
 \code{FALSE}.}
 }
 \value{
@@ -25,4 +25,3 @@ The volumetric data
 \description{
 Converts a sparse coordinate list to its non-sparse volumetric representation.
 }
-\keyword{internal}

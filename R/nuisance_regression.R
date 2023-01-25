@@ -1,10 +1,10 @@
 #' Nuisance regression
 #'
-#' Performs nuisance regression. The data and design matrix must both be
-#'  centered, or an intercept must be included in the design matrix!
+#' Performs nuisance regression. Important note: the data and design matrix must
+#'  both be centered, or an intercept must be included in the design matrix.
 #'
-#' @param Y The \eqn{T} by \eqn{V} or \eqn{V} by \eqn{T} data.
-#' @param design The \eqn{T} by \eqn{Q} matrix of nuisance regressors.
+#' @param Y The \eqn{T \times V} or \eqn{V \times T} data.
+#' @param design The \eqn{T \times Q} matrix of nuisance regressors.
 #'
 #' @return The data after nuisance regression.
 #' 
@@ -15,6 +15,7 @@
 #' design <- cbind(seq(100), 1)
 #' nuisance_regression(Y, design)
 nuisance_regression <- function(Y, design){
+  # # Old, less efficient version.
   # Z <- design
 	# if(nrow(Y) != nrow(Z)) stop('Y and Z must have same number of rows')
  	# invZtZ <- solve(t(Z) %*% Z)  #(Z'Z)^{-1}

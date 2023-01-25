@@ -12,12 +12,14 @@ infer_format_ifti(BOLD, verbose = FALSE)
 \item{verbose}{Print the format? Default: \code{FALSE}.}
 }
 \value{
-The format: \code{"CIFTI"} file path, \code{"xifti"} object,
+A length-two vector. The first element indicates the format:
+\code{"CIFTI"} file path, \code{"xifti"} object,
 \code{"GIFTI"} file path, \code{"gifti"} object,
 \code{"NIFTI"} file path, \code{"nifti"} object,
-or \code{"data"}.
+\code{"RDS"} file path, or \code{"data"}.
+The second element indicates
+the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
 }
 \description{
 Infer fMRI data format
 }
-\keyword{internal}

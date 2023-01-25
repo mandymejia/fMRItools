@@ -15,4 +15,3 @@ Logical. Is \code{x} all integers?
 \description{
 Check if a data vector or matrix is all integers.
 }
-\keyword{internal}

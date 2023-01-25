@@ -7,7 +7,9 @@
 dim_reduce(X, Q = NULL, Q_max = 100)
 }
 \arguments{
-\item{X}{\eqn{V \times T} fMRI timeseries data matrix, centered by columns.}
+\item{X}{A numeric matrix, with each column being a centered timeseries.
+For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain
+locations.}
 
 \item{Q}{Number of latent dimensions to estimate. If \code{NULL} (default),
 estimated using PESEL (Sobczyka et al. 2020).}

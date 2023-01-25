@@ -180,10 +180,10 @@ CompCor_HCP <- function(
   design <- do.call(cbind, out$noise$PCs)
   if (DCT > 0) { design <- cbind(design, dct_bases(T_, DCT)) }
   if (!is.null(nuisance_too)) {
-    nuisance_too <- validate_design_matrix(nuisance_too)
+    nuisance_too <- validate_design_mat(nuisance_too)
     design <- cbind(design, nuisance_too)
   }
-  design <- validate_design_matrix(cbind(1, design))
+  design <- validate_design_mat(cbind(1, design))
 
   # Return data in \code{"xifti"} format.
   out$data <- ciftiTools::newdata_xifti(cii, nuisance_regression(cii, design))

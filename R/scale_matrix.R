@@ -3,27 +3,28 @@
 #' Centers and scales the columns of a matrix robustly
 #'
 #' Centers each column on its median, and scales each column by its median
-#' absolute deviation (MAD). Constant-valued columns are set to \code{NA}
-#' (or removed if \code{drop_const}) and a warning is raised. If all 
-#' MADs are zero, an error is raised.
+#' 	absolute deviation (MAD). If there are constant-valued columns, they are
+#' 	removed if \code{drop_const} or set to \code{NA} if \code{!drop_const}, and
+#' 	a warning is raised. If all columns are constant, an error is raised.
 #'
-#' @param mat A numerical matrix.
-#' @param TOL minimum MAD to consider a column non-constant.
+#' @param mat A numeric matrix. Its columns will be centered and scaled.
+#' @param TOL Columns with MAD below this value will be considered constant.
 #'  Default: \code{1e-8}
-#' @param drop_const Drop
+#' @param drop_const Drop constant columns? Default: \code{TRUE}. If 
+#' 	\code{FALSE}, set to \code{NA} instead. 
+#' @param doRows Center and scale the rows instead? Default: \code{FALSE}.
 #'
+#' @export
 #' @return The input matrix with its columns centered and scaled.
-#'
-#' @importFrom robustbase rowMedians
-scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
+scale_med <- function(mat, TOL=1e-8, drop_const=TRUE, doRows=FALSE){
   # Transpose.
-  mat <- t(mat)
+  if (!doRows) { mat <- t(mat) }
 
   #	Center.
-  mat <- mat - c(rowMedians(mat, na.rm=TRUE))
+  mat <- mat - c(rowMedians2(mat, na.rm=TRUE))
 
   # Scale.
-  mad <- 1.4826 * rowMedians(abs(mat), na.rm=TRUE)
+  mad <- 1.4826 * rowMedians2(abs(mat), na.rm=TRUE)
   mad <- as.numeric(mad)
   const_mask <- mad < TOL
   if (any(const_mask)) {
@@ -41,10 +42,10 @@ scale_med <- function(mat, TOL=1e-8, drop_const=TRUE){
   mat[const_mask,] <- NA
   mat[!const_mask,] <- mat[!const_mask,] / mad
 
+  if (drop_const) { mat <- mat[!const_mask,] }
+
   # Revert transpose.
   mat <- t(mat)
-
-  if (drop_const) { mat <- mat[!const_mask,] }
 
   mat
 }
@@ -119,46 +120,33 @@ scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transp
 	BOLD
 }
 
-#' Scale the design matrix
+#' Scale a design matrix
+#' 
+#' Scale the columns of a matrix by dividing each column by its 
+#' 	highest-magnitude value, and then subtracting its mean.
 #'
-#' @param design_mat The original (unscaled) design matrix that is T x K, where
-#'     T is the number of time points, and k is the number of task covariates
+#' @param x A \eqn{T \times K} numeric matrix. In the context of a
+#' 	design matrix for a GLM analysis of task fMRI, \eqn{T} is the number of time
+#' 	points and \eqn{K} is the number of task covariates.
+#' @param doRows Scale the rows instead? Default: \code{FALSE}.
 #'
-#' @return A scaled design matrix
+#' @return The scaled design matrix
 #' 
 #' @export
 #' 
-# @examples
-# # Task 1
-# t1 <-
-#   specifydesign(
-#     onsets = seq(0, 200, by = 40),
-#     durations = 1,
-#     totaltime = 200,
-#     TR = 1,
-#     effectsize = 1.3,
-#     conv = "double-gamma",
-#     param = list(list(a1 = 6, a2 = 12, b1 = 0.9, b2 = 0.9, c = 0.15))
-#   )
-# # Task 2
-# t2 <-
-#   specifydesign(
-#     onsets = seq(20, 200, by = 40),
-#     durations = 1,
-#     totaltime = 200,
-#     TR = 1,
-#     effectsize = 1.3,
-#     conv = "double-gamma",
-#     param = list(list(a1 = 6, a2 = 12, b1 = 0.9, b2 = 0.9, c = 0.15))
-#   )
-# A <- cbind(t1,t2) # This is the design matrix
-# B <- scale_design_mat(A)
-scale_design_mat <- function(design_mat) {
-  if (!inherits(design_mat, "matrix")) stop("The design matrix must be a matrix class object.")
-  output_mat <- apply(design_mat,2,function(task) {
-    returned_col <- task / max(task)
-    returned_col <- returned_col - mean(returned_col)
-    return(returned_col)
-  })
-  return(output_mat)
+#' @examples 
+#' scale_design_mat(cbind(seq(7), 1, rnorm(7)))
+scale_design_mat <- function(x, doRows=FALSE) {
+	stopifnot(is.matrix(x))
+	stopifnot(is.numeric(x))
+	stopifnot(!any(is.na(x)))
+
+	if (!doRows) { x <- t(x) }
+
+	x <- x / apply(x, 1, max)
+	x <- x - apply(x, 1, mean)
+
+	if (!doRows) { x <- t(x) }
+
+	x
 }

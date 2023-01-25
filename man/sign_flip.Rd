@@ -7,7 +7,7 @@
 sign_flip(x)
 }
 \arguments{
-\item{x}{The ICA results with entries \code{S} and \code{M}}
+\item{x}{The ICA results: a list with entries \code{"S"} and \code{"M"}}
 }
 \value{
 \code{x} but with positive skew source signals
@@ -15,4 +15,3 @@ sign_flip(x)
 \description{
 Flips all source signal estimates (S) to positive skew
 }
-\keyword{internal}

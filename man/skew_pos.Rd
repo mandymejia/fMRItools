@@ -7,13 +7,13 @@
 skew_pos(x)
 }
 \arguments{
-\item{x}{The numeric vector for which to calculate the skew. Can also be a matrix,
-in which case the skew of each column will be calculated.}
+\item{x}{The numeric vector for which to calculate the skew. Can also be a
+matrix, in which case the skew of each column will be calculated.}
 }
 \value{
-\code{TRUE} if the skew is positive or zero. \code{FALSE} if the skew is negative.
+\code{TRUE} if the skew is positive or zero. \code{FALSE} if the
+skew is negative.
 }
 \description{
 Does the vector have a positive skew?
 }
-\keyword{internal}

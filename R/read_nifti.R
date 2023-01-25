@@ -1,11 +1,14 @@
-#' Wrapper to common functions for reading NIFTIs
+#' Wrapper to functions for reading NIFTIs
 #' 
 #' Tries \code{RNifti::readNifti}, then \code{oro.nifti::readNIfTI}. If
 #'  neither package is available an error is raised.
 #' 
+#' For \code{oro.nifti::readNIFTI} the argument 
+#'  \code{reorient=FALSE} will be used.
+#' 
 #' @param nifti_fname The file name of the NIFTI.
 #' @return The NIFTI
-#' @keywords internal
+#' @export
 read_nifti <- function(nifti_fname){
   if (requireNamespace("RNifti", quietly = TRUE)) {
     return(RNifti::readNifti(nifti_fname))

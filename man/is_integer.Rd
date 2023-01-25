@@ -17,4 +17,3 @@ Logical indicating whether \code{x} is an integer
 \description{
 Is this an integer?
 }
-\keyword{internal}

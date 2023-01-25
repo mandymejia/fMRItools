@@ -1,6 +1,8 @@
 #' Hat matrix
 #'
-#' Get the hat matrix from a design matrix using the QR decomposition.
+#' Get the hat matrix from a design matrix.
+#' 
+#' Uses the QR decomposition.
 #'
 #' @param design The \eqn{T} by \eqn{Q} design matrix
 #'

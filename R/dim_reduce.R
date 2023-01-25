@@ -4,7 +4,9 @@
 #'  SVD. If dimensionality is not specified, it is estimated using the method 
 #'  described in Minka (2008).
 #'
-#' @param X \eqn{V \times T} fMRI timeseries data matrix, centered by columns.
+#' @param X A numeric matrix, with each column being a centered timeseries. 
+#'  For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain 
+#'  locations.
 #' @param Q Number of latent dimensions to estimate. If \code{NULL} (default), 
 #'  estimated using PESEL (Sobczyka et al. 2020).
 #' @param Q_max Maximal number of principal components for automatic 
@@ -55,14 +57,17 @@ dim_reduce <- function(X, Q=NULL, Q_max=100){
   )
 }
 
-#' Check \code{Q2_max}
+#' Check \code{Q2_max}. DEPRECATED.
 #'
 #' Check \code{Q2_max} and set it if \code{NULL}.
+#' 
+#' This function is deprecated (moved to \code{templateICAr}).
 #'
 #' @param Q2_max,nQ,nT The args
 #' @return \code{Q2_max}, clamped to acceptable range of values.
 #' @keywords internal
 Q2_max_check <- function(Q2_max, nQ, nT){
+  # [TO DO]: Delete this function.
   if (!is.null(Q2_max)) {
     if (round(Q2_max) != Q2_max || Q2_max <= 0) {
       stop('`Q2_max` must be `NULL` or a non-negative integer.')

@@ -4,15 +4,16 @@
 \alias{bandstop_filter}
 \title{Bandstop filter}
 \usage{
-bandstop_filter(x, TR, f1, f2, Rs = 20)
+bandstop_filter(X, TR, f1, f2, Rs = 20)
 }
 \arguments{
-\item{x}{A numeric matrix, with each column being a timeseries to apply
-the stopband filter}
+\item{X}{A numeric matrix, with each column being a timeseries to apply
+the stopband filter. For fMRI data, \code{X} should be \code{T} timepoints
+by \code{V} brain locations.}
 
-\item{TR}{the time difference between rows in x, in seconds.}
+\item{TR}{The time step between adjacent rows of \code{x}, in seconds}
 
-\item{f1, f2}{The frequency limits for the filter, in Hz. \code{f1 < f2}.}
+\item{f1, f2}{The frequency limits for the filter, in Hz. \code{f1 < f2}}
 
 \item{Rs}{The amount of attenuation of the stopband ripple, in dB}
 }
@@ -21,8 +22,8 @@ The filtered data
 }
 \description{
 Filter out frequencies within a given range using a Chebyshev Type II
-stopband. Basically a convenience wrapper for the \code{gsignal::cheby2}
-function.
+stopband. Essentially a convenience wrapper for the
+\code{\link[gsignal]{cheby2}} function.
 }
 \examples{
 if (requireNamespace("gsignal", quietly=TRUE)) {

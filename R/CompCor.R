@@ -32,9 +32,9 @@ CompCor.noise_comps <- function(X_noise, center, scale, noise_nPC){
     # Transpose.
     X_noise[[ii]] <- t(X_noise[[ii]])
     #	Center.
-    if (center) { X_noise[[ii]] <- X_noise[[ii]] - c(rowMedians(X_noise[[ii]], na.rm=TRUE)) }
+    if (center) { X_noise[[ii]] <- X_noise[[ii]] - c(rowMedians2(X_noise[[ii]], na.rm=TRUE)) }
     # Compute MADs.
-    mad <- 1.4826 * rowMedians(abs(X_noise[[ii]]), na.rm=TRUE)
+    mad <- 1.4826 * rowMedians2(abs(X_noise[[ii]]), na.rm=TRUE)
     X_constant <- mad < TOL
     if (any(X_constant)) {
       if (all(X_constant)) {
@@ -111,8 +111,6 @@ CompCor.noise_comps <- function(X_noise, center, scale, noise_nPC){
 #' 
 #'  If the data ROI is not all \code{TRUE}, the entry \code{"ROI_data"} will have
 #'  the ROI mask for the data.
-#'
-#' @importFrom robustbase rowMedians
 #' 
 #' @section References:
 #'  \itemize{
@@ -146,17 +144,17 @@ CompCor <- function(
     design <- do.call(cbind, out2$noise_comps)
     if (!(is.null(nuisance) || isFALSE(nuisance) || identical(nuisance, 0))) {
       if (nrow(nuisance) != T_) { stop("`nuisance` does not have the same number of timepoints as `X`.") }
-      nuisance <- validate_design_matrix(nuisance)
+      nuisance <- validate_design_mat(nuisance)
       design <- cbind(design, nuisance)
     }
-    design <- validate_design_matrix(cbind(1, design), T_)
+    design <- validate_design_mat(cbind(1, design), T_)
     out1$X <- nuisance_regression(out1$X, design)
 
     # # Normalize data.
     # out1$X <- t(out1$X)
-    # if (center) { out1$X <- out1$X - c(rowMedians(out1$X, na.rm=TRUE)) }
+    # if (center) { out1$X <- out1$X - c(rowMedians2(out1$X, na.rm=TRUE)) }
     # if (scale) { 
-    #   mad <- 1.4826 * rowMedians(abs(out1$X), na.rm=TRUE)
+    #   mad <- 1.4826 * rowMedians2(abs(out1$X), na.rm=TRUE)
     #   mad_inv <- ifelse(mad < 1e-8, 0, 1/mad)
     #   out1$X <- out1$X * mad_inv
     # }

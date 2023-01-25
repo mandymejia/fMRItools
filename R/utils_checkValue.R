@@ -18,7 +18,7 @@
 #'
 #' @return The matched user inputs.
 #'
-#' @keywords internal
+#' @export
 #'
 match_input <- function(
   user, expected,
@@ -84,7 +84,7 @@ match_input <- function(
 #'
 #' @return Logical. Do \code{user} and \code{expected} match?
 #' 
-#' @keywords internal
+#' @export
 #' 
 match_exactly <- function(
   user, expected,
@@ -126,7 +126,7 @@ match_exactly <- function(
 #' @param dtype The data type. Default: \code{"numeric"}. Also can be 
 #'  \code{"logical"} or \code{"character"}
 #' @return \code{TRUE} if \code{x} is \code{dtype} and length one. 
-#' @keywords internal
+#' @export
 #'
 is_1 <- function(x, dtype=c("numeric", "logical", "character")){
   dtype <- match.arg(dtype, c("numeric", "logical", "character"))
@@ -138,29 +138,16 @@ is_1 <- function(x, dtype=c("numeric", "logical", "character")){
   xFUN(x) && (length(x)==1)
 }
 
-#' Is this object a positive number?
+#' Is this object a positive number? (Or non-negative)
 #' 
 #' @param x The value to check
-#' @return \code{TRUE} if \code{x} is a single positive number
-#' @keywords internal
+#' @param zero_ok Is a value of zero ok?
+#' @return Logical indicating if \code{x} is a single positive or non-negative 
+#'  number
+#' @export
 #' 
-is_posNum <- function(x){
-  is_1(x) && (x>0)
-}
-
-#' All integers?
-#'
-#' Check if a data vector or matrix is all integers.
-#'
-#' @param x The data vector or matrix
-#' @keywords internal
-#'
-#' @return Logical. Is \code{x} all integers?
-#'
-all_integers <- function(x){
-  if (!is.numeric(x)) { return(FALSE) }
-  non_integer <- max(abs(x - round(x)))
-  non_integer==0 && !is.na(non_integer)
+is_posNum <- function(x, zero_ok=FALSE){
+  is_1(x) && ((x>0) || (x==0 && zero_ok))
 }
 
 #' Is this an integer?
@@ -169,7 +156,7 @@ all_integers <- function(x){
 #' @param nneg Require \code{x>=0} (non-negative) too?
 #' @return Logical indicating whether \code{x} is an integer
 #' 
-#' @keywords internal
+#' @export
 is_integer <- function(x, nneg=FALSE){
   out <- FALSE
   if (is_1(x)) {
@@ -180,6 +167,21 @@ is_integer <- function(x, nneg=FALSE){
   out
 }
 
+#' All integers?
+#'
+#' Check if a data vector or matrix is all integers.
+#'
+#' @param x The data vector or matrix
+#' @export
+#'
+#' @return Logical. Is \code{x} all integers?
+#'
+all_integers <- function(x){
+  if (!is.numeric(x)) { return(FALSE) }
+  non_integer <- max(abs(x - round(x)))
+  non_integer==0 && !is.na(non_integer)
+}
+
 #' Is this numeric vector constant?
 #' 
 #' @param x The numeric vector
@@ -188,7 +190,7 @@ is_integer <- function(x, nneg=FALSE){
 #' 
 #' @return Is \code{x} constant? 
 #' 
-#' @keywords internal
+#' @export
 is_constant <- function(x, TOL=1e-8) {
   stopifnot(is.numeric(x))
   abs(max(x) - min(x)) < TOL

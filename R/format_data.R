@@ -25,7 +25,9 @@
 #' @keywords internal
 format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_erosion=NULL){
 
-  # TO DO: explain how to use ROI_data
+  # [TO DO]: Use `as.matrix_ifti`
+  # [TO DO]: Separate out the `ROI_noise` stuff
+  # [TO DO]: explain how to use ROI_data
 
   # if X is a file, read it.
   if (is.character(X)) {
@@ -109,7 +111,7 @@ format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_
       }
     } else if (X_type == "xifti") {
       ROI_data <- rep(TRUE, V_)
-    } else { stop("Internal error: unrecognized `X_type`") }
+    } else { stop("Internal error: `X_type` not recognized.") }
     if (sum(ROI_data) == 0) { warning("The data ROI was empty.\n") }
   }
 
@@ -202,7 +204,7 @@ format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_
         if (is.array(ROI_noise[[ii]])) {
           stopifnot(all(dim(ROI_noise[[ii]]) == dim(X)[1:3]))
           ROI_noise[[ii]][,,] <- as.logical(ROI_noise[[ii]]) * 1
-          ROI_noise[[ii]] <- erode_vol(ROI_noise[[ii]], noise_erosion[[ii]], c(-1, 0, NA, NaN))
+          ROI_noise[[ii]] <- erode_mask_vol(ROI_noise[[ii]], noise_erosion[[ii]], c(-1, 0, NA, NaN))
           X_noise[[ii]] <- t(matrix(X[ROI_noise[[ii]] > 0], ncol=T_))
 
         } else if (is.matrix(ROI_noise[[ii]])) {

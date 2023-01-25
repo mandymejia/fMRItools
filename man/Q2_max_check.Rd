@@ -2,7 +2,7 @@
 % Please edit documentation in R/dim_reduce.R
 \name{Q2_max_check}
 \alias{Q2_max_check}
-\title{Check \code{Q2_max}}
+\title{Check \code{Q2_max}. DEPRECATED.}
 \usage{
 Q2_max_check(Q2_max, nQ, nT)
 }
@@ -14,5 +14,8 @@ Q2_max_check(Q2_max, nQ, nT)
 }
 \description{
 Check \code{Q2_max} and set it if \code{NULL}.
+}
+\details{
+This function is deprecated (moved to \code{templateICAr}).
 }
 \keyword{internal}
