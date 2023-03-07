@@ -46,7 +46,7 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
   }
   
   # Determine PCA dimensionality.
-  if(is.null(Q)){
+  if (is.null(Q)) {
     if (!requireNamespace("pesel", quietly = TRUE)) {
       stop("Package \"pesel\" needed to read input data. Please install it", call. = FALSE)
     }
