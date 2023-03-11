@@ -1,0 +1,7 @@
+Ahmed, N., Natarajan, T. & Rao, K. R. Discrete Cosine Transform. IEEE Transactions on Computers C–23, 90–93 (1974).
+Behzadi, Y., Restom, K., Liau, J. & Liu, T. T. A component based noise correction method (CompCor) for BOLD and perfusion based fMRI. NeuroImage 37, 90–101 (2007).
+Grabner, G. et al. Symmetric Atlasing and Model Based Segmentation: An Application to the Hippocampus in Older Adults. in Medical Image Computing and Computer-Assisted Intervention – MICCAI 2006 (eds. Larsen, R., Nielsen, M. & Sporring, J.) 58–66 (Springer, 2006). doi:10.1007/11866763_8.
+Jenkinson, M., Beckmann, C. F., Behrens, T. E. J., Woolrich, M. W. & Smith, S. M. FSL. NeuroImage 62, 782–790 (2012).
+Lindquist, M. A., Geuter, S., Wager, T. D. & Caffo, B. S. Modular preprocessing pipelines can reintroduce artifacts into fMRI data. Human Brain Mapping 40, 2358–2376 (2019).
+Muschelli, J. et al. Reduction of motion-related artifacts in resting state fMRI using aCompCor. NeuroImage 96, 22–35 (2014).
+Sobczyk, P., Bogdan, M. & Josse, J. Bayesian Dimensionality Reduction With PCA Using Penalized Semi-Integrated Likelihood. Journal of Computational and Graphical Statistics 26, 826–839 (2017).
