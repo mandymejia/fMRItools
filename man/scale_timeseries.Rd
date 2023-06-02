@@ -11,23 +11,27 @@ scale_timeseries(
 )
 }
 \arguments{
-\item{BOLD}{Input fMRI data (V x T)}
+\item{BOLD}{fMRI data as a locations by time (\eqn{V \times T}) numeric
+matrix.}
 
-\item{scale}{Option for scaling units.
+\item{scale}{Option for scaling the BOLD response.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{If \code{"auto"} (default), will use mean scaling except if demeaned data
-is detected, in which case sd scaling will be used instead.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{\code{"auto"} (default) will use \code{"mean"} scaling except if demeaned 
+}\if{html}{\out{</div>}}
 
-\code{"mean"} scaling will scale the data to percent local signal change.
+data is detected (if any mean is less than one), in which case \code{"sd"}
+scaling will be used instead.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{\code{"mean"} scaling will scale the data to percent local signal change.
 
 \code{"sd"} scaling will scale the data by local standard deviation.
 
 \code{"none"} will only center the data, not scale it.
 }\if{html}{\out{</div>}}}
 
-\item{transpose}{Check orientation of data, which, if TRUE, will transpose
-the data when the number of time points is greater than the number of voxels.
-Note: this is not always true for subcortical regions.}
+\item{transpose}{Transpose \code{BOLD} if there are more columns than rows?
+(Because we usually expect the number of voxels to exceed the number of time
+points.) Default: \code{TRUE}.}
 }
 \value{
 Scale to units of percent local signal change and centers

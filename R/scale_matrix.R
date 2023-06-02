@@ -54,7 +54,7 @@ scale_med <- function(mat, TOL=1e-8, drop_const=TRUE, doRows=FALSE){
 #'
 #' @param BOLD fMRI data as a locations by time (\eqn{V \times T}) numeric 
 #' 	matrix.
-#' @param scale_BOLD Option for scaling the BOLD response.
+#' @param scale Option for scaling the BOLD response.
 #' 
 #' 	\code{"auto"} (default) will use \code{"mean"} scaling except if demeaned 
 #'  data is detected (if any mean is less than one), in which case \code{"sd"}
