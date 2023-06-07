@@ -30,6 +30,7 @@ Imports:
     stats
 Suggests:
     ciftiTools,
+    corpcor,
     gifti, 
     knitr,
     rmarkdown,
