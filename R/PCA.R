@@ -60,18 +60,36 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
     { svd(crossprod(X) / (nV-1), nu=Q, nv=0) },
     error = function(cond) {
       message(cond)
-      if (!requireNamespace("corpcor", quietly = TRUE)) {
-        stop(
-          "`svd` failed, and the backup routine `corpcor::fast.svd` ", 
-          "is not available since the Package \"corpcor\" is needed. ",
-          "Please install it.", call. = FALSE
-        )
+      z <- crossprod(X) / (nV-1)
+
+      # If `svd` fails:
+      # First, try detecting and dropping co-linear columns, and running `svd` again.
+      zcor <- cor(z)
+      zcor[upper.tri(zcor)] <- 0
+      diag(zcor) <- 0
+      zdrop <- apply(zcor, 2, function(cc) any(abs(cc) > .99))
+      if (any(zdrop)) {
+        if (sum(!zdrop) < Q) {
+          stop(cat(sum(zdrop), " co-linear columns detected, but dropping them would result in less than Q columns remaining."))
+        }
+        cat("Dropping", sum(zdrop), "co-linear columns.\n")
+        z <- z[,!zdrop]
+        z <- svd(z, nu=Q, nv=0)
+      } else {
+        # If no co-linear columns detected, try `corpcor:fast.svd`.
+        if (!requireNamespace("corpcor", quietly = TRUE)) {
+          stop(
+            "`svd` failed, and the backup routine `corpcor::fast.svd` ",
+            "is not available since the Package \"corpcor\" is needed. ",
+            "Please install it.", call. = FALSE
+          )
+        }
+        cat("Trying `corpcor::fast.svd`.\n")
+        z <- corpcor::fast.svd(z)[c("u", "d", "v")]
+        names(z) <- toupper(names(z))
+        z$U <- z$U[,seq(Q)]
+        z$V <- NULL
       }
-      cat("Trying `corpcor::fast.svd`.\n")
-      z <- corpcor::fast.svd(crossprod(X) / (nV-1))[c("u", "d", "v")]
-      names(z) <- toupper(names(z))
-      z$U <- z$U[,seq(Q)]
-      z$V <- NULL
       z
     }
   )
