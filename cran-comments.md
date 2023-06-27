@@ -9,10 +9,15 @@
 
 ## Downstream dependencies
 
-BayesfMRI 0.3.5
-fMRIscrub 0.13.0
-templateICAr 0.6.2
+BayesfMRI 0.3.5 passes checks.
+fMRIscrub 0.13.0 passes checks.
+templateICAr 0.6.2 passes checks.
 
 ## Tests
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
+
+## Previous submission results (0.3.0)
+
+> Package `templateICAr` had a build error. 
+We've revised this package, `fMRItools`, to resolve the error.
