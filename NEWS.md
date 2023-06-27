@@ -1,7 +1,12 @@
+# 0.3.1
+
+* Add back `dim_reduce` for now, but warn of its deprecation (moved to `templateICAr`).
+
 # 0.3.0
 
-Do not transpose matrix at the end of `scale_timeseries`.
+* Do not transpose matrix at the end of `scale_timeseries`.
+* More robust PCA, to handle co-linear columns and try another routine if fail
 
 # 0.2.0
 
-Export more functions
+* Export more functions

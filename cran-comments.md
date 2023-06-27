@@ -9,7 +9,9 @@
 
 ## Downstream dependencies
 
-No downstream dependencies on CRAN.
+BayesfMRI 0.3.5
+fMRIscrub 0.13.0
+templateICAr 0.6.2
 
 ## Tests
 

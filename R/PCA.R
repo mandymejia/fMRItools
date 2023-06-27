@@ -20,6 +20,8 @@
 #'
 #' @export
 #'
+#' @importFrom stats cor 
+#'
 #' @return The SVD decomposition
 #'
 #' @examples
@@ -64,7 +66,7 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
 
       # If `svd` fails:
       # First, try detecting and dropping co-linear columns, and running `svd` again.
-      zcor <- cor(z)
+      zcor <- stats::cor(z)
       zcor[upper.tri(zcor)] <- 0
       diag(zcor) <- 0
       zdrop <- apply(zcor, 2, function(cc) any(abs(cc) > .99))
