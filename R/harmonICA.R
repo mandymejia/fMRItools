@@ -316,10 +316,21 @@ harmonICA <- function(
 
   DR0 # temp
 
+  params <- list(
+    inds=inds, 
+    scale=scale,
+    scale_sm_FWHM=scale_sm_FWHM,
+    TR=TR, hpf=hpf, 
+    center_Bcols=center_Bcols,
+    brainstructures=brainstructures, 
+    varTol=varTol, maskTol=maskTol, missingTol=missingTol
+  )
+
   # Harmonize A and cov(A) using ComBat — given the S and cov(A) matrices, Johanna can develop the code to do that
   # Re-construct the fMRI data as Y* = A*S* + E, where A* and S* are the harmonized versions of A and S.  The harmonized version of A is done using matrix operations so that cov(A*) = cov(A)* (the harmonized covariant matrix).  — you could write this step as well, and just leave a placeholder for the harmonization itself
   # Return/write out the harmonized fMRI time series
 
+  list(DR=DR0, params=params)
 }
 
 #' DR step for harmonICA
@@ -529,4 +540,7 @@ harmonICA_DR_oneBOLD <- function(
     scale=scale, scale_sm_xifti=xii1, scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=0, center_Bcols=center_Bcols
   )
+  attr(DR$A, "scaled:center") <- NULL
+
+  DR
 }
