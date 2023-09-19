@@ -50,3 +50,7 @@ gica_cii_fname <- file.path(
 )
 
 q <- harmonICA(rs_cii_fnames[seq(3)], gica_cii_fname)
+
+z <- read_cifti(rs_cii_fnames[1], brainstructures="all")
+z <- newdata_xifti(z, t(q$DR[[1]]$S))
+plot(z)
