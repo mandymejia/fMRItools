@@ -6,7 +6,7 @@
 #'  ICs, and \eqn{N} be the number of fMRI sessions.
 #' 
 #
-#  Note for developers: this function is modeled after \code{templateICA}
+#  Note for developers: this function is modeled after \code{estimate_template}
 #  in \code{templateICAr}.
 #
 #' @param BOLD Vector of subject-level fMRI data in one of the following
@@ -313,8 +313,6 @@ harmonICA <- function(
       verbose=verbose
     )
   }
-
-  DR0 # temp
 
   params <- list(
     inds=inds, 
