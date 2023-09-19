@@ -52,3 +52,103 @@ Mode <- function(x) {
   if (length(q) == length(x)) { return(median(x)) }
   q[which.max(tabulate(match(x, q)))]
 }
+
+#' Get FORMAT from format
+#'
+#' @param format the file format
+#' @return The file FORMAT
+#' @keywords internal
+#'
+get_FORMAT <- function(format){
+  switch(format,
+    CIFTI = "CIFTI",
+    xifti = "CIFTI",
+    GIFTI = "GIFTI",
+    gifti = "GIFTI",
+    NIFTI = "NIFTI",
+    nifti = "NIFTI",
+    RDS = "MATRIX",
+    data = "MATRIX"
+  )
+}
+
+#' Check required packages for the data format
+#'
+#' @param FORMAT The data FORMAT
+#' @return \code{NULL}, invisibly
+#' @keywords internal
+check_req_ifti_pkg <- function(FORMAT){
+  if (FORMAT == "CIFTI") {
+    if (!requireNamespace("ciftiTools", quietly = TRUE)) {
+      stop("Package \"ciftiTools\" needed to work with CIFTI data. Please install it.", call. = FALSE)
+    }
+  }
+
+  if (FORMAT == "GIFTI") {
+    if (!requireNamespace("gifti", quietly = TRUE)) {
+      stop("Package \"gifti\" needed to work with NIFTI data. Please install it.", call. = FALSE)
+    }
+    if (!requireNamespace("ciftiTools", quietly = TRUE)) {
+      stop("Package \"ciftiTools\" needed to work with CIFTI data. Please install it.", call. = FALSE)
+    }
+  }
+
+  if (FORMAT == "NIFTI") {
+    if (!requireNamespace("RNifti", quietly = TRUE)) {
+      stop("Package \"RNifti\" needed to work with NIFTI data. Please install it.", call. = FALSE)
+    }
+  }
+
+  invisible(NULL)
+}
+
+#' Create a mask based on vertices that are invalid
+#'
+#' @param BOLD A \eqn{V \times T} numeric matrix. Each row is a location.
+#' @param meanTol,varTol Tolerance for mean and variance of each data location.
+#'  Locations which do not meet these thresholds are masked out of the analysis.
+#'  Defaults: \code{-Inf} for \code{meanTol} (ignore), and \code{1e-6} for
+#'  {varTol}.
+#' @param verbose Print messages counting how many locations are removed?
+#'
+#' @return A logical vector indicating valid vertices
+#'
+#' @keywords internal
+make_mask <- function(BOLD, meanTol=-Inf, varTol=1e-6, verbose=TRUE){
+  stopifnot(is.matrix(BOLD))
+
+  mask_na <- mask_mean <- mask_var <- rep(TRUE, nrow(BOLD))
+  # Mark columns with any NA or NaN values for removal.
+  mask_na[apply(is.na(BOLD) | is.nan(BOLD), 1, any)] <- FALSE
+  # Calculate means and variances of columns, except those with any NA or NaN.
+  # Mark columns with mean/var falling under the thresholds for removal.
+  mask_mean[mask_na][rowMeans(BOLD[mask_na,,drop=FALSE]) < meanTol] <- FALSE
+  if (varTol > 0) {
+    if (requireNamespace("matrixStats", quietly = TRUE)) {
+      mask_var[mask_na][matrixStats::rowVars(BOLD[mask_na,,drop=FALSE]) < varTol] <- FALSE
+    } else {
+      mask_var[mask_na][apply(BOLD[mask_na,,drop=FALSE], 1, var) < varTol] <- FALSE
+    }
+  }
+
+  # Print counts of locations removed, for each reason.
+  if (verbose) {
+    warn_part1 <- if (any(!mask_na)) { "additional locations" } else { "locations" }
+    if (any(!mask_na)) {
+      cat("\t", sum(!mask_na), paste0("locations removed due to NA/NaN values.\n"))
+    }
+    # Do not include NA locations in count.
+    mask_mean2 <- mask_mean | (!mask_na)
+    if (any(!mask_mean2)) {
+      cat("\t", sum(!mask_mean2), warn_part1, paste0("removed due to low mean.\n"))
+    }
+    # Do not include NA or low-mean locations in count.
+    mask_var2 <- mask_var | (!mask_mean) | (!mask_na)
+    if (any(!mask_var2)) {
+      cat("\t", sum(!mask_var2), warn_part1, paste0("removed due to low variance.\n"))
+    }
+  }
+
+  # Return composite mask.
+  mask_na & mask_mean & mask_var
+}
