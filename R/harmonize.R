@@ -100,7 +100,7 @@
 #' @param verbose Display progress updates? Default: \code{TRUE}.
 #' @export
 #' 
-harmonICA <- function(
+harmonize <- function(
   BOLD, 
   GICA, inds=NULL, 
   scale=c("local", "global", "none"),
@@ -299,7 +299,7 @@ harmonICA <- function(
       '\nReading and analyzing data for subject ', ii,' of ', nN, '.\n'
     )) }
 
-    DR0[[ii]] <- harmonICA_DR_oneBOLD(
+    DR0[[ii]] <- harmonize_DR_oneBOLD(
       BOLD[[ii]],
       format=format,
       GICA=GICA,
@@ -331,9 +331,9 @@ harmonICA <- function(
   list(DR=DR0, params=params)
 }
 
-#' DR step for harmonICA
+#' DR step for harmonize
 #' 
-#' Compute dual regression for harmonICA
+#' Compute dual regression for harmonize
 #' 
 #' @param BOLD Vector of subject-level fMRI data in one of the following
 #'  formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
@@ -421,7 +421,7 @@ harmonICA <- function(
 #'  at a given location.
 #' 
 #' @keywords internal
-harmonICA_DR_oneBOLD <- function(
+harmonize_DR_oneBOLD <- function(
   BOLD,
   format=c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
   GICA,
