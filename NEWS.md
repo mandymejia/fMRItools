@@ -1,6 +1,11 @@
+# 0.3.2
+
+* Add workaround for when PESEL estimates zero components.
+
 # 0.3.1
 
 * Add back `dim_reduce` for now, but warn of its deprecation (moved to `templateICAr`).
+* Add draft of first step of `harmonize`
 
 # 0.3.0
 
