@@ -98,7 +98,7 @@
 #'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
 #'  at a given location.
 #' @param verbose Display progress updates? Default: \code{TRUE}.
-#' @export
+#' @keywords internal
 #' 
 harmonize <- function(
   BOLD, 

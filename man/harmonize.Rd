@@ -128,3 +128,4 @@ Harmonize data using ICA.
 Let \eqn{V} be the number of data locations; \eqn{Q} be the number of group
 ICs, and \eqn{N} be the number of fMRI sessions.
 }
+\keyword{internal}
