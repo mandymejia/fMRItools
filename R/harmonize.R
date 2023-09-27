@@ -1,10 +1,10 @@
 #' ICA-based harmonization
-#' 
+#'
 #' Harmonize data using ICA.
-#' 
+#'
 #' Let \eqn{V} be the number of data locations; \eqn{Q} be the number of group
 #'  ICs, and \eqn{N} be the number of fMRI sessions.
-#' 
+#'
 #
 #  Note for developers: this function is modeled after \code{estimate_template}
 #  in \code{templateICAr}.
@@ -14,25 +14,31 @@
 #'  \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
 #'  or \eqn{V \times T} numeric matrices, where \eqn{V} is the number of data
 #'  locations and \eqn{T} is the number of timepoints.
+#'  @param ghemi Which hemisphere, in the case of a single GIFTI file?
 #
 #   If GIFTI or \code{"gifti"}, the input can also be a length two list,
 #   where the first list element is a length \eqn{N} vector for the left
 #   hemisphere and the second list element is a length \eqn{N} vector for the
 #   right hemisphere.
+
 #' @param GICA Group ICA maps in a format compatible with \code{BOLD}. Can also
 #'  be a (vectorized) numeric matrix (\eqn{V \times Q}) no matter the format of
 #'  \code{BOLD}. Its columns will be centered.
-#' @param inds Numeric indices of the group ICs to include in the template. If
-#'  \code{NULL}, use all group ICs (default).
-#'
-#'  If \code{inds} is provided, the ICs not included will be removed after
-#'  calculating dual regression, not before. This is because removing the ICs
-#'  prior to dual regression would leave unmodelled signals in the data, which
-#'  could bias the templates.
+#' @param mask Required if the entries of \code{BOLD} are NIFTI
+#'  file paths or \code{"nifti"} objects, optional for other formats. For NIFTI, this is a brain map formatted as a
+#'  binary array of the same spatial dimensions as the fMRI data, with
+#'  \code{TRUE} corresponding to in-mask voxels. For other formats, a logical vector.
+# @param inds Numeric indices of the group ICs to include in the template. If
+#  \code{NULL}, use all group ICs (default).
+#
+#  If \code{inds} is provided, the ICs not included will be removed after
+#  calculating dual regression, not before. This is because removing the ICs
+#  prior to dual regression would leave unmodelled signals in the data, which
+#  could bias the templates.
 #' @param scale \code{"global"} (default), \code{"local"}, or \code{"none"}.
-#'  Global scaling will divide the entire data matrix by the mean image standard 
+#'  Global scaling will divide the entire data matrix by the mean image standard
 #'  deviation (\code{mean(sqrt(rowVars(BOLD)))}). Local scaling will divide each
-#'  data location's time series by its estimated standard deviation. 
+#'  data location's time series by its estimated standard deviation.
 #' @param scale_sm_surfL,scale_sm_surfR,scale_sm_FWHM Only applies if
 #'  \code{scale=="local"} and \code{BOLD} represents surface data (CIFTI or
 #'  GIFTI). To smooth the standard deviation estimates used for local scaling,
@@ -54,27 +60,23 @@
 #' @param hpf The frequency at which to apply a highpass filter to the data
 #'  during pre-processing, in Hertz. Default: \code{0.01} Hertz. Set to \code{0}
 #'  to disable the highpass filter.
-#' 
-#' 
-#'  The highpass filter serves to detrend the data, since low-frequency 
-#'  variance is associated with noise. Highpass filtering is accomplished by 
-#'  nuisance regression of discrete cosine transform (DCT) bases. 
-#' 
+#'
+#'
+#'  The highpass filter serves to detrend the data, since low-frequency
+#'  variance is associated with noise. Highpass filtering is accomplished by
+#'  nuisance regression of discrete cosine transform (DCT) bases.
+#'
 #'  Note the \code{TR} argument is required for highpass filtering. If
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
 #' @param center_Bcols Center BOLD across columns (each image)? This
-#'  is equivalent to performing global signal regression. Default: 
-#'  \code{FALSE}. 
+#'  is equivalent to performing global signal regression. Default:
+#'  \code{FALSE}.
 #' @param brainstructures Only applies if the entries of \code{BOLD} are CIFTI
 #'  file paths. This is a character vector indicating which brain structure(s)
 #'  to obtain: \code{"left"} (left cortical surface), \code{"right"} (right
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
-#' @param mask Required if and only if the entries of \code{BOLD} are NIFTI
-#'  file paths or \code{"nifti"} objects. This is a brain map formatted as a
-#'  binary array of the same spatial dimensions as the fMRI data, with
-#'  \code{TRUE} corresponding to in-mask voxels.
 #' @param varTol Tolerance for variance of each data location. For each scan,
 #'  locations which do not meet this threshold are masked out of the analysis.
 #'  Default: \code{1e-6}. Variance is calculated on the original data, before
@@ -99,15 +101,15 @@
 #'  at a given location.
 #' @param verbose Display progress updates? Default: \code{TRUE}.
 #' @keywords internal
-#' 
+#'
 harmonize <- function(
-  BOLD, 
-  GICA, inds=NULL, 
+  BOLD, ghemi=NULL,
+  GICA, mask=NULL, #inds=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
-  TR=NULL, hpf=.01, 
+  TR=NULL, hpf=.01,
   center_Bcols=FALSE,
-  brainstructures=c("all"), mask=NULL,
+  brainstructures=c("all"),
   varTol=1e-6, maskTol=.1, missingTol=.1,
   verbose=TRUE){
 
@@ -127,7 +129,7 @@ harmonize <- function(
     scale <- "local"
   }
   scale <- match.arg(scale, c("local", "global", "none"))
-  stopifnot(is_1(scale_sm_FWHM, "numeric"))
+  stopifnot(fMRItools:::is_1(scale_sm_FWHM, "numeric"))
   if (is.null(hpf)) { hpf <- 0 }
   if (is.null(TR)) {
     if (hpf==.01) {
@@ -137,19 +139,19 @@ harmonize <- function(
       stop("Cannot apply `hpf` because `TR` was not provided. Either provide `TR` or set `hpf=0`.")
     }
   } else {
-    stopifnot(is_posNum(TR))
-    stopifnot(is_posNum(hpf, zero_ok=TRUE))
+    stopifnot(fMRItools:::is_posNum(TR))
+    stopifnot(fMRItools:::is_posNum(hpf, zero_ok=TRUE))
   }
-  stopifnot(is_1(center_Bcols, "logical"))
-  stopifnot(is_1(varTol, "numeric"))
+  stopifnot(fMRItools:::is_1(center_Bcols, "logical"))
+  stopifnot(fMRItools:::is_1(varTol, "numeric"))
   if (varTol < 0) { cat("Setting `varTol=0`."); varTol <- 0 }
-  stopifnot(is_posNum(maskTol))
-  stopifnot(is_posNum(missingTol))
-  stopifnot(is_1(verbose, "logical"))
+  stopifnot(fMRItools:::is_posNum(maskTol))
+  stopifnot(fMRItools:::is_posNum(missingTol))
+  stopifnot(fMRItools:::is_1(verbose, "logical"))
 
   # `BOLD` format --------------------------------------------------------------
-  format <- infer_format_ifti_vec(BOLD)[1]
-  FORMAT <- get_FORMAT(format)
+  format <- fMRItools:::infer_format_ifti_vec(BOLD)[1]
+  FORMAT <- fMRItools:::get_FORMAT(format)
   FORMAT_extn <- switch(FORMAT,
     CIFTI=".dscalar.nii",
     GIFTI=".func.gii",
@@ -158,7 +160,7 @@ harmonize <- function(
   )
   nN <- length(BOLD)
 
-  check_req_ifti_pkg(FORMAT)
+  fMRItools:::check_req_ifti_pkg(FORMAT)
 
   # If BOLD is a CIFTI, GIFTI, NIFTI, or RDS file, check that the file paths exist.
   if (format %in% c("CIFTI", "GIFTI", "NIFTI", "RDS")) {
@@ -221,14 +223,14 @@ harmonize <- function(
   }
   nQ <- dim(GICA)[length(dim(GICA))]
 
-  # `inds`.
-  if (!is.null(inds)) {
-    if (!all(inds %in% seq(nQ))) stop('Invalid entries in inds argument.')
-    nL <- length(inds)
-  } else {
-    inds <- seq(nQ)
-    nL <- nQ
-  }
+  # # `inds`.
+  # if (!is.null(inds)) {
+  #   if (!all(inds %in% seq(nQ))) stop('Invalid entries in inds argument.')
+  #   nL <- length(inds)
+  # } else {
+  #   inds <- seq(nQ)
+  #   nL <- nQ
+  # }
 
   # [TO DO]: NA in GICA?
 
@@ -261,46 +263,48 @@ harmonize <- function(
     }
   } else {
     if (!is.null(mask)) {
-      warning("Ignoring `mask`, which is only applicable to NIFTI data.")
-      mask <- NULL
+      #warning("Ignoring `mask`, which is only applicable to NIFTI data.")
+      #mask <- NULL
+      nI <- length(mask); nV <- sum(mask)
+    } else {
+      nI <- nV <- nrow(GICA)
     }
-    nI <- nV <- nrow(GICA)
   }
 
-  # Center `GICA` columns.
+  # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- colCenter(GICA) }
+  if (center_Gcols) { GICA <- fMRItools:::colCenter(GICA) }
 
   # Print summary of data ------------------------------------------------------
   format2 <- if (format == "data") { "numeric matrix" } else { format }
   if (verbose) {
-    cat("Data input format:             ", format2, "\n")
-    cat('Number of data locations:      ', nV, "\n")
-    if (FORMAT == "NIFTI") {
-      cat("Unmasked dimensions:           ", paste(nI, collapse=" x "), "\n")
-    }
+    cat("Data input format:    ", format2, "\n")
+    cat("Image dimensions:     ", paste(nI, collapse=" x "), "\n")
+    cat('Masked locations:     ', nV, "\n")
     if (FORMAT == "GIFTI") {
-      cat("Cortex Hemisphere:             ", ghemi, "\n")
+      cat("Cortex hemisphere:    ", ghemi, "\n")
     }
-    cat('Number of original group ICs:  ', nQ, "\n")
-    cat('Number of ICs for hamonizing:  ', nL, "\n")
-    cat('Number of sessions:            ', nN, "\n")
+    cat('Number of group ICs:  ', nQ, "\n")
+    cat('Number of sessions:   ', nN, "\n")
   }
 
   # Dual regression ------------------------------------------------------------
 
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- colCenter(GICA) }
+  if (center_Gcols) { GICA <- fMRItools:::colCenter(GICA) }
 
-  DR0 <- vector("list", nN)
+  S0 <- array(0, dim = c(nN, nQ, nV))
+  A0 <- vector("list", nN)
+  G0 <- array(NA, dim = c(nN, nQ, nQ))
   for (ii in seq(nN)) {
     if (verbose) { cat(paste0(
       '\nReading and analyzing data for subject ', ii,' of ', nN, '.\n'
     )) }
 
-    DR0[[ii]] <- harmonize_DR_oneBOLD(
-      BOLD[[ii]],
+    DR0_ii <- harmonize_DR_oneBOLD(
+      BOLD[[ii]], mask=mask,
+      ghemi=ghemi,
       format=format,
       GICA=GICA,
       center_Bcols=center_Bcols,
@@ -308,19 +312,62 @@ harmonize <- function(
       scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
       scale_sm_FWHM=scale_sm_FWHM,
       TR=TR, hpf=hpf,
-      brainstructures=brainstructures, mask=mask,
+      brainstructures=brainstructures,
       varTol=varTol, maskTol=maskTol,
       verbose=verbose
     )
+    S0[ii,,] <- DR0_ii$S
+    A0[[ii]] <- DR0_ii$A
+    G0[ii,,] <- cov(DR0_ii$A)
   }
 
+  # Process the features -------------------------------------------------------
+
+  ### Use SVD to reduce dimensions of S_q
+
+  U0 <- vector('list', nQ)
+  for(qq in 1:nQ){
+
+    if (verbose) { cat(paste0(
+      '\nPerforming PCA on IC ', qq,' of ', nQ, '.\n'
+    )) }
+
+    #do PCA separately for each IC q
+    S0_q <- S0[,qq,] #NxV
+
+    #center across sessions so X'X is covariance matrix (add back later)
+    S0_q_mean <- colMeans(S0_q)
+    S0_q <- t(S0_q) - S0_q_mean #vector will be recycled by column
+
+    #want to obtain U (NxP) where P << V
+    SSt_q <- crossprod(S0_q) # S0 is currently VxN, so S0'S0 is NxN.
+    svd_q <- svd(SSt_q, nv=0) #want to get U from SVD of S0' = UDV'. SVD of S0'S0 = UDV'VDU' = U D^2 U'
+
+    #keep components explaining 99% of variation
+    nP <- min(which(cumsum(svd_q$d)/sum(svd_q$d) > 0.99))
+    U0[[qq]] <- svd_q$u[,1:nP]
+
+    #[TO DO] compute and visualize V' = (1/D)U'S0' to make sure they are sensible
+  }
+  save(U0, file=file.path(dir_features, 'U.RData'))
+  U0_1 <- U0[[1]]
+  save(U0, file=file.path(dir_features, 'U.RData'))
+  save(U0_1, file=file.path(dir_features, 'U1.RData'))
+  save(S0, file=file.path(dir_features, 'S.RData'))
+  save(A0, file=file.path(dir_features, 'A.RData'))
+  save(G0, file=file.path(dir_features, 'G.RData'))
+
+  ###
+
+
+
   params <- list(
-    inds=inds, 
+    #inds=inds,
     scale=scale,
     scale_sm_FWHM=scale_sm_FWHM,
-    TR=TR, hpf=hpf, 
+    TR=TR, hpf=hpf,
     center_Bcols=center_Bcols,
-    brainstructures=brainstructures, 
+    brainstructures=brainstructures,
     varTol=varTol, maskTol=maskTol, missingTol=missingTol
   )
 
@@ -332,9 +379,9 @@ harmonize <- function(
 }
 
 #' DR step for harmonize
-#' 
+#'
 #' Compute dual regression for harmonize
-#' 
+#'
 #' @param BOLD Vector of subject-level fMRI data in one of the following
 #'  formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
 #'  \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
@@ -345,16 +392,21 @@ harmonize <- function(
 #   where the first list element is a length \eqn{N} vector for the left
 #   hemisphere and the second list element is a length \eqn{N} vector for the
 #   right hemisphere.
+#'  @param ghemi Which hemisphere, in the case of a single GIFTI file?
 #' @param format Expected format of \code{BOLD} and \code{BOLD2}. Should be one
 #'  of the following: a \code{"CIFTI"} file path, a \code{"xifti"} object, a
 #'  \code{"NIFTI"} file path, a \code{"nifti"} object, or a \code{"data"} matrix.
 #' @param GICA Group ICA maps in a format compatible with \code{BOLD}. Can also
 #'  be a (vectorized) numeric matrix (\eqn{V \times Q}) no matter the format of
 #'  \code{BOLD}. Its columns will be centered.
+#' @param mask Required if the entries of \code{BOLD} are NIFTI
+#'  file paths or \code{"nifti"} objects, optional for other formats. For NIFTI, this is a brain map formatted as a
+#'  binary array of the same spatial dimensions as the fMRI data, with
+#'  \code{TRUE} corresponding to in-mask voxels. For other formats, a logical vector.
 #' @param scale \code{"global"} (default), \code{"local"}, or \code{"none"}.
-#'  Global scaling will divide the entire data matrix by the mean image standard 
+#'  Global scaling will divide the entire data matrix by the mean image standard
 #'  deviation (\code{mean(sqrt(rowVars(BOLD)))}). Local scaling will divide each
-#'  data location's time series by its estimated standard deviation. 
+#'  data location's time series by its estimated standard deviation.
 #' @param scale_sm_surfL,scale_sm_surfR,scale_sm_FWHM Only applies if
 #'  \code{scale=="local"} and \code{BOLD} represents surface data (CIFTI or
 #'  GIFTI). To smooth the standard deviation estimates used for local scaling,
@@ -376,27 +428,23 @@ harmonize <- function(
 #' @param hpf The frequency at which to apply a highpass filter to the data
 #'  during pre-processing, in Hertz. Default: \code{0.01} Hertz. Set to \code{0}
 #'  to disable the highpass filter.
-#' 
-#' 
-#'  The highpass filter serves to detrend the data, since low-frequency 
-#'  variance is associated with noise. Highpass filtering is accomplished by 
-#'  nuisance regression of discrete cosine transform (DCT) bases. 
-#' 
+#'
+#'
+#'  The highpass filter serves to detrend the data, since low-frequency
+#'  variance is associated with noise. Highpass filtering is accomplished by
+#'  nuisance regression of discrete cosine transform (DCT) bases.
+#'
 #'  Note the \code{TR} argument is required for highpass filtering. If
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
 #' @param center_Bcols Center BOLD across columns (each image)? This
-#'  is equivalent to performing global signal regression. Default: 
-#'  \code{FALSE}. 
+#'  is equivalent to performing global signal regression. Default:
+#'  \code{FALSE}.
 #' @param brainstructures Only applies if the entries of \code{BOLD} are CIFTI
 #'  file paths. This is a character vector indicating which brain structure(s)
 #'  to obtain: \code{"left"} (left cortical surface), \code{"right"} (right
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
-#' @param mask Required if and only if the entries of \code{BOLD} are NIFTI
-#'  file paths or \code{"nifti"} objects. This is a brain map formatted as a
-#'  binary array of the same spatial dimensions as the fMRI data, with
-#'  \code{TRUE} corresponding to in-mask voxels.
 #' @param varTol Tolerance for variance of each data location. For each scan,
 #'  locations which do not meet this threshold are masked out of the analysis.
 #'  Default: \code{1e-6}. Variance is calculated on the original data, before
@@ -419,18 +467,18 @@ harmonize <- function(
 #'  zero and one), or as a number of locations (integers greater than one).
 #'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
 #'  at a given location.
-#' 
+#'
 #' @keywords internal
 harmonize_DR_oneBOLD <- function(
-  BOLD,
+  BOLD, ghemi,
   format=c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
-  GICA,
+  GICA, mask=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
-  center_Bcols=FALSE, 
+  center_Bcols=FALSE,
   NA_limit=.1,
-  brainstructures=c("all"), mask=NULL,
+  brainstructures=c("all"),
   varTol=1e-6, maskTol=.1,
   verbose=TRUE){
 
@@ -444,11 +492,11 @@ harmonize_DR_oneBOLD <- function(
 
   # Load helper variables.
   format <- match.arg(format, c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"))
-  FORMAT <- get_FORMAT(format)
+  FORMAT <- fMRItools:::get_FORMAT(format)
   nQ <- ncol(GICA)
   nI <- nV <- nrow(GICA)
 
-  check_req_ifti_pkg(FORMAT)
+  fMRItools:::check_req_ifti_pkg(FORMAT)
 
   # Get `BOLD` (and `BOLD2`) as a data matrix or array.  -----------------------
   if (verbose) { cat("\tReading and formatting data...") }
@@ -465,11 +513,11 @@ harmonize_DR_oneBOLD <- function(
   } else if (FORMAT == "GIFTI") {
     if (is.character(BOLD)) { BOLD <- gifti::readgii(BOLD) }
     stopifnot(gifti::is.gifti(BOLD))
-    ghemi <- BOLD$file_meta["AnatomicalStructurePrimary"]
-    if (!(ghemi %in% c("CortexLeft", "CortexRight"))) {
-      stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
-    }
-    ghemi <- switch(ghemi, CortexLeft="left", CortexRight="right")
+    #ghemi <- BOLD$file_meta["AnatomicalStructurePrimary"]
+    #if (!(ghemi %in% c("CortexLeft", "CortexRight"))) {
+    #  stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
+    #}
+    #ghemi <- switch(ghemi, CortexLeft="left", CortexRight="right")
     if (scale == "local") {
       if (ghemi == "left") {
         xii1 <- ciftiTools::select_xifti(ciftiTools::as.xifti(cortexL=do.call(cbind, BOLD$data)), 1) * 0
@@ -492,6 +540,7 @@ harmonize_DR_oneBOLD <- function(
     stopifnot(is.matrix(BOLD))
     nI <- nV <- nrow(GICA)
   } else { stop() }
+
   dBOLD <- dim(BOLD)
   ldB <- length(dim(BOLD))
   nT <- dim(BOLD)[ldB]
@@ -508,14 +557,16 @@ harmonize_DR_oneBOLD <- function(
 
   # Check for missing values. --------------------------------------------------
   nV0 <- nV # not used
-  mask <- make_mask(BOLD, varTol=varTol)
+  #mask <- fMRItools:::make_mask(BOLD, varTol=varTol)
   use_mask <- !all(mask)
   if (use_mask) {
-    # Coerce `maskTol` to number of locations.
-    stopifnot(is.numeric(maskTol) && length(maskTol)==1 && maskTol >= 0)
-    if (maskTol < 1) { maskTol <- maskTol * nV }
-    # Skip this scan if `maskTol` is surpassed.
-    if (sum(!mask) > maskTol) { return(NULL) }
+
+    # # Coerce `maskTol` to number of locations.
+    # stopifnot(is.numeric(maskTol) && length(maskTol)==1 && maskTol >= 0)
+    # if (maskTol < 1) { maskTol <- maskTol * nV }
+    # # Skip this scan if `maskTol` is surpassed.
+    # if (sum(!mask) > maskTol) { return(NULL) }
+
     # Mask out the locations.
     BOLD <- BOLD[mask,,drop=FALSE]
     GICA <- GICA[mask,,drop=FALSE]
@@ -536,7 +587,8 @@ harmonize_DR_oneBOLD <- function(
   DR <- templateICAr::dual_reg(
     BOLD, GICA,
     scale=scale, scale_sm_xifti=xii1, scale_sm_FWHM=scale_sm_FWHM,
-    TR=TR, hpf=0, center_Bcols=center_Bcols
+    #TR=TR, hpf=0,
+    center_Bcols=center_Bcols
   )
   attr(DR$A, "scaled:center") <- NULL
 
