@@ -323,9 +323,9 @@ harmonize <- function(
 
   # Process the features -------------------------------------------------------
 
-  ### Use SVD to reduce dimensions of S_q
+  ### Use SVD to reduce dimensions of S_q <- MAYBE NOT!  USE SPATIAL MODEL INSTEAD?
 
-  U0 <- vector('list', nQ)
+  U0 <- V0 <- vector('list', nQ)
   for(qq in 1:nQ){
 
     if (verbose) { cat(paste0(
@@ -336,8 +336,8 @@ harmonize <- function(
     S0_q <- S0[,qq,] #NxV
 
     #center across sessions so X'X is covariance matrix (add back later)
-    S0_q_mean <- colMeans(S0_q)
-    S0_q <- t(S0_q) - S0_q_mean #vector will be recycled by column
+    #S0_q_mean <- colMeans(S0_q)
+    S0_q <- t(S0_q) #- S0_q_mean #vector will be recycled by column
 
     #want to obtain U (NxP) where P << V
     SSt_q <- crossprod(S0_q) # S0 is currently VxN, so S0'S0 is NxN.
@@ -347,17 +347,57 @@ harmonize <- function(
     nP <- min(which(cumsum(svd_q$d)/sum(svd_q$d) > 0.99))
     U0[[qq]] <- svd_q$u[,1:nP]
 
-    #[TO DO] compute and visualize V' = (1/D)U'S0' to make sure they are sensible
+    #visualize V' = (1/D)U'S0' to make sure they are sensible
+    V0[[qq]] <- diag(1/svd_q$d[1:nP]) %*% t(svd_q$u[,1:nP]) %*% t(S0_q)
   }
   save(U0, file=file.path(dir_features, 'U.RData'))
+  save(V0, file=file.path(dir_features, 'V.RData'))
   U0_1 <- U0[[1]]
   save(U0, file=file.path(dir_features, 'U.RData'))
   save(U0_1, file=file.path(dir_features, 'U1.RData'))
   save(S0, file=file.path(dir_features, 'S.RData'))
+  S0_1 <- S0[,1,]
+  save(S0_1, file=file.path(dir_features, 'S1.RData'))
   save(A0, file=file.path(dir_features, 'A.RData'))
   save(G0, file=file.path(dir_features, 'G.RData'))
 
-  ###
+  ### Project elements of G to a tangent space
+
+  if (verbose) { cat('\nProjecting covariance matrices to tangent space.\n' }
+
+  # Calculate the element-wise average of the covariance matrices
+  G_avg <- apply(G0, c(2, 3), mean)
+
+  # Project each covariance matrix to tangent space at base point defined by the Euclidean mean
+  system.time(G_tangent <- apply(G0, MARGIN = 1, FUN = tangent_space_projection, B = G_avg))
+
+  save(G_tangent, file=file.path(dir_features, 'G_tangent.RData'))
+
+  # Run ComBat to harmonize U0 -------------------------------------------------
+
+  # Project U0* back to get S0* ------------------------------------------------
+
+  # Run ComBat to harmonize G_tangent ------------------------------------------
+
+  # Transform G_tangent* back to get G0* ---------------------------------------
+
+  # Rotate A0 so that Cov(A0*) = G0* -------------------------------------------
+
+  # Reconstruct the fMRI data! -------------------------------------------------
+
+  ### Compute the original residual E = Y - AS
+
+  ### Compute empirically what % of variation in Y is left in E, return this too
+
+  ### Compute Y* = A*S* + E
+
+  # Organize stuff to return ---------------------------------------------------
+
+  # harmonized Y
+  # harmonized and unharmonized features?
+  # distance between harmonized and unharmonized features?
+  # var left in E
+  # params (include GICA?)
 
 
 
@@ -371,11 +411,37 @@ harmonize <- function(
     varTol=varTol, maskTol=maskTol, missingTol=missingTol
   )
 
-  # Harmonize A and cov(A) using ComBat — given the S and cov(A) matrices, Johanna can develop the code to do that
-  # Re-construct the fMRI data as Y* = A*S* + E, where A* and S* are the harmonized versions of A and S.  The harmonized version of A is done using matrix operations so that cov(A*) = cov(A)* (the harmonized covariant matrix).  — you could write this step as well, and just leave a placeholder for the harmonization itself
-  # Return/write out the harmonized fMRI time series
-
   list(DR=DR0, params=params)
+}
+
+library(expm)
+tangent_space_projection <- function(A, B, reverse=FALSE) {
+  # Assuming A and B are both positive definite matrices
+
+  # Perform eigenvalue decomposition of B
+  eig <- eigen(B)
+  # Square root of eigenvalues
+  sqrt_eigvals <- sqrt(eig$values)
+
+  # Reconstruct square root of B
+  sqrt_B <- eig$vectors %*% diag(sqrt_eigvals) %*% t(eig$vectors)
+  inv_sqrt_B <- eig$vectors %*% diag(1/sqrt_eigvals) %*% t(eig$vectors)
+
+  # Compute B^{-1/2}AB^{-1/2}
+  middle_term <- inv_sqrt_B %*% A %*% inv_sqrt_B
+
+  # Perform transformation or reverse transformation
+  if(!reverse){
+    # Compute the matrix logarithm
+    log_term <- logm(middle_term)
+    # Compute the projection
+    projection <- sqrt_B %*% log_term %*% sqrt_B
+  } else {
+    exp_term <- expm(middle_term)
+    projection <- sqrt_B %*% exp_term %*% sqrt_B
+  }
+
+  return(projection)
 }
 
 #' DR step for harmonize
