@@ -6,8 +6,10 @@
 \usage{
 harmonize_DR_oneBOLD(
   BOLD,
+  ghemi,
   format = c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
   GICA,
+  mask = NULL,
   scale = c("local", "global", "none"),
   scale_sm_surfL = NULL,
   scale_sm_surfR = NULL,
@@ -17,7 +19,6 @@ harmonize_DR_oneBOLD(
   center_Bcols = FALSE,
   NA_limit = 0.1,
   brainstructures = c("all"),
-  mask = NULL,
   varTol = 1e-06,
   maskTol = 0.1,
   verbose = TRUE
@@ -28,7 +29,8 @@ harmonize_DR_oneBOLD(
 formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
 \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
 or \eqn{V \times T} numeric matrices, where \eqn{V} is the number of data
-locations and \eqn{T} is the number of timepoints.}
+locations and \eqn{T} is the number of timepoints.
+@param ghemi Which hemisphere, in the case of a single GIFTI file?}
 
 \item{format}{Expected format of \code{BOLD} and \code{BOLD2}. Should be one
 of the following: a \code{"CIFTI"} file path, a \code{"xifti"} object, a
@@ -37,6 +39,11 @@ of the following: a \code{"CIFTI"} file path, a \code{"xifti"} object, a
 \item{GICA}{Group ICA maps in a format compatible with \code{BOLD}. Can also
 be a (vectorized) numeric matrix (\eqn{V \times Q}) no matter the format of
 \code{BOLD}. Its columns will be centered.}
+
+\item{mask}{Required if the entries of \code{BOLD} are NIFTI
+file paths or \code{"nifti"} objects, optional for other formats. For NIFTI, this is a brain map formatted as a
+binary array of the same spatial dimensions as the fMRI data, with
+\code{TRUE} corresponding to in-mask voxels. For other formats, a logical vector.}
 
 \item{scale}{\code{"global"} (default), \code{"local"}, or \code{"none"}.
 Global scaling will divide the entire data matrix by the mean image standard
@@ -84,11 +91,6 @@ to obtain: \code{"left"} (left cortical surface), \code{"right"} (right
 cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 gray matter). Can also be \code{"all"} (obtain all three brain structures).
 Default: \code{c("all")}.}
-
-\item{mask}{Required if and only if the entries of \code{BOLD} are NIFTI
-file paths or \code{"nifti"} objects. This is a brain map formatted as a
-binary array of the same spatial dimensions as the fMRI data, with
-\code{TRUE} corresponding to in-mask voxels.}
 
 \item{varTol}{Tolerance for variance of each data location. For each scan,
 locations which do not meet this threshold are masked out of the analysis.

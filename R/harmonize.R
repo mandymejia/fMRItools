@@ -101,6 +101,7 @@
 #'  at a given location.
 #' @param verbose Display progress updates? Default: \code{TRUE}.
 #' @keywords internal
+#' @importFrom stats cov
 #'
 harmonize <- function(
   BOLD, ghemi=NULL,
@@ -129,7 +130,7 @@ harmonize <- function(
     scale <- "local"
   }
   scale <- match.arg(scale, c("local", "global", "none"))
-  stopifnot(fMRItools:::is_1(scale_sm_FWHM, "numeric"))
+  stopifnot(is_1(scale_sm_FWHM, "numeric"))
   if (is.null(hpf)) { hpf <- 0 }
   if (is.null(TR)) {
     if (hpf==.01) {
@@ -139,19 +140,19 @@ harmonize <- function(
       stop("Cannot apply `hpf` because `TR` was not provided. Either provide `TR` or set `hpf=0`.")
     }
   } else {
-    stopifnot(fMRItools:::is_posNum(TR))
-    stopifnot(fMRItools:::is_posNum(hpf, zero_ok=TRUE))
+    stopifnot(is_posNum(TR))
+    stopifnot(is_posNum(hpf, zero_ok=TRUE))
   }
-  stopifnot(fMRItools:::is_1(center_Bcols, "logical"))
-  stopifnot(fMRItools:::is_1(varTol, "numeric"))
+  stopifnot(is_1(center_Bcols, "logical"))
+  stopifnot(is_1(varTol, "numeric"))
   if (varTol < 0) { cat("Setting `varTol=0`."); varTol <- 0 }
-  stopifnot(fMRItools:::is_posNum(maskTol))
-  stopifnot(fMRItools:::is_posNum(missingTol))
-  stopifnot(fMRItools:::is_1(verbose, "logical"))
+  stopifnot(is_posNum(maskTol))
+  stopifnot(is_posNum(missingTol))
+  stopifnot(is_1(verbose, "logical"))
 
   # `BOLD` format --------------------------------------------------------------
-  format <- fMRItools:::infer_format_ifti_vec(BOLD)[1]
-  FORMAT <- fMRItools:::get_FORMAT(format)
+  format <- infer_format_ifti_vec(BOLD)[1]
+  FORMAT <- get_FORMAT(format)
   FORMAT_extn <- switch(FORMAT,
     CIFTI=".dscalar.nii",
     GIFTI=".func.gii",
@@ -160,7 +161,7 @@ harmonize <- function(
   )
   nN <- length(BOLD)
 
-  fMRItools:::check_req_ifti_pkg(FORMAT)
+  check_req_ifti_pkg(FORMAT)
 
   # If BOLD is a CIFTI, GIFTI, NIFTI, or RDS file, check that the file paths exist.
   if (format %in% c("CIFTI", "GIFTI", "NIFTI", "RDS")) {
@@ -273,7 +274,7 @@ harmonize <- function(
 
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- fMRItools:::colCenter(GICA) }
+  if (center_Gcols) { GICA <- colCenter(GICA) }
 
   # Print summary of data ------------------------------------------------------
   format2 <- if (format == "data") { "numeric matrix" } else { format }
@@ -292,7 +293,7 @@ harmonize <- function(
 
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- fMRItools:::colCenter(GICA) }
+  if (center_Gcols) { GICA <- colCenter(GICA) }
 
   S0 <- array(0, dim = c(nN, nQ, nV))
   A0 <- vector("list", nN)
@@ -350,6 +351,12 @@ harmonize <- function(
     #visualize V' = (1/D)U'S0' to make sure they are sensible
     V0[[qq]] <- diag(1/svd_q$d[1:nP]) %*% t(svd_q$u[,1:nP]) %*% t(S0_q)
   }
+
+  # Damon added these temporary lines to pass roxygen checks.
+  dir_features <- tempdir()
+  DR0 <- NULL
+  # ---------------------------------------------------------
+
   save(U0, file=file.path(dir_features, 'U.RData'))
   save(V0, file=file.path(dir_features, 'V.RData'))
   U0_1 <- U0[[1]]
@@ -558,11 +565,11 @@ harmonize_DR_oneBOLD <- function(
 
   # Load helper variables.
   format <- match.arg(format, c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"))
-  FORMAT <- fMRItools:::get_FORMAT(format)
+  FORMAT <- get_FORMAT(format)
   nQ <- ncol(GICA)
   nI <- nV <- nrow(GICA)
 
-  fMRItools:::check_req_ifti_pkg(FORMAT)
+  check_req_ifti_pkg(FORMAT)
 
   # Get `BOLD` (and `BOLD2`) as a data matrix or array.  -----------------------
   if (verbose) { cat("\tReading and formatting data...") }
@@ -623,7 +630,7 @@ harmonize_DR_oneBOLD <- function(
 
   # Check for missing values. --------------------------------------------------
   nV0 <- nV # not used
-  #mask <- fMRItools:::make_mask(BOLD, varTol=varTol)
+  #mask <- make_mask(BOLD, varTol=varTol)
   use_mask <- !all(mask)
   if (use_mask) {
 
