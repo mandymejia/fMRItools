@@ -6,7 +6,6 @@
 \usage{
 harmonize(
   BOLD,
-  ghemi = NULL,
   GICA,
   mask = NULL,
   scale = c("local", "global", "none"),
@@ -28,8 +27,9 @@ harmonize(
 formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
 \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
 or \eqn{V \times T} numeric matrices, where \eqn{V} is the number of data
-locations and \eqn{T} is the number of timepoints.
-@param ghemi Which hemisphere, in the case of a single GIFTI file?}
+locations and \eqn{T} is the number of timepoints. For GIFTI or
+\code{"gifti"} input, each entry can also be a length-two list where the
+first entry is the left cortex and the second is the right cortex.}
 
 \item{GICA}{Group ICA maps in a format compatible with \code{BOLD}. Can also
 be a (vectorized) numeric matrix (\eqn{V \times Q}) no matter the format of

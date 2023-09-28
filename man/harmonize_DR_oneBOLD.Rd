@@ -6,7 +6,7 @@
 \usage{
 harmonize_DR_oneBOLD(
   BOLD,
-  ghemi,
+  gii_hemi,
   format = c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
   GICA,
   mask = NULL,
@@ -30,7 +30,7 @@ formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
 \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
 or \eqn{V \times T} numeric matrices, where \eqn{V} is the number of data
 locations and \eqn{T} is the number of timepoints.
-@param ghemi Which hemisphere, in the case of a single GIFTI file?}
+@param gii_hemi Which hemisphere, in the case of a single GIFTI file?}
 
 \item{format}{Expected format of \code{BOLD} and \code{BOLD2}. Should be one
 of the following: a \code{"CIFTI"} file path, a \code{"xifti"} object, a

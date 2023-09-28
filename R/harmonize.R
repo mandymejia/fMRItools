@@ -13,8 +13,10 @@
 #'  formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
 #'  \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
 #'  or \eqn{V \times T} numeric matrices, where \eqn{V} is the number of data
-#'  locations and \eqn{T} is the number of timepoints.
-#'  @param ghemi Which hemisphere, in the case of a single GIFTI file?
+#'  locations and \eqn{T} is the number of timepoints. For GIFTI or 
+#'  \code{"gifti"} input, each entry can also be a length-two list where the
+#'  first entry is the left cortex and the second is the right cortex.
+#   @param gii_hemi Which hemisphere, in the case of a single GIFTI file?
 #
 #   If GIFTI or \code{"gifti"}, the input can also be a length two list,
 #   where the first list element is a length \eqn{N} vector for the left
@@ -104,7 +106,7 @@
 #' @importFrom stats cov
 #'
 harmonize <- function(
-  BOLD, ghemi=NULL,
+  BOLD, #gii_hemi=NULL,
   GICA, mask=NULL, #inds=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
@@ -114,6 +116,9 @@ harmonize <- function(
   varTol=1e-6, maskTol=.1, missingTol=.1,
   verbose=TRUE){
 
+  if (!requireNamespace("expm", quietly = TRUE)) {
+    stop("Package \"expm\" needed. Please install it", call. = FALSE)
+  }
   if (!requireNamespace("templateICAr", quietly = TRUE)) {
     stop("Package \"templateICAr\" needed. Please install it", call. = FALSE)
   }
@@ -209,11 +214,11 @@ harmonize <- function(
     stopifnot(is.matrix(GICA))
   } else if (FORMAT == "GIFTI") {
     if (is.character(GICA)) { GICA <- gifti::readgii(GICA) }
-    ghemi <- GICA$file_meta["AnatomicalStructurePrimary"]
-    if (!(ghemi %in% c("CortexLeft", "CortexRight"))) {
+    gii_hemi <- GICA$file_meta["AnatomicalStructurePrimary"]
+    if (!(gii_hemi %in% c("CortexLeft", "CortexRight"))) {
       stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
     }
-    ghemi <- switch(ghemi, CortexLeft="left", CortexRight="right")
+    gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
     GICA <- do.call(cbind, GICA$data)
   } else if (FORMAT == "NIFTI") {
     if (is.character(GICA)) { GICA <- RNifti::readNifti(GICA) }
@@ -283,7 +288,7 @@ harmonize <- function(
     cat("Image dimensions:     ", paste(nI, collapse=" x "), "\n")
     cat('Masked locations:     ', nV, "\n")
     if (FORMAT == "GIFTI") {
-      cat("Cortex hemisphere:    ", ghemi, "\n")
+      cat("Cortex hemisphere:    ", gii_hemi, "\n")
     }
     cat('Number of group ICs:  ', nQ, "\n")
     cat('Number of sessions:   ', nN, "\n")
@@ -305,7 +310,7 @@ harmonize <- function(
 
     DR0_ii <- harmonize_DR_oneBOLD(
       BOLD[[ii]], mask=mask,
-      ghemi=ghemi,
+      gii_hemi=gii_hemi,
       format=format,
       GICA=GICA,
       center_Bcols=center_Bcols,
@@ -370,7 +375,7 @@ harmonize <- function(
 
   ### Project elements of G to a tangent space
 
-  if (verbose) { cat('\nProjecting covariance matrices to tangent space.\n' }
+  if (verbose) { cat('\nProjecting covariance matrices to tangent space.\n') }
 
   # Calculate the element-wise average of the covariance matrices
   G_avg <- apply(G0, c(2, 3), mean)
@@ -465,7 +470,7 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #   where the first list element is a length \eqn{N} vector for the left
 #   hemisphere and the second list element is a length \eqn{N} vector for the
 #   right hemisphere.
-#'  @param ghemi Which hemisphere, in the case of a single GIFTI file?
+#'  @param gii_hemi Which hemisphere, in the case of a single GIFTI file?
 #' @param format Expected format of \code{BOLD} and \code{BOLD2}. Should be one
 #'  of the following: a \code{"CIFTI"} file path, a \code{"xifti"} object, a
 #'  \code{"NIFTI"} file path, a \code{"nifti"} object, or a \code{"data"} matrix.
@@ -543,7 +548,7 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'
 #' @keywords internal
 harmonize_DR_oneBOLD <- function(
-  BOLD, ghemi,
+  BOLD, gii_hemi,
   format=c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
   GICA, mask=NULL,
   scale=c("local", "global", "none"),
@@ -586,15 +591,15 @@ harmonize_DR_oneBOLD <- function(
   } else if (FORMAT == "GIFTI") {
     if (is.character(BOLD)) { BOLD <- gifti::readgii(BOLD) }
     stopifnot(gifti::is.gifti(BOLD))
-    #ghemi <- BOLD$file_meta["AnatomicalStructurePrimary"]
-    #if (!(ghemi %in% c("CortexLeft", "CortexRight"))) {
+    #gii_hemi <- BOLD$file_meta["AnatomicalStructurePrimary"]
+    #if (!(gii_hemi %in% c("CortexLeft", "CortexRight"))) {
     #  stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
     #}
-    #ghemi <- switch(ghemi, CortexLeft="left", CortexRight="right")
+    #gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
     if (scale == "local") {
-      if (ghemi == "left") {
+      if (gii_hemi == "left") {
         xii1 <- ciftiTools::select_xifti(ciftiTools::as.xifti(cortexL=do.call(cbind, BOLD$data)), 1) * 0
-      } else if (ghemi == "right") {
+      } else if (gii_hemi == "right") {
         xii1 <- ciftiTools::select_xifti(ciftiTools::as.xifti(cortexR=do.call(cbind, BOLD$data)), 1) * 0
       } else { stop() }
       xii1$meta$cifti$intent <- 3006
