@@ -562,14 +562,6 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'  can be specified either as a proportion of the number of locations (between
 #'  zero and one), or as a number of locations (integers greater than one).
 #'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
-#' @param missingTol For harmonizing all subjects:
-#'  tolerance for number of subjects masked out due to low variance or missing
-#'  values at a given location. If more than this many subjects are masked out,
-#'  the location will not be included in the harmonization analysis. \code{missingTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
-#'  at a given location.
 #'
 #' @keywords internal
 harmonize_DR_oneBOLD <- function(
