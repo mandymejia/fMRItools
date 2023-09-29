@@ -17,7 +17,6 @@ templateICAr 0.6.2 passes checks.
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
 
-## Previous submission results (0.3.0)
+## Previous submission results (0.3.2)
 
-> Package `templateICAr` had a build error. 
-We've revised this package, `fMRItools`, to resolve the error.
+We removed the script that had an issue.
