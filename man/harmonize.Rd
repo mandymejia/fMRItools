@@ -16,7 +16,7 @@ harmonize(
   scale_sm_FWHM = 2,
   TR = NULL,
   hpf = 0.01,
-  center_Bcols = FALSE,
+  GSR = FALSE,
   brainstructures = c("all"),
   varTol = 1e-06,
   maskTol = 0.1,
@@ -91,7 +91,7 @@ nuisance regression of discrete cosine transform (DCT) bases.
 Note the \code{TR} argument is required for highpass filtering. If
 \code{TR} is not provided, \code{hpf} will be ignored.}
 
-\item{center_Bcols}{Center BOLD across columns (each image)? This
+\item{GSR}{Center BOLD across columns (each image)? This
 is equivalent to performing global signal regression. Default:
 \code{FALSE}.}
 

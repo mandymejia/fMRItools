@@ -3,7 +3,7 @@
 #' @param BOLD Subject-level fMRI data matrix (\eqn{V \times T}). Rows will be
 #'  centered.
 #' @param GICA Group-level independent components (\eqn{V \times Q})
-#' @param center_Bcols Center BOLD across columns (each image)? This
+#' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default: 
 #'  \code{FALSE}. 
 #' @param scale \code{"local"} (default), \code{"global"}, or \code{"none"}.
@@ -49,7 +49,7 @@ dual_reg <- function(
   BOLD, GICA,
   scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
-  center_Bcols=FALSE){
+  GSR=FALSE){
 
   stopifnot(is.matrix(BOLD))
   stopifnot(is.matrix(GICA))
@@ -83,7 +83,7 @@ dual_reg <- function(
   # Standardize scale if `scale`, and detrend if `hpf>0`.
   # Transpose it: now `BOLD` is TxV.
   BOLD <- t(norm_BOLD(
-    BOLD, center_rows=TRUE, center_cols=center_Bcols,
+    BOLD, center_rows=TRUE, center_cols=GSR,
     scale=scale, scale_sm_xifti=scale_sm_xifti, scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf
   ))

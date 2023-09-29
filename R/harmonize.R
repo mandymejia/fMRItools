@@ -67,7 +67,7 @@
 #'
 #'  Note the \code{TR} argument is required for highpass filtering. If
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
-#' @param center_Bcols Center BOLD across columns (each image)? This
+#' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
 #' @param brainstructures Only applies if the entries of \code{BOLD} are CIFTI
@@ -108,7 +108,7 @@ harmonize <- function(
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
-  center_Bcols=FALSE,
+  GSR=FALSE,
   brainstructures=c("all"),
   varTol=1e-6, maskTol=.1, missingTol=.1,
   verbose=TRUE){
@@ -145,7 +145,7 @@ harmonize <- function(
     stopifnot(is_posNum(TR))
     stopifnot(is_posNum(hpf, zero_ok=TRUE))
   }
-  stopifnot(is_1(center_Bcols, "logical"))
+  stopifnot(is_1(GSR, "logical"))
   stopifnot(is_1(varTol, "numeric"))
   if (varTol < 0) { cat("Setting `varTol=0`."); varTol <- 0 }
   stopifnot(is_posNum(maskTol))
@@ -336,7 +336,7 @@ harmonize <- function(
       gii_hemi=gii_hemi,
       format=format,
       GICA=GICA,
-      center_Bcols=center_Bcols,
+      GSR=GSR,
       scale=scale,
       scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
       scale_sm_FWHM=scale_sm_FWHM,
@@ -438,7 +438,7 @@ harmonize <- function(
     scale=scale,
     scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
-    center_Bcols=center_Bcols,
+    GSR=GSR,
     brainstructures=brainstructures,
     varTol=varTol, maskTol=maskTol, missingTol=missingTol
   )
@@ -540,7 +540,7 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'
 #'  Note the \code{TR} argument is required for highpass filtering. If
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
-#' @param center_Bcols Center BOLD across columns (each image)? This
+#' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
 #' @param brainstructures Only applies if the entries of \code{BOLD} are CIFTI
@@ -580,7 +580,7 @@ harmonize_DR_oneBOLD <- function(
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
-  center_Bcols=FALSE,
+  GSR=FALSE,
   NA_limit=.1,
   brainstructures=c("all"),
   varTol=1e-6, maskTol=.1,
@@ -712,12 +712,12 @@ harmonize_DR_oneBOLD <- function(
     xii1 <- ciftiTools::add_surf(xii1, surfL=scale_sm_surfL, surfR=scale_sm_surfR)
   }
 
-  center_Bcols <- FALSE
+  GSR <- FALSE
   DR <- templateICAr::dual_reg(
     BOLD, GICA,
     scale=scale, scale_sm_xifti=xii1, scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
-    center_Bcols=center_Bcols
+    GSR=GSR
   )
   attr(DR$A, "scaled:center") <- NULL
 
