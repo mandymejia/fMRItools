@@ -6,10 +6,11 @@
 \usage{
 harmonize_DR_oneBOLD(
   BOLD,
-  gii_hemi,
-  format = c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
+  format = c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti",
+    "RDS", "data"),
   GICA,
   mask = NULL,
+  gii_hemi = NULL,
   scale = c("local", "global", "none"),
   scale_sm_surfL = NULL,
   scale_sm_surfR = NULL,

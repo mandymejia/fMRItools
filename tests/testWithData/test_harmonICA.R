@@ -49,8 +49,20 @@ gica_cii_fname <- file.path(
   "melodic_IC.4k.dscalar.nii"
 )
 
-q <- harmonICA(rs_cii_fnames[seq(3)], gica_cii_fname)
+gica_gii_fnames <- c(
+  "/Users/ddpham/Library/CloudStorage/OneDrive-SharedLibraries-IndianaUniversity/O365-BL-STAT-StatMIND-Projects - General/Data/MSC-OneSubject/melodic_IC.sep.L.func.gii",
+  "/Users/ddpham/Library/CloudStorage/OneDrive-SharedLibraries-IndianaUniversity/O365-BL-STAT-StatMIND-Projects - General/Data/MSC-OneSubject/melodic_IC.sep.R.func.gii"
+)
+
+# Do ---------------------------------------------------------------------------
+q <- harmonize(rs_cii_fnames[seq(3)], gica_cii_fname)
 
 z <- read_cifti(rs_cii_fnames[1], brainstructures="all")
 z <- newdata_xifti(z, t(q$DR[[1]]$S))
 plot(z)
+
+# Do ---------------------------------------------------------------------------
+q <- harmonize(
+  list(list(rs_giiL_fnames[1], rs_giiR_fnames[1]), list(rs_giiL_fnames[2], rs_giiR_fnames[2])),
+  gica_gii_fnames
+)

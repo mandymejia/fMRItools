@@ -13,30 +13,27 @@
 #'  formats: CIFTI file paths, \code{"xifti"} objects, GIFTI file paths,
 #'  \code{"gifti"} objects, NIFTI file paths, \code{"nifti"} objects,
 #'  or \eqn{V \times T} numeric matrices, where \eqn{V} is the number of data
-#'  locations and \eqn{T} is the number of timepoints. For GIFTI or 
+#'  locations and \eqn{T} is the number of timepoints. For GIFTI or
 #'  \code{"gifti"} input, each entry can also be a length-two list where the
 #'  first entry is the left cortex and the second is the right cortex.
-#   @param gii_hemi Which hemisphere, in the case of a single GIFTI file?
-#
-#   If GIFTI or \code{"gifti"}, the input can also be a length two list,
-#   where the first list element is a length \eqn{N} vector for the left
-#   hemisphere and the second list element is a length \eqn{N} vector for the
-#   right hemisphere.
-
 #' @param GICA Group ICA maps in a format compatible with \code{BOLD}. Can also
 #'  be a (vectorized) numeric matrix (\eqn{V \times Q}) no matter the format of
 #'  \code{BOLD}. Its columns will be centered.
 #' @param mask Required if the entries of \code{BOLD} are NIFTI
-#'  file paths or \code{"nifti"} objects, optional for other formats. For NIFTI, this is a brain map formatted as a
-#'  binary array of the same spatial dimensions as the fMRI data, with
-#'  \code{TRUE} corresponding to in-mask voxels. For other formats, a logical vector.
-# @param inds Numeric indices of the group ICs to include in the template. If
-#  \code{NULL}, use all group ICs (default).
-#
-#  If \code{inds} is provided, the ICs not included will be removed after
-#  calculating dual regression, not before. This is because removing the ICs
-#  prior to dual regression would leave unmodelled signals in the data, which
-#  could bias the templates.
+#'  file paths or \code{"nifti"} objects, optional for other formats. For
+#'  NIFTI, this is a brain map formatted as a binary array of the same spatial
+#'  dimensions as the fMRI data, with \code{TRUE} corresponding to in-mask
+#'  voxels. For other formats, a logical vector.
+#' @param gii_hemi Which hemisphere, if BOLD is a single list of GIFTI data?
+#'  Should be \code{"left"} or \code{"right"}. If \code{NULL} (default), try to
+#'  infer from the metadata.
+#' @param inds Numeric indices of the group ICs to include in the template. If
+#'  \code{NULL}, use all group ICs (default).
+#'
+#'  If \code{inds} is provided, the ICs not included will be removed after
+#'  calculating dual regression, not before. This is because removing the ICs
+#'  prior to dual regression would leave unmodelled signals in the data, which
+#'  could bias the templates.
 #' @param scale \code{"global"} (default), \code{"local"}, or \code{"none"}.
 #'  Global scaling will divide the entire data matrix by the mean image standard
 #'  deviation (\code{mean(sqrt(rowVars(BOLD)))}). Local scaling will divide each
@@ -106,8 +103,8 @@
 #' @importFrom stats cov
 #'
 harmonize <- function(
-  BOLD, #gii_hemi=NULL,
-  GICA, mask=NULL, #inds=NULL,
+  BOLD, GICA,
+  mask=NULL, gii_hemi=NULL, inds=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
@@ -161,6 +158,7 @@ harmonize <- function(
   FORMAT_extn <- switch(FORMAT,
     CIFTI=".dscalar.nii",
     GIFTI=".func.gii",
+    GIFTI2=".func.gii",
     NIFTI=".nii",
     MATRIX=".rds"
   )
@@ -168,9 +166,17 @@ harmonize <- function(
 
   check_req_ifti_pkg(FORMAT)
 
-  # If BOLD is a CIFTI, GIFTI, NIFTI, or RDS file, check that the file paths exist.
-  if (format %in% c("CIFTI", "GIFTI", "NIFTI", "RDS")) {
-    missing_BOLD <- !file.exists(BOLD)
+  # If BOLD is a CIFTI, GIFTI, GIFTI2, NIFTI, or RDS file, check that the file paths exist.
+  if (format %in% c("CIFTI", "GIFTI", "GIFTI2", "NIFTI", "RDS")) {
+
+    if (format == "GIFTI2") {
+      missing_BOLD1 <- !file.exists(vapply(BOLD, function(q){ q[[1]] }, ''))
+      missing_BOLD2 <- !file.exists(vapply(BOLD, function(q){ q[[2]] }, ''))
+      missing_BOLD <- missing_BOLD1 | missing_BOLD2
+    } else {
+      missing_BOLD <- !file.exists(BOLD)
+    }
+
     if (all(missing_BOLD)) stop('The files in `BOLD` do not exist.')
     if (any(missing_BOLD)) {
       warning(
@@ -220,6 +226,24 @@ harmonize <- function(
     }
     gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
     GICA <- do.call(cbind, GICA$data)
+  } else if (FORMAT == "GIFTI2") {
+    GICA <- as.list(GICA)
+    if (length(GICA) != 2) {
+      stop("`GICA` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
+    }
+    for (ii in seq(2)) {
+      if (is.character(GICA[[ii]])) { GICA[[ii]] <- gifti::readgii(GICA[[ii]]) }
+      gii_hemi_ii <- GICA[[ii]]$file_meta["AnatomicalStructurePrimary"]
+      if (!(gii_hemi_ii %in% c("CortexLeft", "CortexRight"))) {
+        stop("AnatomicalStructurePrimary metadata missing or invalid for GICA[[ii]].")
+      }
+      gii_hemi_ii <- switch(gii_hemi_ii, CortexLeft="left", CortexRight="right")
+      if (gii_hemi_ii != c("left", "right")[ii]) {
+        stop("`GICA` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
+      }
+      GICA[[ii]] <- do.call(cbind, GICA[[ii]]$data)
+    }
+    GICA <- rbind(GICA[[1]], GICA[[2]])
   } else if (FORMAT == "NIFTI") {
     if (is.character(GICA)) { GICA <- RNifti::readNifti(GICA) }
     stopifnot(length(dim(GICA)) > 1)
@@ -229,14 +253,14 @@ harmonize <- function(
   }
   nQ <- dim(GICA)[length(dim(GICA))]
 
-  # # `inds`.
-  # if (!is.null(inds)) {
-  #   if (!all(inds %in% seq(nQ))) stop('Invalid entries in inds argument.')
-  #   nL <- length(inds)
-  # } else {
-  #   inds <- seq(nQ)
-  #   nL <- nQ
-  # }
+  # `inds`.
+  if (!is.null(inds)) {
+    if (!all(inds %in% seq(nQ))) stop('Invalid entries in inds argument.')
+    nL <- length(inds)
+  } else {
+    inds <- seq(nQ)
+    nL <- nQ
+  }
 
   # [TO DO]: NA in GICA?
 
@@ -286,16 +310,15 @@ harmonize <- function(
   if (verbose) {
     cat("Data input format:    ", format2, "\n")
     cat("Image dimensions:     ", paste(nI, collapse=" x "), "\n")
-    cat('Masked locations:     ', nV, "\n")
+    cat("In-mask locations:    ", nV, "\n")
     if (FORMAT == "GIFTI") {
       cat("Cortex hemisphere:    ", gii_hemi, "\n")
     }
-    cat('Number of group ICs:  ', nQ, "\n")
-    cat('Number of sessions:   ', nN, "\n")
+    cat("Number of group ICs:  ", nQ, "\n")
+    cat("Number of sessions:   ", nN, "\n")
   }
 
   # Dual regression ------------------------------------------------------------
-
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
   if (center_Gcols) { GICA <- colCenter(GICA) }
@@ -328,11 +351,10 @@ harmonize <- function(
   }
 
   # Process the features -------------------------------------------------------
-
   ### Use SVD to reduce dimensions of S_q <- MAYBE NOT!  USE SPATIAL MODEL INSTEAD?
 
   U0 <- V0 <- vector('list', nQ)
-  for(qq in 1:nQ){
+  for (qq in seq(nQ)) {
 
     if (verbose) { cat(paste0(
       '\nPerforming PCA on IC ', qq,' of ', nQ, '.\n'
@@ -411,10 +433,8 @@ harmonize <- function(
   # var left in E
   # params (include GICA?)
 
-
-
   params <- list(
-    #inds=inds,
+    inds=inds,
     scale=scale,
     scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
@@ -423,10 +443,16 @@ harmonize <- function(
     varTol=varTol, maskTol=maskTol, missingTol=missingTol
   )
 
-  list(DR=DR0, params=params)
+  # Harmonize A and cov(A) using ComBat — given the S and cov(A) matrices, Johanna can develop the code to do that
+  # Re-construct the fMRI data as Y* = A*S* + E, where A* and S* are the harmonized versions of A and S.  The harmonized version of A is done using matrix operations so that cov(A*) = cov(A)* (the harmonized covariant matrix).  — you could write this step as well, and just leave a placeholder for the harmonization itself
+  # Return/write out the harmonized fMRI time series
+
+  list(
+    DR=DR0,
+    params=params
+  )
 }
 
-library(expm)
 tangent_space_projection <- function(A, B, reverse=FALSE) {
   # Assuming A and B are both positive definite matrices
 
@@ -445,11 +471,11 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
   # Perform transformation or reverse transformation
   if(!reverse){
     # Compute the matrix logarithm
-    log_term <- logm(middle_term)
+    log_term <- expm::logm(middle_term)
     # Compute the projection
     projection <- sqrt_B %*% log_term %*% sqrt_B
   } else {
-    exp_term <- expm(middle_term)
+    exp_term <- expm::expm(middle_term)
     projection <- sqrt_B %*% exp_term %*% sqrt_B
   }
 
@@ -548,9 +574,9 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'
 #' @keywords internal
 harmonize_DR_oneBOLD <- function(
-  BOLD, gii_hemi,
-  format=c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"),
-  GICA, mask=NULL,
+  BOLD,
+  format=c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti", "RDS", "data"),
+  GICA, mask=NULL, gii_hemi=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
@@ -562,14 +588,16 @@ harmonize_DR_oneBOLD <- function(
 
   if (verbose) { extime <- Sys.time() }
 
+  if (!is.null(gii_hemi)) { stopifnot(gii_hemi %in% c("left", "right")) }
+
   scale <- match.arg(scale, c("local", "global", "none"))
   # No other arg checks: check them before calling this function.
 
-  # For `"xifti"` data for handling the medial wall and smoothing.
+  # For handling cortical surface data: the medial wall and smoothing.
   xii1 <- NULL
 
   # Load helper variables.
-  format <- match.arg(format, c("CIFTI", "xifti", "GIFTI", "gifti", "NIFTI", "nifti", "RDS", "data"))
+  format <- match.arg(format, c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti", "RDS", "data"))
   FORMAT <- get_FORMAT(format)
   nQ <- ncol(GICA)
   nI <- nV <- nrow(GICA)
@@ -591,11 +619,20 @@ harmonize_DR_oneBOLD <- function(
   } else if (FORMAT == "GIFTI") {
     if (is.character(BOLD)) { BOLD <- gifti::readgii(BOLD) }
     stopifnot(gifti::is.gifti(BOLD))
-    #gii_hemi <- BOLD$file_meta["AnatomicalStructurePrimary"]
-    #if (!(gii_hemi %in% c("CortexLeft", "CortexRight"))) {
-    #  stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
-    #}
-    #gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
+    if (is.null(gii_hemi)) {
+      gii_hemi <- BOLD$file_meta["AnatomicalStructurePrimary"]
+      if (!(gii_hemi %in% c("CortexLeft", "CortexRight"))) {
+      stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
+      }
+      gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
+    } else {
+      if (gii_hemi == "left" && BOLD$file_meta["AnatomicalStructurePrimary"]=="CortexRight") {
+        stop("`gii_hemi` is 'left' but GIFTI data is for the right cortex.")
+      }
+      if (gii_hemi == "right" && BOLD$file_meta["AnatomicalStructurePrimary"]=="CortexLeft") {
+        stop("`gii_hemi` is 'right' but GIFTI data is for the left cortex.")
+      }
+    }
     if (scale == "local") {
       if (gii_hemi == "left") {
         xii1 <- ciftiTools::select_xifti(ciftiTools::as.xifti(cortexL=do.call(cbind, BOLD$data)), 1) * 0
@@ -605,9 +642,26 @@ harmonize_DR_oneBOLD <- function(
       xii1$meta$cifti$intent <- 3006
     }
     BOLD <- do.call(cbind, BOLD$data)
-
     stopifnot(is.matrix(BOLD))
     nI <- nV <- nrow(GICA)
+  } else if (FORMAT == "GIFTI2") {
+    for (ii in seq(2)) {
+      if (is.character(BOLD[[ii]])) { BOLD[[ii]] <- gifti::readgii(BOLD[[ii]]) }
+      stopifnot(gifti::is.gifti(BOLD[[ii]]))
+    }
+    BOLD <- lapply(BOLD, function(q){do.call(cbind, q$data)})
+    if (scale == "local") {
+      xii1 <- ciftiTools::select_xifti(
+        ciftiTools::as.xifti(
+          cortexL=BOLD[[1]],
+          cortexR=BOLD[[2]]
+        ), 1
+      ) * 0
+      xii1$meta$cifti$intent <- 3006
+      # the medial wall is included in the data.
+      xii1$meta$cortex$resamp_res <- nrow(xii1$data$cortex_left)
+    }
+    BOLD <- do.call(rbind, BOLD)
   } else if (FORMAT == "NIFTI") {
     if (is.character(BOLD)) { BOLD <- RNifti::readNifti(BOLD) }
     stopifnot(length(dim(BOLD)) > 1)
@@ -635,16 +689,14 @@ harmonize_DR_oneBOLD <- function(
 
   # Check for missing values. --------------------------------------------------
   nV0 <- nV # not used
-  #mask <- make_mask(BOLD, varTol=varTol)
+  mask <- make_mask(BOLD, varTol=varTol)
   use_mask <- !all(mask)
   if (use_mask) {
-
-    # # Coerce `maskTol` to number of locations.
-    # stopifnot(is.numeric(maskTol) && length(maskTol)==1 && maskTol >= 0)
-    # if (maskTol < 1) { maskTol <- maskTol * nV }
-    # # Skip this scan if `maskTol` is surpassed.
-    # if (sum(!mask) > maskTol) { return(NULL) }
-
+    # Coerce `maskTol` to number of locations.
+    stopifnot(is.numeric(maskTol) && length(maskTol)==1 && maskTol >= 0)
+    if (maskTol < 1) { maskTol <- maskTol * nV }
+    # Skip this scan if `maskTol` is surpassed.
+    if (sum(!mask) > maskTol) { return(NULL) }
     # Mask out the locations.
     BOLD <- BOLD[mask,,drop=FALSE]
     GICA <- GICA[mask,,drop=FALSE]
@@ -660,15 +712,16 @@ harmonize_DR_oneBOLD <- function(
     xii1 <- ciftiTools::add_surf(xii1, surfL=scale_sm_surfL, surfR=scale_sm_surfR)
   }
 
-  # [TEMP? no scaling smoothing, no hpf] [TO DO]
   center_Bcols <- FALSE
   DR <- templateICAr::dual_reg(
     BOLD, GICA,
     scale=scale, scale_sm_xifti=xii1, scale_sm_FWHM=scale_sm_FWHM,
-    #TR=TR, hpf=0,
+    TR=TR, hpf=hpf,
     center_Bcols=center_Bcols
   )
   attr(DR$A, "scaled:center") <- NULL
+
+  if (use_mask) { DR$S <- unmask_mat(DR$S, mask, mask_dim=2, fill=NA) }
 
   DR
 }

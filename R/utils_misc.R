@@ -65,6 +65,8 @@ get_FORMAT <- function(format){
     xifti = "CIFTI",
     GIFTI = "GIFTI",
     gifti = "GIFTI",
+    GIFTI2 = "GIFTI2",
+    gifti2 = "GIFTI2",
     NIFTI = "NIFTI",
     nifti = "NIFTI",
     RDS = "MATRIX",
@@ -84,7 +86,7 @@ check_req_ifti_pkg <- function(FORMAT){
     }
   }
 
-  if (FORMAT == "GIFTI") {
+  if (FORMAT == "GIFTI" || FORMAT == "GIFTI2") {
     if (!requireNamespace("gifti", quietly = TRUE)) {
       stop("Package \"gifti\" needed to work with NIFTI data. Please install it.", call. = FALSE)
     }
@@ -111,6 +113,7 @@ check_req_ifti_pkg <- function(FORMAT){
 #'  {varTol}.
 #' @param verbose Print messages counting how many locations are removed?
 #'
+#' @importFrom matrixStats rowVars
 #' @return A logical vector indicating valid vertices
 #'
 #' @keywords internal

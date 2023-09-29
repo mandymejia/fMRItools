@@ -8,6 +8,8 @@ harmonize(
   BOLD,
   GICA,
   mask = NULL,
+  gii_hemi = NULL,
+  inds = NULL,
   scale = c("local", "global", "none"),
   scale_sm_surfL = NULL,
   scale_sm_surfR = NULL,
@@ -36,9 +38,22 @@ be a (vectorized) numeric matrix (\eqn{V \times Q}) no matter the format of
 \code{BOLD}. Its columns will be centered.}
 
 \item{mask}{Required if the entries of \code{BOLD} are NIFTI
-file paths or \code{"nifti"} objects, optional for other formats. For NIFTI, this is a brain map formatted as a
-binary array of the same spatial dimensions as the fMRI data, with
-\code{TRUE} corresponding to in-mask voxels. For other formats, a logical vector.}
+file paths or \code{"nifti"} objects, optional for other formats. For
+NIFTI, this is a brain map formatted as a binary array of the same spatial
+dimensions as the fMRI data, with \code{TRUE} corresponding to in-mask
+voxels. For other formats, a logical vector.}
+
+\item{gii_hemi}{Which hemisphere, if BOLD is a single list of GIFTI data?
+Should be \code{"left"} or \code{"right"}. If \code{NULL} (default), try to
+infer from the metadata.}
+
+\item{inds}{Numeric indices of the group ICs to include in the template. If
+\code{NULL}, use all group ICs (default).
+
+If \code{inds} is provided, the ICs not included will be removed after
+calculating dual regression, not before. This is because removing the ICs
+prior to dual regression would leave unmodelled signals in the data, which
+could bias the templates.}
 
 \item{scale}{\code{"global"} (default), \code{"local"}, or \code{"none"}.
 Global scaling will divide the entire data matrix by the mean image standard

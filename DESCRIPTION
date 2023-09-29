@@ -27,14 +27,14 @@ Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
 Imports:
-    stats
+    stats,
+    matrixStats
 Suggests:
     ciftiTools,
     corpcor,
     expm,
     gifti, 
     knitr,
-    matrixStats,
     rmarkdown,
     robustbase,
     pesel,
