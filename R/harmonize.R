@@ -77,23 +77,21 @@
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
 #' @param varTol Tolerance for variance of each data location. For each scan,
-#'  locations which do not meet this threshold are masked out of the analysis.
+#'  locations which do not meet this threshold are masked out of the 
+#'  harmonization.
 #'  Default: \code{1e-6}. Variance is calculated on the original data, before
 #'  any normalization.
-#' @param maskTol For computing the dual regression results for each subject:
+#' @param maskTol For computing the dual regression result for each subject:
 #'  tolerance for number of locations masked out due to low
 #'  variance or missing values. If more than this many locations are masked out,
-#'  a subject is skipped without calculating dual regression. \code{maskTol}
+#'  a subject is not incldued in the harmonization analysis. \code{maskTol}
 #'  can be specified either as a proportion of the number of locations (between
 #'  zero and one), or as a number of locations (integers greater than one).
 #'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
-#'
-#'  If \code{BOLD2} is provided, masks are calculated for both scans and then
-#'  the intersection of the masks is used, for each subject.
-#' @param missingTol For computing the variance decomposition across all subjects:
+#' @param missingTol For harmonizing all subjects:
 #'  tolerance for number of subjects masked out due to low variance or missing
 #'  values at a given location. If more than this many subjects are masked out,
-#'  the location's value will be \code{NA} in the templates. \code{missingTol}
+#'  the location will not be included in the harmonization analysis. \code{missingTol}
 #'  can be specified either as a proportion of the number of locations (between
 #'  zero and one), or as a number of locations (integers greater than one).
 #'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
@@ -148,8 +146,8 @@ harmonize <- function(
   stopifnot(is_1(GSR, "logical"))
   stopifnot(is_1(varTol, "numeric"))
   if (varTol < 0) { cat("Setting `varTol=0`."); varTol <- 0 }
-  stopifnot(is_posNum(maskTol))
-  stopifnot(is_posNum(missingTol))
+  stopifnot(is_posNum(maskTol, zero_ok=TRUE))
+  stopifnot(is_posNum(missingTol, zero_ok=TRUE))
   stopifnot(is_1(verbose, "logical"))
 
   # `BOLD` format --------------------------------------------------------------
@@ -319,10 +317,6 @@ harmonize <- function(
   }
 
   # Dual regression ------------------------------------------------------------
-  # Center each group IC across space. (Used to be a function argument.)
-  center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- colCenter(GICA) }
-
   S0 <- array(0, dim = c(nN, nQ, nV))
   A0 <- vector("list", nN)
   G0 <- array(NA, dim = c(nN, nQ, nQ))
@@ -453,6 +447,13 @@ harmonize <- function(
   )
 }
 
+#' Tangent space projection
+#' 
+#' Tangent space projection
+#' 
+#' @param A,B,reverse To-Do
+#' @return To-Do
+#' @keywords internal
 tangent_space_projection <- function(A, B, reverse=FALSE) {
   # Assuming A and B are both positive definite matrices
 
@@ -497,7 +498,7 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #   hemisphere and the second list element is a length \eqn{N} vector for the
 #   right hemisphere.
 #'  @param gii_hemi Which hemisphere, in the case of a single GIFTI file?
-#' @param format Expected format of \code{BOLD} and \code{BOLD2}. Should be one
+#' @param format Expected format of \code{BOLD}. Should be one
 #'  of the following: a \code{"CIFTI"} file path, a \code{"xifti"} object, a
 #'  \code{"NIFTI"} file path, a \code{"nifti"} object, or a \code{"data"} matrix.
 #' @param GICA Group ICA maps in a format compatible with \code{BOLD}. Can also
@@ -550,23 +551,21 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
 #' @param varTol Tolerance for variance of each data location. For each scan,
-#'  locations which do not meet this threshold are masked out of the analysis.
+#'  locations which do not meet this threshold are masked out of the 
+#'  harmonization.
 #'  Default: \code{1e-6}. Variance is calculated on the original data, before
 #'  any normalization.
-#' @param maskTol For computing the dual regression results for each subject:
+#' @param maskTol For computing the dual regression result for each subject:
 #'  tolerance for number of locations masked out due to low
 #'  variance or missing values. If more than this many locations are masked out,
-#'  a subject is skipped without calculating dual regression. \code{maskTol}
+#'  a subject is not incldued in the harmonization analysis. \code{maskTol}
 #'  can be specified either as a proportion of the number of locations (between
 #'  zero and one), or as a number of locations (integers greater than one).
 #'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
-#'
-#'  If \code{BOLD2} is provided, masks are calculated for both scans and then
-#'  the intersection of the masks is used, for each subject.
-#' @param missingTol For computing the variance decomposition across all subjects:
+#' @param missingTol For harmonizing all subjects:
 #'  tolerance for number of subjects masked out due to low variance or missing
 #'  values at a given location. If more than this many subjects are masked out,
-#'  the location's value will be \code{NA} in the templates. \code{missingTol}
+#'  the location will not be included in the harmonization analysis. \code{missingTol}
 #'  can be specified either as a proportion of the number of locations (between
 #'  zero and one), or as a number of locations (integers greater than one).
 #'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
@@ -604,7 +603,7 @@ harmonize_DR_oneBOLD <- function(
 
   check_req_ifti_pkg(FORMAT)
 
-  # Get `BOLD` (and `BOLD2`) as a data matrix or array.  -----------------------
+  # Get `BOLD` as a data matrix or array.  -------------------------------------
   if (verbose) { cat("\tReading and formatting data...") }
   if (FORMAT == "CIFTI") {
     if (is.character(BOLD)) { BOLD <- ciftiTools::read_cifti(BOLD, brainstructures=brainstructures) }
@@ -677,7 +676,7 @@ harmonize_DR_oneBOLD <- function(
   ldB <- length(dim(BOLD))
   nT <- dim(BOLD)[ldB]
 
-  # Check BOLD (and BOLD2) dimensions correspond with `GICA` and `mask`.
+  # Check BOLD dimensions correspond with `GICA` and `mask`.
   if(!(ldB-1 == length(nI))) { stop("`GICA` and BOLD spatial dimensions do not match.") }
   if(!all(dBOLD[seq(ldB-1)] == nI)) { stop("`GICA` and BOLD spatial dimensions do not match.") }
 

@@ -103,25 +103,23 @@ gray matter). Can also be \code{"all"} (obtain all three brain structures).
 Default: \code{c("all")}.}
 
 \item{varTol}{Tolerance for variance of each data location. For each scan,
-locations which do not meet this threshold are masked out of the analysis.
+locations which do not meet this threshold are masked out of the
+harmonization.
 Default: \code{1e-6}. Variance is calculated on the original data, before
 any normalization.}
 
-\item{maskTol}{For computing the dual regression results for each subject:
+\item{maskTol}{For computing the dual regression result for each subject:
 tolerance for number of locations masked out due to low
 variance or missing values. If more than this many locations are masked out,
-a subject is skipped without calculating dual regression. \code{maskTol}
+a subject is not incldued in the harmonization analysis. \code{maskTol}
 can be specified either as a proportion of the number of locations (between
 zero and one), or as a number of locations (integers greater than one).
-Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
+Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.}
 
-If \code{BOLD2} is provided, masks are calculated for both scans and then
-the intersection of the masks is used, for each subject.}
-
-\item{missingTol}{For computing the variance decomposition across all subjects:
+\item{missingTol}{For harmonizing all subjects:
 tolerance for number of subjects masked out due to low variance or missing
 values at a given location. If more than this many subjects are masked out,
-the location's value will be \code{NA} in the templates. \code{missingTol}
+the location will not be included in the harmonization analysis. \code{missingTol}
 can be specified either as a proportion of the number of locations (between
 zero and one), or as a number of locations (integers greater than one).
 Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
