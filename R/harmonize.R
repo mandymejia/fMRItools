@@ -76,40 +76,27 @@
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
-#' @param varTol Tolerance for variance of each data location. For each scan,
-#'  locations which do not meet this threshold are masked out of the 
-#'  harmonization.
-#'  Default: \code{1e-6}. Variance is calculated on the original data, before
-#'  any normalization.
-#' @param maskTol For computing the dual regression result for each subject:
-#'  tolerance for number of locations masked out due to low
-#'  variance or missing values. If more than this many locations are masked out,
-#'  a subject is not incldued in the harmonization analysis. \code{maskTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
-#' @param missingTol For harmonizing all subjects:
-#'  tolerance for number of subjects masked out due to low variance or missing
-#'  values at a given location. If more than this many subjects are masked out,
-#'  the location will not be included in the harmonization analysis. \code{missingTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
-#'  at a given location.
 #' @param verbose Display progress updates? Default: \code{TRUE}.
+#' @param do_harmonize Perform the harmonization?  If not, will only extract and
+#' return features to be harmonized.
 #' @keywords internal
 #' @importFrom stats cov
 #'
 harmonize <- function(
   BOLD, GICA,
-  mask=NULL, gii_hemi=NULL, inds=NULL,
+  mask=NULL,
+  gii_hemi=NULL,
+  inds=NULL,
   scale=c("local", "global", "none"),
-  scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
-  TR=NULL, hpf=.01,
+  scale_sm_surfL=NULL,
+  scale_sm_surfR=NULL,
+  scale_sm_FWHM=2,
+  TR=NULL,
+  hpf=.01,
   GSR=FALSE,
   brainstructures=c("all"),
-  varTol=1e-6, maskTol=.1, missingTol=.1,
-  verbose=TRUE){
+  verbose=TRUE,
+  do_harmonize=FALSE){
 
   if (!requireNamespace("expm", quietly = TRUE)) {
     stop("Package \"expm\" needed. Please install it", call. = FALSE)
@@ -144,10 +131,6 @@ harmonize <- function(
     stopifnot(is_posNum(hpf, zero_ok=TRUE))
   }
   stopifnot(is_1(GSR, "logical"))
-  stopifnot(is_1(varTol, "numeric"))
-  if (varTol < 0) { cat("Setting `varTol=0`."); varTol <- 0 }
-  stopifnot(is_posNum(maskTol, zero_ok=TRUE))
-  stopifnot(is_posNum(missingTol, zero_ok=TRUE))
   stopifnot(is_1(verbose, "logical"))
 
   # `BOLD` format --------------------------------------------------------------
@@ -299,6 +282,8 @@ harmonize <- function(
     }
   }
 
+  # [TO DO]: Apply mask to GICA prior to centering
+
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
   if (center_Gcols) { GICA <- colCenter(GICA) }
@@ -316,6 +301,8 @@ harmonize <- function(
     cat("Number of sessions:   ", nN, "\n")
   }
 
+  # [TO DO]: Implement template ICA instead of DR. The estimates are so noisy.
+
   # Dual regression ------------------------------------------------------------
   S0 <- array(0, dim = c(nN, nQ, nV))
   A0 <- vector("list", nN)
@@ -326,70 +313,57 @@ harmonize <- function(
     )) }
 
     DR0_ii <- harmonize_DR_oneBOLD(
-      BOLD[[ii]], mask=mask,
+      BOLD[[ii]],
+      mask=mask,
       gii_hemi=gii_hemi,
       format=format,
       GICA=GICA,
       GSR=GSR,
       scale=scale,
-      scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
+      scale_sm_surfL=scale_sm_surfL,
+      scale_sm_surfR=scale_sm_surfR,
       scale_sm_FWHM=scale_sm_FWHM,
-      TR=TR, hpf=hpf,
+      TR=TR,
+      hpf=hpf,
       brainstructures=brainstructures,
-      varTol=varTol, maskTol=maskTol,
       verbose=verbose
     )
-    S0[ii,,] <- DR0_ii$S
+    S0[ii,,] <- DR0_ii$S[,mask]
     A0[[ii]] <- DR0_ii$A
     G0[ii,,] <- cov(DR0_ii$A)
   }
 
-  # Process the features -------------------------------------------------------
-  ### Use SVD to reduce dimensions of S_q <- MAYBE NOT!  USE SPATIAL MODEL INSTEAD?
+  ### Process the features -------------------------------------------------------
 
-  U0 <- V0 <- vector('list', nQ)
-  for (qq in seq(nQ)) {
+    ## Use SVD to reduce dimensions of S_q <- MAYBE NOT!  USE SPATIAL MODEL INSTEAD?
 
-    if (verbose) { cat(paste0(
-      '\nPerforming PCA on IC ', qq,' of ', nQ, '.\n'
-    )) }
+  # U0 <- V0 <- vector('list', nQ)
+  # for (qq in seq(nQ)) {
+  #
+  #   if (verbose) { cat(paste0(
+  #     '\nPerforming PCA on IC ', qq,' of ', nQ, '.\n'
+  #   )) }
+  #
+  #   #do PCA separately for each IC q
+  #   S0_q <- S0[,qq,] #NxV
+  #
+  #   #center across sessions so X'X is covariance matrix (add back later)
+  #   #S0_q_mean <- colMeans(S0_q)
+  #   S0_q <- t(S0_q) #- S0_q_mean #vector will be recycled by column
+  #
+  #   #want to obtain U (NxP) where P << V
+  #   SSt_q <- crossprod(S0_q) # S0 is currently VxN, so S0'S0 is NxN.
+  #   svd_q <- svd(SSt_q, nv=0) #want to get U from SVD of S0' = UDV'. SVD of S0'S0 = UDV'VDU' = U D^2 U'
+  #
+  #   #keep components explaining 99% of variation
+  #   nP <- min(which(cumsum(svd_q$d)/sum(svd_q$d) > 0.99))
+  #   U0[[qq]] <- svd_q$u[,1:nP]
+  #
+  #   #visualize V' = (1/D)U'S0' to make sure they are sensible
+  #   V0[[qq]] <- diag(1/svd_q$d[1:nP]) %*% t(svd_q$u[,1:nP]) %*% t(S0_q)
+  # }
 
-    #do PCA separately for each IC q
-    S0_q <- S0[,qq,] #NxV
-
-    #center across sessions so X'X is covariance matrix (add back later)
-    #S0_q_mean <- colMeans(S0_q)
-    S0_q <- t(S0_q) #- S0_q_mean #vector will be recycled by column
-
-    #want to obtain U (NxP) where P << V
-    SSt_q <- crossprod(S0_q) # S0 is currently VxN, so S0'S0 is NxN.
-    svd_q <- svd(SSt_q, nv=0) #want to get U from SVD of S0' = UDV'. SVD of S0'S0 = UDV'VDU' = U D^2 U'
-
-    #keep components explaining 99% of variation
-    nP <- min(which(cumsum(svd_q$d)/sum(svd_q$d) > 0.99))
-    U0[[qq]] <- svd_q$u[,1:nP]
-
-    #visualize V' = (1/D)U'S0' to make sure they are sensible
-    V0[[qq]] <- diag(1/svd_q$d[1:nP]) %*% t(svd_q$u[,1:nP]) %*% t(S0_q)
-  }
-
-  # Damon added these temporary lines to pass roxygen checks.
-  dir_features <- tempdir()
-  DR0 <- NULL
-  # ---------------------------------------------------------
-
-  save(U0, file=file.path(dir_features, 'U.RData'))
-  save(V0, file=file.path(dir_features, 'V.RData'))
-  U0_1 <- U0[[1]]
-  save(U0, file=file.path(dir_features, 'U.RData'))
-  save(U0_1, file=file.path(dir_features, 'U1.RData'))
-  save(S0, file=file.path(dir_features, 'S.RData'))
-  S0_1 <- S0[,1,]
-  save(S0_1, file=file.path(dir_features, 'S1.RData'))
-  save(A0, file=file.path(dir_features, 'A.RData'))
-  save(G0, file=file.path(dir_features, 'G.RData'))
-
-  ### Project elements of G to a tangent space
+  ## Project elements of G to a tangent space
 
   if (verbose) { cat('\nProjecting covariance matrices to tangent space.\n') }
 
@@ -397,13 +371,17 @@ harmonize <- function(
   G_avg <- apply(G0, c(2, 3), mean)
 
   # Project each covariance matrix to tangent space at base point defined by the Euclidean mean
-  system.time(G_tangent <- apply(G0, MARGIN = 1, FUN = tangent_space_projection, B = G_avg))
+  G_tangent <- apply(G0, MARGIN = 1, FUN = tangent_space_projection, B = G_avg) #very fast
 
-  save(G_tangent, file=file.path(dir_features, 'G_tangent.RData'))
+  feature_list <- list(S = S0,
+                       A = A0,
+                       G = G0,
+                       Gt = G_tangent)
 
-  # Run ComBat to harmonize U0 -------------------------------------------------
+  if(!do_harmonize) return(feature_list)
 
-  # Project U0* back to get S0* ------------------------------------------------
+
+  # Run ComBat to harmonize S0 -------------------------------------------------
 
   # Run ComBat to harmonize G_tangent ------------------------------------------
 
@@ -433,8 +411,7 @@ harmonize <- function(
     scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
     GSR=GSR,
-    brainstructures=brainstructures,
-    varTol=varTol, maskTol=maskTol, missingTol=missingTol
+    brainstructures=brainstructures
   )
 
   # Harmonize A and cov(A) using ComBat — given the S and cov(A) matrices, Johanna can develop the code to do that
@@ -442,15 +419,15 @@ harmonize <- function(
   # Return/write out the harmonized fMRI time series
 
   list(
-    DR=DR0,
+    features=feature_list,
     params=params
   )
 }
 
 #' Tangent space projection
-#' 
+#'
 #' Tangent space projection
-#' 
+#'
 #' @param A,B,reverse To-Do
 #' @return To-Do
 #' @keywords internal
@@ -550,31 +527,20 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
-#' @param varTol Tolerance for variance of each data location. For each scan,
-#'  locations which do not meet this threshold are masked out of the 
-#'  harmonization.
-#'  Default: \code{1e-6}. Variance is calculated on the original data, before
-#'  any normalization.
-#' @param maskTol For computing the dual regression result for each subject:
-#'  tolerance for number of locations masked out due to low
-#'  variance or missing values. If more than this many locations are masked out,
-#'  a subject is not incldued in the harmonization analysis. \code{maskTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
 #'
 #' @keywords internal
 harmonize_DR_oneBOLD <- function(
   BOLD,
   format=c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti", "RDS", "data"),
-  GICA, mask=NULL, gii_hemi=NULL,
+  GICA,
+  mask=NULL,
+  gii_hemi=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
   GSR=FALSE,
   NA_limit=.1,
   brainstructures=c("all"),
-  varTol=1e-6, maskTol=.1,
   verbose=TRUE){
 
   if (verbose) { extime <- Sys.time() }
@@ -679,15 +645,8 @@ harmonize_DR_oneBOLD <- function(
   }
 
   # Check for missing values. --------------------------------------------------
-  nV0 <- nV # not used
-  mask <- make_mask(BOLD, varTol=varTol)
   use_mask <- !all(mask)
   if (use_mask) {
-    # Coerce `maskTol` to number of locations.
-    stopifnot(is.numeric(maskTol) && length(maskTol)==1 && maskTol >= 0)
-    if (maskTol < 1) { maskTol <- maskTol * nV }
-    # Skip this scan if `maskTol` is surpassed.
-    if (sum(!mask) > maskTol) { return(NULL) }
     # Mask out the locations.
     BOLD <- BOLD[mask,,drop=FALSE]
     GICA <- GICA[mask,,drop=FALSE]
@@ -704,9 +663,11 @@ harmonize_DR_oneBOLD <- function(
   }
 
   GSR <- FALSE
-  DR <- templateICAr::dual_reg(
+  DR <- dual_reg(
     BOLD, GICA,
-    scale=scale, scale_sm_xifti=xii1, scale_sm_FWHM=scale_sm_FWHM,
+    scale=scale,
+    scale_sm_xifti=xii1,
+    scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
     GSR=GSR
   )

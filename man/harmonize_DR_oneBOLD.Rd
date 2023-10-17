@@ -20,8 +20,6 @@ harmonize_DR_oneBOLD(
   GSR = FALSE,
   NA_limit = 0.1,
   brainstructures = c("all"),
-  varTol = 1e-06,
-  maskTol = 0.1,
   verbose = TRUE
 )
 }
@@ -92,20 +90,6 @@ to obtain: \code{"left"} (left cortical surface), \code{"right"} (right
 cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 gray matter). Can also be \code{"all"} (obtain all three brain structures).
 Default: \code{c("all")}.}
-
-\item{varTol}{Tolerance for variance of each data location. For each scan,
-locations which do not meet this threshold are masked out of the
-harmonization.
-Default: \code{1e-6}. Variance is calculated on the original data, before
-any normalization.}
-
-\item{maskTol}{For computing the dual regression result for each subject:
-tolerance for number of locations masked out due to low
-variance or missing values. If more than this many locations are masked out,
-a subject is not incldued in the harmonization analysis. \code{maskTol}
-can be specified either as a proportion of the number of locations (between
-zero and one), or as a number of locations (integers greater than one).
-Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.}
 }
 \description{
 Compute dual regression for harmonize

@@ -18,10 +18,8 @@ harmonize(
   hpf = 0.01,
   GSR = FALSE,
   brainstructures = c("all"),
-  varTol = 1e-06,
-  maskTol = 0.1,
-  missingTol = 0.1,
-  verbose = TRUE
+  verbose = TRUE,
+  do_harmonize = FALSE
 )
 }
 \arguments{
@@ -102,30 +100,10 @@ cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 gray matter). Can also be \code{"all"} (obtain all three brain structures).
 Default: \code{c("all")}.}
 
-\item{varTol}{Tolerance for variance of each data location. For each scan,
-locations which do not meet this threshold are masked out of the
-harmonization.
-Default: \code{1e-6}. Variance is calculated on the original data, before
-any normalization.}
-
-\item{maskTol}{For computing the dual regression result for each subject:
-tolerance for number of locations masked out due to low
-variance or missing values. If more than this many locations are masked out,
-a subject is not incldued in the harmonization analysis. \code{maskTol}
-can be specified either as a proportion of the number of locations (between
-zero and one), or as a number of locations (integers greater than one).
-Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.}
-
-\item{missingTol}{For harmonizing all subjects:
-tolerance for number of subjects masked out due to low variance or missing
-values at a given location. If more than this many subjects are masked out,
-the location will not be included in the harmonization analysis. \code{missingTol}
-can be specified either as a proportion of the number of locations (between
-zero and one), or as a number of locations (integers greater than one).
-Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
-at a given location.}
-
 \item{verbose}{Display progress updates? Default: \code{TRUE}.}
+
+\item{do_harmonize}{Perform the harmonization?  If not, will only extract and
+return features to be harmonized.}
 }
 \description{
 Harmonize data using ICA.
