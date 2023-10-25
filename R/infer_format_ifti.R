@@ -97,7 +97,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
     }
 
   # List: GIFTI right and left
-  } else if (!is.numeric(BOLD) && (length(BOLD)==2)) {
+  } else if (is.list(BOLD) && (length(BOLD)==2)) {
     if (is.character(BOLD[[1]]) && is.character(BOLD[[2]])) {
       if (length(BOLD[[1]])==1 && length(BOLD[[2]])==1) {
         if (all(endsWith(c(BOLD[[1]], BOLD[[2]]), "gii"))) {

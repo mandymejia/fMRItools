@@ -108,6 +108,7 @@ harmonize <- function(
   # Check arguments ------------------------------------------------------------
 
   # Simple argument checks.
+  if (!is.null(gii_hemi)) { stopifnot(gii_hemi %in% c("left", "right")) }
   if (is.null(scale) || isFALSE(scale)) { scale <- "none" }
   if (isTRUE(scale)) {
     warning(
@@ -123,7 +124,7 @@ harmonize <- function(
     if (hpf==.01) {
       message("Setting `hpf=0` because `TR` was not provided. Either provide `TR` or set `hpf=0` to disable this message.")
       hpf <- 0
-    } else {
+    } else if (hpf!=0) {
       stop("Cannot apply `hpf` because `TR` was not provided. Either provide `TR` or set `hpf=0`.")
     }
   } else {
@@ -202,11 +203,22 @@ harmonize <- function(
     stopifnot(is.matrix(GICA))
   } else if (FORMAT == "GIFTI") {
     if (is.character(GICA)) { GICA <- gifti::readgii(GICA) }
-    gii_hemi <- GICA$file_meta["AnatomicalStructurePrimary"]
-    if (!(gii_hemi %in% c("CortexLeft", "CortexRight"))) {
-      stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
+    gii_hemi2 <- GICA$file_meta["AnatomicalStructurePrimary"]
+    if (!(gii_hemi2 %in% c("CortexLeft", "CortexRight"))) {
+      warning("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
+      if (is.null(gii_hemi)) {
+        stop("`gii_hemi` must be provided because the GICA metadata does not have hemisphere information..")
+      }
+    } else {
+      gii_hemi2 <- switch(gii_hemi2, CortexLeft="left", CortexRight="right")
+      if (!is.null(gii_hemi)) {
+        if (gii_hemi2 != gii_hemi) {
+          stop("`gii_hemi` was `", gii_hemi, "` but GICA has data for the ", gii_hemi2, " hemisphere.")
+        }
+      } else {
+        gii_hemi <- gii_hemi2
+      }
     }
-    gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
     GICA <- do.call(cbind, GICA$data)
   } else if (FORMAT == "GIFTI2") {
     GICA <- as.list(GICA)
@@ -247,16 +259,18 @@ harmonize <- function(
   # [TO DO]: NA in GICA?
 
   # `mask` ---------------------------------------------------------------------
-  # Get `mask` as a logical array.
-  # Check `GICA` and `mask` dimensions match.
-  # Append NIFTI header from GICA to `mask`.
-  # Vectorize `GICA`.
+  # Get `mask` as a logical array (NIFTI) or vector (everything else).
+  # For NIFTI, append NIFTI header from GICA to `mask`.
+  # Apply mask to `GICA`, and if NIFTI, vectorize `GICA`.
   if (FORMAT == "NIFTI") {
     if (is.null(mask)) { stop("`mask` is required.") }
     if (is.character(mask)) { mask <- RNifti::readNifti(mask); mask <- array(as.logical(mask), dim=dim(mask)) }
     if (dim(mask)[length(dim(mask))] == 1) { mask <- array(mask, dim=dim(mask)[length(dim(mask))-1]) }
     if (is.numeric(mask)) {
       cat("Coercing `mask` to a logical array.\n")
+      if (!all_binary(mask)) {
+        cat("Warning: values other than 0 or 1 in mask.\n")
+      }
       mask <- array(as.logical(mask), dim=dim(mask))
     }
     nI <- dim(mask); nV <- sum(mask)
@@ -267,46 +281,44 @@ harmonize <- function(
       }
       # Append NIFTI header.
       mask <- RNifti::asNifti(array(mask, dim=c(dim(mask), 1)), reference=GICA)
-      # Vectorize `GICA`.
+      # Vectorize `GICA`; apply mask.
       if (all(dim(GICA)[seq(length(dim(GICA))-1)] == nI)) {
         GICA <- matrix(GICA[rep(as.logical(mask), nQ)], ncol=nQ)
-        stopifnot(nrow(GICA) == nV)
       }
     }
   } else { #For non-NIFTI data, mask is not required but can be provided
     if (!is.null(mask)) {
-      #OPTIONAL GIFTI-FORMAT MASK
       if (FORMAT == "GIFTI") {
-        # DAMON FILL IN HERE
+        mask <- read_gifti_expect_mask(mask, gii_hemi)
       } else if (FORMAT == "GIFTI2") {
         mask <- as.list(mask)
         if (length(mask) != 2) {
           stop("`mask` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
         }
         for (ii in seq(2)) {
-          if (is.character(mask[[ii]])) { mask[[ii]] <- gifti::readgii(mask[[ii]]) }
-          gii_hemi_ii <- mask[[ii]]$file_meta["AnatomicalStructurePrimary"]
-          if (!(gii_hemi_ii %in% c("CortexLeft", "CortexRight"))) {
-            stop("AnatomicalStructurePrimary metadata missing or invalid for mask[[ii]].")
-          }
-          gii_hemi_ii <- switch(gii_hemi_ii, CortexLeft="left", CortexRight="right")
-          if (gii_hemi_ii != c("left", "right")[ii]) {
-            stop("`mask` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
-          }
-          mask[[ii]] <- do.call(cbind, mask[[ii]]$data)
+          mask[[ii]] <- read_gifti_expect_mask(mask[[ii]], c("left", "right")[ii])
         }
-        mask <- rbind(mask[[1]], mask[[2]])
-        mask <- as.logical(mask)
+        mask <- do.call(c, mask)
       } else if (FORMAT == "MATRIX") {
-        # DAMON FILL IN HERE
+        stopifnot(is.vector(mask))
+        stopifnot(is.numeric(mask) || is.logical(mask))
+      }
+      if (is.numeric(mask)) {
+        cat("Coercing `mask` to a logical vector.\n")
+        if (!all_binary(mask)) {
+          cat("Warning: values other than 0 or 1 in mask.\n")
+        }
+        mask <- as.logical(mask)
       }
       nI <- length(mask); nV <- sum(mask)
+      # Check `GICA` and `mask` dimensions match.
+      stopifnot(nrow(GICA) == nI)
+      # Apply mask to GICA.
+      GICA <- GICA[mask,,drop=FALSE]
     } else { #end if(!is.null(mask))
       nI <- nV <- nrow(GICA)
     }
   } #end else (not NIFTI format)
-
-  # [TO DO]: Apply mask to GICA prior to centering
 
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
@@ -352,7 +364,8 @@ harmonize <- function(
       brainstructures=brainstructures,
       verbose=verbose
     )
-    S0[ii,,] <- DR0_ii$S[,mask]
+    if (!is.null(mask)) { DR0_ii$S <- DR0_ii$S[,mask,drop=FALSE] }
+    S0[ii,,] <- DR0_ii$S
     A0[[ii]] <- DR0_ii$A
     G0[ii,,] <- cov(DR0_ii$A)
   }
@@ -584,10 +597,13 @@ harmonize_DR_oneBOLD <- function(
 
   nQ <- ncol(GICA)
 
-  if(is.null(mask)){
+  if (is.null(mask)) {
     nI <- nV <- nrow(GICA)
+  } else if (FORMAT=="NIFTI") {
+    nI <- dim(drop(mask))
+    nV <- sum(mask)
   } else {
-    nI <- nrow(GICA); nV <- sum(mask)
+    nI <- length(mask); nV <- sum(mask)
   }
 
   # Get `BOLD` as a data matrix or array.  -------------------------------------
@@ -601,7 +617,6 @@ harmonize_DR_oneBOLD <- function(
       BOLD <- as.matrix(BOLD)
     }
     stopifnot(is.matrix(BOLD))
-    #nI <- nV <- nrow(GICA)
   } else if (FORMAT == "GIFTI") {
     if (is.character(BOLD)) { BOLD <- gifti::readgii(BOLD) }
     stopifnot(gifti::is.gifti(BOLD))
@@ -629,14 +644,12 @@ harmonize_DR_oneBOLD <- function(
     }
     BOLD <- do.call(cbind, BOLD$data)
     stopifnot(is.matrix(BOLD))
-    #nI <- nV <- nrow(GICA)
   } else if (FORMAT == "GIFTI2") {
-    BOLD_new <- vector('list', length=2)
     for (ii in seq(2)) {
-      if (is.character(BOLD[[ii]])) { BOLD_new[[ii]] <- gifti::readgii(BOLD[[ii]]) }
-      stopifnot(gifti::is.gifti(BOLD_new[[ii]]))
+      if (is.character(BOLD[[ii]])) { BOLD[[ii]] <- gifti::readgii(BOLD[[ii]]) }
+      stopifnot(gifti::is.gifti(BOLD[[ii]]))
     }
-    BOLD <- lapply(BOLD_new, function(q){do.call(cbind, q$data)})
+    BOLD <- lapply(BOLD, function(q){do.call(cbind, q$data)})
     if (scale == "local") {
       xii1 <- ciftiTools::select_xifti(
         ciftiTools::as.xifti(
@@ -653,11 +666,9 @@ harmonize_DR_oneBOLD <- function(
     if (is.character(BOLD)) { BOLD <- RNifti::readNifti(BOLD) }
     stopifnot(length(dim(BOLD)) > 1)
     stopifnot(!is.null(mask))
-    nI <- dim(drop(mask)) #; nV <- sum(mask)
   } else if (FORMAT == "MATRIX") {
     if (is.character(BOLD)) { BOLD <- readRDS(BOLD) }
     stopifnot(is.matrix(BOLD))
-    #nI <- nV <- nrow(GICA)
   } else { stop() }
 
   dBOLD <- dim(BOLD)
@@ -680,7 +691,6 @@ harmonize_DR_oneBOLD <- function(
   if (use_mask) {
     # Mask out the locations.
     BOLD <- BOLD[mask,,drop=FALSE]
-    GICA <- GICA[mask,,drop=FALSE]
     if (!is.null(xii1)) {
       xiitmp <- as.matrix(xii1)
       xiitmp[!mask,] <- NA
@@ -707,4 +717,53 @@ harmonize_DR_oneBOLD <- function(
   if (use_mask) { DR$S <- unmask_mat(DR$S, mask, mask_dim=2, fill=NA) }
 
   DR
+}
+
+#' Read GIFTI with expected hemisphere
+#'
+#' Read in a GIFTI file, and check that the hemisphere is as expected.
+#'
+#' @param gii A file path to a GIFTI metric file, or a \code{"gifti"} object.
+#' @param hemi Expected hemisphere. Default: \code{"left"}.
+#' @keywords internal
+read_gifti_expect_hemi <- function(gii, hemi=c("left", "right")){
+  hemi <- match.arg(hemi, c("left", "right"))
+
+  # Read in
+  if (is.character(gii)) { gii <- gifti::read_gifti(gii) }
+  stopifnot(inherits(gii, "gifti"))
+
+  # Check hemisphere metadata is left or right
+  hemi2 <- gii$file_meta["AnatomicalStructurePrimary"]
+  if (!(hemi2 %in% c("CortexLeft", "CortexRight"))) {
+    stop("AnatomicalStructurePrimary metadata missing or invalid for gii.")
+  }
+
+  # Check hemisphere is what's expected.
+  if (hemi != c(CortexLeft="left", CortexRight="right")[hemi2]) {
+    stop("`gii` was expected to be have ", hemi, " hemisphere data, but it has data for the opposite hemisphere.")
+  }
+
+  gii
+}
+
+#' Read GIFTI with mask data
+#'
+#' Read in a GIFTI file, and check that it has one binary/logical column.
+#'
+#' @param gii A file path to a GIFTI metric file, or a \code{"gifti"} object,
+#'  with a single column of zeroes and ones.
+#' @param hemi Expected hemisphere. Default: \code{"left"}.
+#' @keywords internal
+read_gifti_expect_mask <- function(gii, hemi=c("left", "right")) {
+  gii <- read_gifti_expect_hemi(gii, hemi=hemi)
+
+  # Convert to vector. Check there's only one column. [TO DO]
+  gii <- do.call(cbind, gii$data)
+
+  # Check logical/binary. Issue warning, but proceed, if not.
+  if (!all_binary(gii)) { warning("`gii` is not all binary.") }
+
+  # Convert to binary and return.
+  as.logical(gii)
 }
