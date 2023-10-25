@@ -56,7 +56,10 @@ gica_gii_fnames <- file.path(dir_StatMIND, c(
 ))
 
 # CIFTI ------------------------------------------------------------------------
-q <- harmonize(rs_cii_fnames[seq(3)], brainstructures=c("left", "right"), gica_cii_fname, TR=.72, do_harmonize=FALSE)
+q <- harmonize(
+  rs_cii_fnames[seq(3)], brainstructures=c("left", "right"), gica_cii_fname,
+  scale="local", TR=.72, do_harmonize=FALSE
+)
 y <- read_cifti(rs_cii_fnames[1], brainstructures=c("left", "right"))
 z <- newdata_xifti(y, t(q$S[1,,]))
 plot(y); plot(z)
@@ -70,7 +73,8 @@ gica_cii_sep <- separate_cifti(gica_cii_fname, write_dir=tempdir())
 q2 <- harmonize(
   rs_cii_sep_dat[seq(3)],
   as.list(gica_cii_sep[c("cortexL","cortexR")]),
-  rs_cii_sep_mwall, TR=.72, do_harmonize=FALSE
+  rs_cii_sep_mwall,
+  scale="local", TR=.72, do_harmonize=FALSE
 )
 testthat::expect_equal(q, q2)
 
@@ -79,8 +83,20 @@ q3 <- harmonize(
   vapply(rs_cii_sep_dat[seq(3)], function(q){q[[1]]}, ''),
   gica_cii_sep["cortexL"],
   rs_cii_sep_mwall[["ROIcortexL"]],
-  inds=seq(4), scale="local", scale_sm_FWHM=2, hpf=0, GSR=TRUE,
+  inds=seq(4), scale="global", hpf=0, GSR=TRUE,
   TR=.72, do_harmonize=FALSE
 )
 
 cor(q3$S[1,3,], q2$S[1,3,seq(3670)])
+
+# MATRIX -----------------------------------------------------------------------
+dat <- lapply(lapply(rs_cii_sep_dat[seq(3)], function(q){q[[1]]}), read_gifti_expect_hemi, "left")
+dat <- lapply(dat, function(q){do.call(cbind, q$data)[read_gifti_expect_mask(rs_cii_sep_mwall$ROIcortexL, "left"),]})
+gica <- do.call(cbind, read_gifti_expect_hemi(gica_cii_sep["cortexL"])$data)[read_gifti_expect_mask(rs_cii_sep_mwall$ROIcortexL, "left"),]
+q4 <- harmonize(
+  dat, gica,
+  inds=seq(4), scale="global", hpf=0, GSR=TRUE,
+  TR=.72, do_harmonize=FALSE
+)
+testthat::expect_equal(q3, q4)
+

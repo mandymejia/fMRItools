@@ -686,9 +686,7 @@ harmonize_DR_oneBOLD <- function(
   }
 
   # Check for missing values. --------------------------------------------------
-  mask <- as.logical(mask)
-  use_mask <- !all(mask)
-  if (use_mask) {
+  if (!is.null(mask)) {
     # Mask out the locations.
     BOLD <- BOLD[mask,,drop=FALSE]
     if (!is.null(xii1)) {
@@ -714,7 +712,7 @@ harmonize_DR_oneBOLD <- function(
   )
   attr(DR$A, "scaled:center") <- NULL
 
-  if (use_mask) { DR$S <- unmask_mat(DR$S, mask, mask_dim=2, fill=NA) }
+  if (!is.null(mask)) { DR$S <- unmask_mat(DR$S, mask, mask_dim=2, fill=NA) }
 
   DR
 }
