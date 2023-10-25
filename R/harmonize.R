@@ -185,6 +185,7 @@ harmonize <- function(
 
   # `GICA` ---------------------------------------------------------------------
   # Convert `GICA` to a numeric data matrix or array.
+
   if (FORMAT == "CIFTI") {
     if (is.character(GICA)) { GICA <- ciftiTools::read_cifti(GICA, brainstructures=brainstructures) }
     if (ciftiTools::is.xifti(GICA, messages=FALSE)) {
@@ -272,15 +273,38 @@ harmonize <- function(
         stopifnot(nrow(GICA) == nV)
       }
     }
-  } else {
+  } else { #For non-NIFTI data, mask is not required but can be provided
     if (!is.null(mask)) {
-      #warning("Ignoring `mask`, which is only applicable to NIFTI data.")
-      #mask <- NULL
+      #OPTIONAL GIFTI-FORMAT MASK
+      if (FORMAT == "GIFTI") {
+        # DAMON FILL IN HERE
+      } else if (FORMAT == "GIFTI2") {
+        mask <- as.list(mask)
+        if (length(mask) != 2) {
+          stop("`mask` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
+        }
+        for (ii in seq(2)) {
+          if (is.character(mask[[ii]])) { mask[[ii]] <- gifti::readgii(mask[[ii]]) }
+          gii_hemi_ii <- mask[[ii]]$file_meta["AnatomicalStructurePrimary"]
+          if (!(gii_hemi_ii %in% c("CortexLeft", "CortexRight"))) {
+            stop("AnatomicalStructurePrimary metadata missing or invalid for mask[[ii]].")
+          }
+          gii_hemi_ii <- switch(gii_hemi_ii, CortexLeft="left", CortexRight="right")
+          if (gii_hemi_ii != c("left", "right")[ii]) {
+            stop("`mask` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
+          }
+          mask[[ii]] <- do.call(cbind, mask[[ii]]$data)
+        }
+        mask <- rbind(mask[[1]], mask[[2]])
+        mask <- as.logical(mask)
+      } else if (FORMAT == "MATRIX") {
+        # DAMON FILL IN HERE
+      }
       nI <- length(mask); nV <- sum(mask)
-    } else {
+    } else { #end if(!is.null(mask))
       nI <- nV <- nrow(GICA)
     }
-  }
+  } #end else (not NIFTI format)
 
   # [TO DO]: Apply mask to GICA prior to centering
 
@@ -556,10 +580,15 @@ harmonize_DR_oneBOLD <- function(
   # Load helper variables.
   format <- match.arg(format, c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti", "RDS", "data"))
   FORMAT <- get_FORMAT(format)
-  nQ <- ncol(GICA)
-  nI <- nV <- nrow(GICA)
-
   check_req_ifti_pkg(FORMAT)
+
+  nQ <- ncol(GICA)
+
+  if(is.null(mask)){
+    nI <- nV <- nrow(GICA)
+  } else {
+    nI <- nrow(GICA); nV <- sum(mask)
+  }
 
   # Get `BOLD` as a data matrix or array.  -------------------------------------
   if (verbose) { cat("\tReading and formatting data...") }
@@ -572,7 +601,7 @@ harmonize_DR_oneBOLD <- function(
       BOLD <- as.matrix(BOLD)
     }
     stopifnot(is.matrix(BOLD))
-    nI <- nV <- nrow(GICA)
+    #nI <- nV <- nrow(GICA)
   } else if (FORMAT == "GIFTI") {
     if (is.character(BOLD)) { BOLD <- gifti::readgii(BOLD) }
     stopifnot(gifti::is.gifti(BOLD))
@@ -600,13 +629,14 @@ harmonize_DR_oneBOLD <- function(
     }
     BOLD <- do.call(cbind, BOLD$data)
     stopifnot(is.matrix(BOLD))
-    nI <- nV <- nrow(GICA)
+    #nI <- nV <- nrow(GICA)
   } else if (FORMAT == "GIFTI2") {
+    BOLD_new <- vector('list', length=2)
     for (ii in seq(2)) {
-      if (is.character(BOLD[[ii]])) { BOLD[[ii]] <- gifti::readgii(BOLD[[ii]]) }
-      stopifnot(gifti::is.gifti(BOLD[[ii]]))
+      if (is.character(BOLD[[ii]])) { BOLD_new[[ii]] <- gifti::readgii(BOLD[[ii]]) }
+      stopifnot(gifti::is.gifti(BOLD_new[[ii]]))
     }
-    BOLD <- lapply(BOLD, function(q){do.call(cbind, q$data)})
+    BOLD <- lapply(BOLD_new, function(q){do.call(cbind, q$data)})
     if (scale == "local") {
       xii1 <- ciftiTools::select_xifti(
         ciftiTools::as.xifti(
@@ -623,11 +653,11 @@ harmonize_DR_oneBOLD <- function(
     if (is.character(BOLD)) { BOLD <- RNifti::readNifti(BOLD) }
     stopifnot(length(dim(BOLD)) > 1)
     stopifnot(!is.null(mask))
-    nI <- dim(drop(mask)); nV <- sum(mask)
+    nI <- dim(drop(mask)) #; nV <- sum(mask)
   } else if (FORMAT == "MATRIX") {
     if (is.character(BOLD)) { BOLD <- readRDS(BOLD) }
     stopifnot(is.matrix(BOLD))
-    nI <- nV <- nrow(GICA)
+    #nI <- nV <- nrow(GICA)
   } else { stop() }
 
   dBOLD <- dim(BOLD)
@@ -645,6 +675,7 @@ harmonize_DR_oneBOLD <- function(
   }
 
   # Check for missing values. --------------------------------------------------
+  mask <- as.logical(mask)
   use_mask <- !all(mask)
   if (use_mask) {
     # Mask out the locations.
