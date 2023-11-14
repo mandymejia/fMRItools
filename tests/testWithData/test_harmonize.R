@@ -58,7 +58,11 @@ gica_gii_fnames <- file.path(dir_StatMIND, c(
 # CIFTI ------------------------------------------------------------------------
 q <- harmonize(
   rs_cii_fnames[seq(3)], brainstructures=c("left", "right"), gica_cii_fname,
-  scale="local", TR=.72, do_harmonize=FALSE
+  scale="local", TR=.72, do_harmonize=FALSE, mask=c(rep(FALSE, 7344-100), rep(TRUE, 100))
+)
+q2 <- harmonize(
+  rs_cii_fnames[seq(3)], brainstructures=c("left", "right"), gica_cii_fname,
+  scale="local", TR=.72, do_harmonize=FALSE, use_templateICA=TRUE, mask=c(rep(FALSE, 7344-100), rep(TRUE, 100))
 )
 y <- read_cifti(rs_cii_fnames[1], brainstructures=c("left", "right"))
 z <- newdata_xifti(y, t(q$S[1,,]))

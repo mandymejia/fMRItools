@@ -76,6 +76,31 @@
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
+#' @param use_templateICA,estimate_template_args,templateICA_args Should
+#'  template ICA be used to estimate the harmonized quantities?
+#'  (The subject-specific IC maps and timecourses, and the functional
+#'  connectivity.) Default: \code{FALSE}.
+#'
+#'  If \code{TRUE}, \code{estimate_template_args} and \code{templateICA_args}
+#'  are lists where each entry's name is the name of an argument to
+#'  \code{templateICAr::estimate_template} or \code{templateICAr::templateICA},
+#'  respectively, and the value is the argument's value. Arguments already
+#'  provided to \code{harmonize} will be used and so should not be provided in
+#'  \code{estimate_template_args} or \code{templateICA_args}. So for
+#'  \code{estimate_template_args} the allowed arguments are: \code{Q2},
+#'  \code{Q2_max}, \code{varTol}, \code{maskTol}, \code{usePar} and
+#'  \code{wb_path}. For \code{templateICA_args}, the allowed arguments are:
+#'  \code{tvar_method}, \code{nuisance?}, \code{scrub?}, \code{Q2},
+#'  \code{Q2_max}, \code{time_inds}, \code{varTol}, \code{spatial_model},
+#'  \code{rm_mwall}, \code{reduce_dim}, \code{method_FC}, \code{maxiter},
+#'  \code{miniter}, \code{epsilon}, \code{eps_inter}, \code{kappa_init},
+#'  \code{usePar}.
+#'
+#'  Note that \code{missingTol} will be set to \code{1} in the call to
+#'  \code{estimate_template} because the mask should not change. Rather than
+#'  rely on updating the mask inside \code{estimate_template}, please provide a
+#'  comprehensive mask to the original call to \code{harmonize} via its
+#'  \code{mask} argument.
 #' @param verbose Display progress updates? Default: \code{TRUE}.
 #' @param do_harmonize Perform the harmonization?  If not, will only extract and
 #' return features to be harmonized.
@@ -95,6 +120,9 @@ harmonize <- function(
   hpf=.01,
   GSR=FALSE,
   brainstructures=c("all"),
+  use_templateICA=FALSE,
+  estimate_template_args=NULL,
+  templateICA_args=NULL,
   verbose=TRUE,
   do_harmonize=FALSE){
 
@@ -131,6 +159,7 @@ harmonize <- function(
     stopifnot(is_posNum(TR))
     stopifnot(is_posNum(hpf, zero_ok=TRUE))
   }
+  stopifnot(is_1(use_templateICA, "logical"))
   stopifnot(is_1(GSR, "logical"))
   stopifnot(is_1(verbose, "logical"))
 
@@ -182,6 +211,55 @@ harmonize <- function(
       }
     }
     scale_sm_FWHM <- 0
+  }
+
+  # If using template ICA, estimate the template. ------------------------------
+  # Do this before processing of GICA and mask.
+  # Maybe in the future, we could consider splitting estimate_template so that
+  # we can only process the GICA and mask once, and then directly do the
+  # dual regression and template estimation as it's done in `estimate_template`.
+
+  if (use_templateICA) {
+    cat("Estimating the template.\n")
+    # Arguments provided by user
+    estimate_template_args <- as.list(estimate_template_args)
+    # Arguments repeated by `harmonize` and which should not be provided
+    rep_args <- list(
+      BOLD=BOLD, GICA=GICA, inds=inds,
+      scale=scale,
+      scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
+      scale_sm_FWHM=scale_sm_FWHM,
+      TR=TR, hpf=hpf, GSR=GSR,
+      brainstructures=brainstructures, mask=mask,
+      verbose=verbose
+    )
+    for (aa in seq(length(rep_args))) {
+      if (names(rep_args)[aa] %in% names(estimate_template_args)) {
+        stop(names(rep_args)[aa], " should not be in `estimate_template_args` because it's already an argument to `harmonize`. The value provided to `harmonize` will be used.")
+      }
+    }
+    # Arguments that users are not allowed to change
+    preset_args <- list(
+      BOLD2 = NULL,
+      keep_DR = FALSE,
+      FC = TRUE,
+      missingTol = 1
+    )
+    for (aa in seq(length(rep_args))) {
+      if (names(preset_args)[aa] %in% names(estimate_template_args)) {
+        stop(
+          names(preset_args)[aa],
+          " should not be in `estimate_template_args` because it will be set to ",
+          vapply(preset_args, function(q){if (is.null(q)) {"NULL"} else {as.character(q)}}, '')[aa]
+        )
+      }
+    }
+    # Merge arguments into a list, and call `estimate_template`
+    estimate_template_args <- c(
+      estimate_template_args,
+      rep_args, preset_args
+    )
+    template <- do.call(templateICAr::estimate_template, estimate_template_args)
   }
 
   # `GICA` ---------------------------------------------------------------------
@@ -337,33 +415,88 @@ harmonize <- function(
     cat("Number of sessions:   ", nN, "\n")
   }
 
-  # [TO DO]: Implement template ICA instead of DR. The estimates are so noisy.
-
-  # Dual regression ------------------------------------------------------------
+  # Dual regression or template ICA --------------------------------------------
+  # Initialize arrays of subject estimates.
   S0 <- array(0, dim = c(nN, nQ, nV))
   A0 <- vector("list", nN)
   G0 <- array(NA, dim = c(nN, nQ, nQ))
+
+  if (use_templateICA) {
+    # Arguments provided by user
+    templateICA_args <- as.list(templateICA_args)
+  }
+
+  # Obtain subject estimates with dual regression or template ICA.
   for (ii in seq(nN)) {
     if (verbose) { cat(paste0(
       '\nReading and analyzing data for subject ', ii,' of ', nN, '.\n'
     )) }
 
-    DR0_ii <- harmonize_DR_oneBOLD(
-      BOLD[[ii]],
-      mask=mask,
-      gii_hemi=gii_hemi,
-      format=format,
-      GICA=GICA,
-      GSR=GSR,
-      scale=scale,
-      scale_sm_surfL=scale_sm_surfL,
-      scale_sm_surfR=scale_sm_surfR,
-      scale_sm_FWHM=scale_sm_FWHM,
-      TR=TR,
-      hpf=hpf,
-      brainstructures=brainstructures,
-      verbose=verbose
-    )
+    if (use_templateICA) {
+      # Arguments repeated by `harmonize` and which should not be provided
+      rep_args <- list(
+        BOLD=BOLD[[ii]],
+        scale=scale,
+        scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
+        scale_sm_FWHM=scale_sm_FWHM,
+        TR=TR, hpf=hpf, GSR=GSR,
+        brainstructures=brainstructures, mask=mask,
+        verbose=verbose
+      )
+      for (aa in seq(length(rep_args))) {
+        if (names(rep_args)[aa] %in% names(templateICA_args)) {
+          stop(names(rep_args)[aa], " should not be in `templateICA_args` because it's already an argument to `harmonize`. The value provided to `harmonize` will be used.")
+        }
+      }
+      # Arguments that users are not allowed to change
+      preset_args <- list(
+        template=template,
+        resamp_res=NULL
+      )
+      for (aa in seq(length(rep_args))) {
+        if (names(preset_args)[aa] %in% names(templateICA_args)) {
+          stop(
+            names(preset_args)[aa],
+            " should not be in `templateICA_args` because it will be set to ",
+            vapply(preset_args, function(q){if (is.null(q)) {"NULL"} else {"the calculated template"}}, '')[aa]
+          )
+        }
+      }
+      # Merge arguments into a list, and call `templateICA`
+      templateICA_args_ii <- c(
+        templateICA_args,
+        rep_args, preset_args
+      )
+      # [TO DO]: update `templateICA` to handle mask
+      tICA_ii <- do.call(templateICAr::templateICA, templateICA_args_ii)
+      DR0_ii <- list(
+        S = t(as.matrix(tICA_ii$subjICmean)),
+        A = tICA_ii$A,
+        G = tICA_ii$A_cov
+      )
+
+    } else {
+      DR0_ii2 <- harmonize_DR_oneBOLD(
+        BOLD[[ii]],
+        mask=mask,
+        gii_hemi=gii_hemi,
+        format=format,
+        GICA=GICA,
+        GSR=GSR,
+        scale=scale,
+        scale_sm_surfL=scale_sm_surfL,
+        scale_sm_surfR=scale_sm_surfR,
+        scale_sm_FWHM=scale_sm_FWHM,
+        TR=TR,
+        hpf=hpf,
+        brainstructures=brainstructures,
+        verbose=verbose
+      )
+      DR0_ii2 <- list(
+        S=DR0_ii2$S, A=DR0_ii2$A, G=cov(DR0_ii2$A)
+      )
+    }
+
     if (!is.null(mask)) { DR0_ii$S <- DR0_ii$S[,mask,drop=FALSE] }
     S0[ii,,] <- DR0_ii$S
     A0[[ii]] <- DR0_ii$A

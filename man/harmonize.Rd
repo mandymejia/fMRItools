@@ -18,6 +18,9 @@ harmonize(
   hpf = 0.01,
   GSR = FALSE,
   brainstructures = c("all"),
+  use_templateICA = FALSE,
+  estimate_template_args = NULL,
+  templateICA_args = NULL,
   verbose = TRUE,
   do_harmonize = FALSE
 )
@@ -99,6 +102,32 @@ to obtain: \code{"left"} (left cortical surface), \code{"right"} (right
 cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 gray matter). Can also be \code{"all"} (obtain all three brain structures).
 Default: \code{c("all")}.}
+
+\item{use_templateICA, estimate_template_args, templateICA_args}{Should
+template ICA be used to estimate the harmonized quantities?
+(The subject-specific IC maps and timecourses, and the functional
+connectivity.) Default: \code{FALSE}.
+
+If \code{TRUE}, \code{estimate_template_args} and \code{templateICA_args}
+are lists where each entry's name is the name of an argument to
+\code{templateICAr::estimate_template} or \code{templateICAr::templateICA},
+respectively, and the value is the argument's value. Arguments already
+provided to \code{harmonize} will be used and so should not be provided in
+\code{estimate_template_args} or \code{templateICA_args}. So for
+\code{estimate_template_args} the allowed arguments are: \code{Q2},
+\code{Q2_max}, \code{varTol}, \code{maskTol}, \code{usePar} and
+\code{wb_path}. For \code{templateICA_args}, the allowed arguments are:
+\code{tvar_method}, \code{nuisance?}, \code{scrub?}, \code{Q2},
+\code{Q2_max}, \code{time_inds}, \code{varTol}, \code{spatial_model},
+\code{rm_mwall}, \code{reduce_dim}, \code{method_FC}, \code{maxiter},
+\code{miniter}, \code{epsilon}, \code{eps_inter}, \code{kappa_init},
+\code{usePar}.
+
+Note that \code{missingTol} will be set to \code{1} in the call to
+\code{estimate_template} because the mask should not change. Rather than
+rely on updating the mask inside \code{estimate_template}, please provide a
+comprehensive mask to the original call to \code{harmonize} via its
+\code{mask} argument.}
 
 \item{verbose}{Display progress updates? Default: \code{TRUE}.}
 
