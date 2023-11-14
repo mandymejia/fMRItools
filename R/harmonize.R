@@ -476,7 +476,7 @@ harmonize <- function(
       )
 
     } else {
-      DR0_ii2 <- harmonize_DR_oneBOLD(
+      DR0_ii <- harmonize_DR_oneBOLD(
         BOLD[[ii]],
         mask=mask,
         gii_hemi=gii_hemi,
@@ -492,8 +492,8 @@ harmonize <- function(
         brainstructures=brainstructures,
         verbose=verbose
       )
-      DR0_ii2 <- list(
-        S=DR0_ii2$S, A=DR0_ii2$A, G=cov(DR0_ii2$A)
+      DR0_ii <- list(
+        S=DR0_ii$S, A=DR0_ii$A, G=cov(DR0_ii$A)
       )
     }
 
