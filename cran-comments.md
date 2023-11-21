@@ -16,3 +16,8 @@ templateICAr 0.6.2 passes checks.
 ## Tests
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
+
+## Previous submission
+
+0.4.1 Failed an automatic check because of brackets without '\code' in roxygen
+of `make_mask`. This has been fixed.
