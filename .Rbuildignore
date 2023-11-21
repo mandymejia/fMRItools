@@ -10,3 +10,4 @@
 ^CRAN-SUBMISSION$
 ^tests/testWithData$
 ^codecov\.yml$
+^R/harmonize\.R$

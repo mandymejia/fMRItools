@@ -1,3 +1,7 @@
+# 0.4.0
+
+* Add `all_binary`.
+
 # 0.3.2
 
 * Add workaround for when PESEL estimates zero components.
