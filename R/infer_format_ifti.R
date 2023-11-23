@@ -4,12 +4,12 @@
 #' @param verbose Print the format? Default: \code{FALSE}.
 #' @return A length-two vector. The first element indicates the format:
 #'  \code{"CIFTI"} file path, \code{"xifti"} object,
-#'  \code{"GIFTI"} file path, \code{"gifti"} object,  
-#'  \code{"NIFTI"} file path, \code{"nifti"} object, 
-#'  \code{"RDS"} file path, or \code{"data"}. 
-#'  The second element indicates 
+#'  \code{"GIFTI"} file path, \code{"gifti"} object,
+#'  \code{"NIFTI"} file path, \code{"nifti"} object,
+#'  \code{"RDS"} file path, or \code{"data"}.
+#'  The second element indicates
 #'  the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
-#' 
+#'
 #' @export
 infer_format_ifti <- function(BOLD, verbose=FALSE){
 
@@ -26,7 +26,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
   cii_ext_supported <- paste0(".", cii_supp_int$extension)
   cii_ext_notsupport <- paste0(
     ".", c(
-      "dconn", "pconn", "ptseries", "dtraj", "pscalar", 
+      "dconn", "pconn", "ptseries", "dtraj", "pscalar",
       "pdconn", "dpconn", "pconnseries", "pconnscalar"
     ), ".nii"
   )
@@ -58,7 +58,7 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
       if (!is.na(Bformat2)) {
         Bformat2 <- switch(Bformat2, func="metric", label="label", shape="metric")
       } else {
-        if (endsWith(BOLD, ".surf.gii")) { 
+        if (endsWith(BOLD, ".surf.gii")) {
           Bformat2 <- "surf"
         }
       }
@@ -120,8 +120,8 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
     } else {
       warning("`BOLD` should be TxV or a 4D array, if it's numeric data.")
     }
-  } 
-  
+  }
+
   # Print result.
   if (!is.na(Bformat)) {
     if (verbose) { cat("Inferred input format:", Bformat, "\n") }
@@ -134,21 +134,21 @@ infer_format_ifti <- function(BOLD, verbose=FALSE){
 }
 
 #' Infer fMRI data format for several inputs
-#' 
+#'
 #' Vectorized version of \code{\link{infer_format_ifti}}. Expects all inputs
 #'  to have the same format.
-#' 
+#'
 #' Raises an error if the elements of \code{BOLD} do not share the same format.
 #'
 #' @param BOLD The vector of fMRI data, expected to be of one format
 #' @param verbose Print the format? Default: \code{FALSE}.
 #' @return A length-two vector. The first element indicates the format:
 #'  \code{"CIFTI"} file path, \code{"xifti"} object,
-#'  \code{"GIFTI"} file path, \code{"gifti"} object,  
-#'  \code{"NIFTI"} file path, \code{"nifti"} object, 
-#'  \code{"RDS"} file path, or \code{"data"}. The second element indicates 
+#'  \code{"GIFTI"} file path, \code{"gifti"} object,
+#'  \code{"NIFTI"} file path, \code{"nifti"} object,
+#'  \code{"RDS"} file path, or \code{"data"}. The second element indicates
 #'  the sub-format if relevant; i.e. the type of CIFTI or GIFTI file/object.
-#' 
+#'
 #' @export
 infer_format_ifti_vec <- function(BOLD, verbose=FALSE){
   BOLD <- as.list(BOLD)
@@ -156,7 +156,7 @@ infer_format_ifti_vec <- function(BOLD, verbose=FALSE){
   Bformat <- unique(Bformat)
   if (length(Bformat)>1) {
     stop(paste(
-      "The formats are not identical: ", 
+      "The formats are not identical: ",
       paste(lapply(Bformat, paste, collapse=", "), collapse="; ")
     ))
   }

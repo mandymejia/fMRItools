@@ -182,6 +182,26 @@ all_integers <- function(x){
   non_integer==0 && !is.na(non_integer)
 }
 
+#' All binary?
+#'
+#' Check if a data vector or matrix is all zeroes and ones. Option to also 
+#'  accept logical values.
+#'
+#' @param x The data vector or matrix
+#' @param logical_ok Is a logical vector or matrix also acceptable? Default: 
+#'  \code{TRUE}.
+#' @export
+#'
+#' @return Logical. Is \code{x} binary data?
+#'
+all_binary <- function(x, logical_ok=TRUE){
+  stopifnot(is_1(logical_ok, "logical"))
+  if (is.logical(x)) { return(logical_ok) }
+  if (!is.numeric(x)) { stop("`x` is not numeric or logical.") }
+  if (any(is.na(x))) { return(FALSE) }
+  !(max(x) > 1 || min(x) < 0 || any(x != round(x)))
+}
+
 #' Is this numeric vector constant?
 #' 
 #' @param x The numeric vector

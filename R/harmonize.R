@@ -76,40 +76,55 @@
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
-#' @param varTol Tolerance for variance of each data location. For each scan,
-#'  locations which do not meet this threshold are masked out of the 
-#'  harmonization.
-#'  Default: \code{1e-6}. Variance is calculated on the original data, before
-#'  any normalization.
-#' @param maskTol For computing the dual regression result for each subject:
-#'  tolerance for number of locations masked out due to low
-#'  variance or missing values. If more than this many locations are masked out,
-#'  a subject is not incldued in the harmonization analysis. \code{maskTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
-#' @param missingTol For harmonizing all subjects:
-#'  tolerance for number of subjects masked out due to low variance or missing
-#'  values at a given location. If more than this many subjects are masked out,
-#'  the location will not be included in the harmonization analysis. \code{missingTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of subjects can be masked out
-#'  at a given location.
+#' @param use_templateICA,estimate_template_args,templateICA_args Should
+#'  template ICA be used to estimate the harmonized quantities?
+#'  (The subject-specific IC maps and timecourses, and the functional
+#'  connectivity.) Default: \code{FALSE}.
+#'
+#'  If \code{TRUE}, \code{estimate_template_args} and \code{templateICA_args}
+#'  are lists where each entry's name is the name of an argument to
+#'  \code{templateICAr::estimate_template} or \code{templateICAr::templateICA},
+#'  respectively, and the value is the argument's value. Arguments already
+#'  provided to \code{harmonize} will be used and so should not be provided in
+#'  \code{estimate_template_args} or \code{templateICA_args}. So for
+#'  \code{estimate_template_args} the allowed arguments are: \code{Q2},
+#'  \code{Q2_max}, \code{varTol}, \code{maskTol}, \code{usePar} and
+#'  \code{wb_path}. For \code{templateICA_args}, the allowed arguments are:
+#'  \code{tvar_method}, \code{nuisance?}, \code{scrub?}, \code{Q2},
+#'  \code{Q2_max}, \code{time_inds}, \code{varTol}, \code{spatial_model},
+#'  \code{rm_mwall}, \code{reduce_dim}, \code{method_FC}, \code{maxiter},
+#'  \code{miniter}, \code{epsilon}, \code{eps_inter}, \code{kappa_init},
+#'  \code{usePar}.
+#'
+#'  Note that \code{missingTol} will be set to \code{1} in the call to
+#'  \code{estimate_template} because the mask should not change. Rather than
+#'  rely on updating the mask inside \code{estimate_template}, please provide a
+#'  comprehensive mask to the original call to \code{harmonize} via its
+#'  \code{mask} argument.
 #' @param verbose Display progress updates? Default: \code{TRUE}.
+#' @param do_harmonize Perform the harmonization?  If not, will only extract and
+#' return features to be harmonized.
 #' @keywords internal
 #' @importFrom stats cov
 #'
 harmonize <- function(
   BOLD, GICA,
-  mask=NULL, gii_hemi=NULL, inds=NULL,
+  mask=NULL,
+  gii_hemi=NULL,
+  inds=NULL,
   scale=c("local", "global", "none"),
-  scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
-  TR=NULL, hpf=.01,
+  scale_sm_surfL=NULL,
+  scale_sm_surfR=NULL,
+  scale_sm_FWHM=2,
+  TR=NULL,
+  hpf=.01,
   GSR=FALSE,
   brainstructures=c("all"),
-  varTol=1e-6, maskTol=.1, missingTol=.1,
-  verbose=TRUE){
+  use_templateICA=FALSE,
+  estimate_template_args=NULL,
+  templateICA_args=NULL,
+  verbose=TRUE,
+  do_harmonize=FALSE){
 
   if (!requireNamespace("expm", quietly = TRUE)) {
     stop("Package \"expm\" needed. Please install it", call. = FALSE)
@@ -121,6 +136,7 @@ harmonize <- function(
   # Check arguments ------------------------------------------------------------
 
   # Simple argument checks.
+  if (!is.null(gii_hemi)) { stopifnot(gii_hemi %in% c("left", "right")) }
   if (is.null(scale) || isFALSE(scale)) { scale <- "none" }
   if (isTRUE(scale)) {
     warning(
@@ -136,18 +152,15 @@ harmonize <- function(
     if (hpf==.01) {
       message("Setting `hpf=0` because `TR` was not provided. Either provide `TR` or set `hpf=0` to disable this message.")
       hpf <- 0
-    } else {
+    } else if (hpf!=0) {
       stop("Cannot apply `hpf` because `TR` was not provided. Either provide `TR` or set `hpf=0`.")
     }
   } else {
     stopifnot(is_posNum(TR))
     stopifnot(is_posNum(hpf, zero_ok=TRUE))
   }
+  stopifnot(is_1(use_templateICA, "logical"))
   stopifnot(is_1(GSR, "logical"))
-  stopifnot(is_1(varTol, "numeric"))
-  if (varTol < 0) { cat("Setting `varTol=0`."); varTol <- 0 }
-  stopifnot(is_posNum(maskTol, zero_ok=TRUE))
-  stopifnot(is_posNum(missingTol, zero_ok=TRUE))
   stopifnot(is_1(verbose, "logical"))
 
   # `BOLD` format --------------------------------------------------------------
@@ -200,8 +213,58 @@ harmonize <- function(
     scale_sm_FWHM <- 0
   }
 
+  # If using template ICA, estimate the template. ------------------------------
+  # Do this before processing of GICA and mask.
+  # Maybe in the future, we could consider splitting estimate_template so that
+  # we can only process the GICA and mask once, and then directly do the
+  # dual regression and template estimation as it's done in `estimate_template`.
+
+  if (use_templateICA) {
+    cat("Estimating the template.\n")
+    # Arguments provided by user
+    estimate_template_args <- as.list(estimate_template_args)
+    # Arguments repeated by `harmonize` and which should not be provided
+    rep_args <- list(
+      BOLD=BOLD, GICA=GICA, inds=inds,
+      scale=scale,
+      scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
+      scale_sm_FWHM=scale_sm_FWHM,
+      TR=TR, hpf=hpf, GSR=GSR,
+      brainstructures=brainstructures, mask=mask,
+      verbose=verbose
+    )
+    for (aa in seq(length(rep_args))) {
+      if (names(rep_args)[aa] %in% names(estimate_template_args)) {
+        stop(names(rep_args)[aa], " should not be in `estimate_template_args` because it's already an argument to `harmonize`. The value provided to `harmonize` will be used.")
+      }
+    }
+    # Arguments that users are not allowed to change
+    preset_args <- list(
+      BOLD2 = NULL,
+      keep_DR = FALSE,
+      FC = TRUE,
+      missingTol = 1
+    )
+    for (aa in seq(length(rep_args))) {
+      if (names(preset_args)[aa] %in% names(estimate_template_args)) {
+        stop(
+          names(preset_args)[aa],
+          " should not be in `estimate_template_args` because it will be set to ",
+          vapply(preset_args, function(q){if (is.null(q)) {"NULL"} else {as.character(q)}}, '')[aa]
+        )
+      }
+    }
+    # Merge arguments into a list, and call `estimate_template`
+    estimate_template_args <- c(
+      estimate_template_args,
+      rep_args, preset_args
+    )
+    template <- do.call(templateICAr::estimate_template, estimate_template_args)
+  }
+
   # `GICA` ---------------------------------------------------------------------
   # Convert `GICA` to a numeric data matrix or array.
+
   if (FORMAT == "CIFTI") {
     if (is.character(GICA)) { GICA <- ciftiTools::read_cifti(GICA, brainstructures=brainstructures) }
     if (ciftiTools::is.xifti(GICA, messages=FALSE)) {
@@ -218,11 +281,22 @@ harmonize <- function(
     stopifnot(is.matrix(GICA))
   } else if (FORMAT == "GIFTI") {
     if (is.character(GICA)) { GICA <- gifti::readgii(GICA) }
-    gii_hemi <- GICA$file_meta["AnatomicalStructurePrimary"]
-    if (!(gii_hemi %in% c("CortexLeft", "CortexRight"))) {
-      stop("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
+    gii_hemi2 <- GICA$file_meta["AnatomicalStructurePrimary"]
+    if (!(gii_hemi2 %in% c("CortexLeft", "CortexRight"))) {
+      warning("AnatomicalStructurePrimary metadata missing or invalid for GICA.")
+      if (is.null(gii_hemi)) {
+        stop("`gii_hemi` must be provided because the GICA metadata does not have hemisphere information..")
+      }
+    } else {
+      gii_hemi2 <- switch(gii_hemi2, CortexLeft="left", CortexRight="right")
+      if (!is.null(gii_hemi)) {
+        if (gii_hemi2 != gii_hemi) {
+          stop("`gii_hemi` was `", gii_hemi, "` but GICA has data for the ", gii_hemi2, " hemisphere.")
+        }
+      } else {
+        gii_hemi <- gii_hemi2
+      }
     }
-    gii_hemi <- switch(gii_hemi, CortexLeft="left", CortexRight="right")
     GICA <- do.call(cbind, GICA$data)
   } else if (FORMAT == "GIFTI2") {
     GICA <- as.list(GICA)
@@ -263,16 +337,18 @@ harmonize <- function(
   # [TO DO]: NA in GICA?
 
   # `mask` ---------------------------------------------------------------------
-  # Get `mask` as a logical array.
-  # Check `GICA` and `mask` dimensions match.
-  # Append NIFTI header from GICA to `mask`.
-  # Vectorize `GICA`.
+  # Get `mask` as a logical array (NIFTI) or vector (everything else).
+  # For NIFTI, append NIFTI header from GICA to `mask`.
+  # Apply mask to `GICA`, and if NIFTI, vectorize `GICA`.
   if (FORMAT == "NIFTI") {
     if (is.null(mask)) { stop("`mask` is required.") }
     if (is.character(mask)) { mask <- RNifti::readNifti(mask); mask <- array(as.logical(mask), dim=dim(mask)) }
     if (dim(mask)[length(dim(mask))] == 1) { mask <- array(mask, dim=dim(mask)[length(dim(mask))-1]) }
     if (is.numeric(mask)) {
       cat("Coercing `mask` to a logical array.\n")
+      if (!all_binary(mask)) {
+        cat("Warning: values other than 0 or 1 in mask.\n")
+      }
       mask <- array(as.logical(mask), dim=dim(mask))
     }
     nI <- dim(mask); nV <- sum(mask)
@@ -283,21 +359,44 @@ harmonize <- function(
       }
       # Append NIFTI header.
       mask <- RNifti::asNifti(array(mask, dim=c(dim(mask), 1)), reference=GICA)
-      # Vectorize `GICA`.
+      # Vectorize `GICA`; apply mask.
       if (all(dim(GICA)[seq(length(dim(GICA))-1)] == nI)) {
         GICA <- matrix(GICA[rep(as.logical(mask), nQ)], ncol=nQ)
-        stopifnot(nrow(GICA) == nV)
       }
     }
-  } else {
+  } else { #For non-NIFTI data, mask is not required but can be provided
     if (!is.null(mask)) {
-      #warning("Ignoring `mask`, which is only applicable to NIFTI data.")
-      #mask <- NULL
+      if (FORMAT == "GIFTI") {
+        mask <- read_gifti_expect_mask(mask, gii_hemi)
+      } else if (FORMAT == "GIFTI2") {
+        mask <- as.list(mask)
+        if (length(mask) != 2) {
+          stop("`mask` should be a length-2 list of GIFTI data: left hemisphere first, right hemisphere second.")
+        }
+        for (ii in seq(2)) {
+          mask[[ii]] <- read_gifti_expect_mask(mask[[ii]], c("left", "right")[ii])
+        }
+        mask <- do.call(c, mask)
+      } else if (FORMAT == "MATRIX") {
+        stopifnot(is.vector(mask))
+        stopifnot(is.numeric(mask) || is.logical(mask))
+      }
+      if (is.numeric(mask)) {
+        cat("Coercing `mask` to a logical vector.\n")
+        if (!all_binary(mask)) {
+          cat("Warning: values other than 0 or 1 in mask.\n")
+        }
+        mask <- as.logical(mask)
+      }
       nI <- length(mask); nV <- sum(mask)
-    } else {
+      # Check `GICA` and `mask` dimensions match.
+      stopifnot(nrow(GICA) == nI)
+      # Apply mask to GICA.
+      GICA <- GICA[mask,,drop=FALSE]
+    } else { #end if(!is.null(mask))
       nI <- nV <- nrow(GICA)
     }
-  }
+  } #end else (not NIFTI format)
 
   # Center each group IC across space. (Used to be a function argument.)
   center_Gcols <- TRUE
@@ -316,80 +415,125 @@ harmonize <- function(
     cat("Number of sessions:   ", nN, "\n")
   }
 
-  # Dual regression ------------------------------------------------------------
+  # Dual regression or template ICA --------------------------------------------
+  # Initialize arrays of subject estimates.
   S0 <- array(0, dim = c(nN, nQ, nV))
   A0 <- vector("list", nN)
   G0 <- array(NA, dim = c(nN, nQ, nQ))
+
+  if (use_templateICA) {
+    # Arguments provided by user
+    templateICA_args <- as.list(templateICA_args)
+  }
+
+  # Obtain subject estimates with dual regression or template ICA.
   for (ii in seq(nN)) {
     if (verbose) { cat(paste0(
       '\nReading and analyzing data for subject ', ii,' of ', nN, '.\n'
     )) }
 
-    DR0_ii <- harmonize_DR_oneBOLD(
-      BOLD[[ii]], mask=mask,
-      gii_hemi=gii_hemi,
-      format=format,
-      GICA=GICA,
-      GSR=GSR,
-      scale=scale,
-      scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
-      scale_sm_FWHM=scale_sm_FWHM,
-      TR=TR, hpf=hpf,
-      brainstructures=brainstructures,
-      varTol=varTol, maskTol=maskTol,
-      verbose=verbose
-    )
+    if (use_templateICA) {
+      # Arguments repeated by `harmonize` and which should not be provided
+      rep_args <- list(
+        BOLD=BOLD[[ii]],
+        scale=scale,
+        scale_sm_surfL=scale_sm_surfL, scale_sm_surfR=scale_sm_surfR,
+        scale_sm_FWHM=scale_sm_FWHM,
+        TR=TR, hpf=hpf, GSR=GSR,
+        brainstructures=brainstructures, mask=mask,
+        verbose=verbose
+      )
+      for (aa in seq(length(rep_args))) {
+        if (names(rep_args)[aa] %in% names(templateICA_args)) {
+          stop(names(rep_args)[aa], " should not be in `templateICA_args` because it's already an argument to `harmonize`. The value provided to `harmonize` will be used.")
+        }
+      }
+      # Arguments that users are not allowed to change
+      preset_args <- list(
+        template=template,
+        resamp_res=NULL
+      )
+      for (aa in seq(length(rep_args))) {
+        if (names(preset_args)[aa] %in% names(templateICA_args)) {
+          stop(
+            names(preset_args)[aa],
+            " should not be in `templateICA_args` because it will be set to ",
+            vapply(preset_args, function(q){if (is.null(q)) {"NULL"} else {"the calculated template"}}, '')[aa]
+          )
+        }
+      }
+      # Merge arguments into a list, and call `templateICA`
+      templateICA_args_ii <- c(
+        templateICA_args,
+        rep_args, preset_args
+      )
+      # [TO DO]: update `templateICA` to handle mask
+      tICA_ii <- do.call(templateICAr::templateICA, templateICA_args_ii)
+      DR0_ii <- list(
+        S = t(as.matrix(tICA_ii$subjICmean)),
+        A = tICA_ii$A,
+        G = tICA_ii$A_cov
+      )
+
+    } else {
+      DR0_ii <- harmonize_DR_oneBOLD(
+        BOLD[[ii]],
+        mask=mask,
+        gii_hemi=gii_hemi,
+        format=format,
+        GICA=GICA,
+        GSR=GSR,
+        scale=scale,
+        scale_sm_surfL=scale_sm_surfL,
+        scale_sm_surfR=scale_sm_surfR,
+        scale_sm_FWHM=scale_sm_FWHM,
+        TR=TR,
+        hpf=hpf,
+        brainstructures=brainstructures,
+        verbose=verbose
+      )
+      DR0_ii <- list(
+        S=DR0_ii$S, A=DR0_ii$A, G=cov(DR0_ii$A)
+      )
+    }
+
+    if (!is.null(mask)) { DR0_ii$S <- DR0_ii$S[,mask,drop=FALSE] }
     S0[ii,,] <- DR0_ii$S
     A0[[ii]] <- DR0_ii$A
     G0[ii,,] <- cov(DR0_ii$A)
   }
 
-  # Process the features -------------------------------------------------------
-  ### Use SVD to reduce dimensions of S_q <- MAYBE NOT!  USE SPATIAL MODEL INSTEAD?
+  ### Process the features -------------------------------------------------------
 
-  U0 <- V0 <- vector('list', nQ)
-  for (qq in seq(nQ)) {
+    ## Use SVD to reduce dimensions of S_q <- MAYBE NOT!  USE SPATIAL MODEL INSTEAD?
 
-    if (verbose) { cat(paste0(
-      '\nPerforming PCA on IC ', qq,' of ', nQ, '.\n'
-    )) }
+  # U0 <- V0 <- vector('list', nQ)
+  # for (qq in seq(nQ)) {
+  #
+  #   if (verbose) { cat(paste0(
+  #     '\nPerforming PCA on IC ', qq,' of ', nQ, '.\n'
+  #   )) }
+  #
+  #   #do PCA separately for each IC q
+  #   S0_q <- S0[,qq,] #NxV
+  #
+  #   #center across sessions so X'X is covariance matrix (add back later)
+  #   #S0_q_mean <- colMeans(S0_q)
+  #   S0_q <- t(S0_q) #- S0_q_mean #vector will be recycled by column
+  #
+  #   #want to obtain U (NxP) where P << V
+  #   SSt_q <- crossprod(S0_q) # S0 is currently VxN, so S0'S0 is NxN.
+  #   svd_q <- svd(SSt_q, nv=0) #want to get U from SVD of S0' = UDV'. SVD of S0'S0 = UDV'VDU' = U D^2 U'
+  #
+  #   #keep components explaining 99% of variation
+  #   nP <- min(which(cumsum(svd_q$d)/sum(svd_q$d) > 0.99))
+  #   U0[[qq]] <- svd_q$u[,1:nP]
+  #
+  #   #visualize V' = (1/D)U'S0' to make sure they are sensible
+  #   V0[[qq]] <- diag(1/svd_q$d[1:nP]) %*% t(svd_q$u[,1:nP]) %*% t(S0_q)
+  # }
 
-    #do PCA separately for each IC q
-    S0_q <- S0[,qq,] #NxV
-
-    #center across sessions so X'X is covariance matrix (add back later)
-    #S0_q_mean <- colMeans(S0_q)
-    S0_q <- t(S0_q) #- S0_q_mean #vector will be recycled by column
-
-    #want to obtain U (NxP) where P << V
-    SSt_q <- crossprod(S0_q) # S0 is currently VxN, so S0'S0 is NxN.
-    svd_q <- svd(SSt_q, nv=0) #want to get U from SVD of S0' = UDV'. SVD of S0'S0 = UDV'VDU' = U D^2 U'
-
-    #keep components explaining 99% of variation
-    nP <- min(which(cumsum(svd_q$d)/sum(svd_q$d) > 0.99))
-    U0[[qq]] <- svd_q$u[,1:nP]
-
-    #visualize V' = (1/D)U'S0' to make sure they are sensible
-    V0[[qq]] <- diag(1/svd_q$d[1:nP]) %*% t(svd_q$u[,1:nP]) %*% t(S0_q)
-  }
-
-  # Damon added these temporary lines to pass roxygen checks.
-  dir_features <- tempdir()
-  DR0 <- NULL
-  # ---------------------------------------------------------
-
-  save(U0, file=file.path(dir_features, 'U.RData'))
-  save(V0, file=file.path(dir_features, 'V.RData'))
-  U0_1 <- U0[[1]]
-  save(U0, file=file.path(dir_features, 'U.RData'))
-  save(U0_1, file=file.path(dir_features, 'U1.RData'))
-  save(S0, file=file.path(dir_features, 'S.RData'))
-  S0_1 <- S0[,1,]
-  save(S0_1, file=file.path(dir_features, 'S1.RData'))
-  save(A0, file=file.path(dir_features, 'A.RData'))
-  save(G0, file=file.path(dir_features, 'G.RData'))
-
-  ### Project elements of G to a tangent space
+  ## Project elements of G to a tangent space
 
   if (verbose) { cat('\nProjecting covariance matrices to tangent space.\n') }
 
@@ -397,13 +541,17 @@ harmonize <- function(
   G_avg <- apply(G0, c(2, 3), mean)
 
   # Project each covariance matrix to tangent space at base point defined by the Euclidean mean
-  system.time(G_tangent <- apply(G0, MARGIN = 1, FUN = tangent_space_projection, B = G_avg))
+  G_tangent <- apply(G0, MARGIN = 1, FUN = tangent_space_projection, B = G_avg) #very fast
 
-  save(G_tangent, file=file.path(dir_features, 'G_tangent.RData'))
+  feature_list <- list(S = S0,
+                       A = A0,
+                       G = G0,
+                       Gt = G_tangent)
 
-  # Run ComBat to harmonize U0 -------------------------------------------------
+  if(!do_harmonize) return(feature_list)
 
-  # Project U0* back to get S0* ------------------------------------------------
+
+  # Run ComBat to harmonize S0 -------------------------------------------------
 
   # Run ComBat to harmonize G_tangent ------------------------------------------
 
@@ -433,8 +581,7 @@ harmonize <- function(
     scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
     GSR=GSR,
-    brainstructures=brainstructures,
-    varTol=varTol, maskTol=maskTol, missingTol=missingTol
+    brainstructures=brainstructures
   )
 
   # Harmonize A and cov(A) using ComBat — given the S and cov(A) matrices, Johanna can develop the code to do that
@@ -442,15 +589,15 @@ harmonize <- function(
   # Return/write out the harmonized fMRI time series
 
   list(
-    DR=DR0,
+    features=feature_list,
     params=params
   )
 }
 
 #' Tangent space projection
-#' 
+#'
 #' Tangent space projection
-#' 
+#'
 #' @param A,B,reverse To-Do
 #' @return To-Do
 #' @keywords internal
@@ -550,31 +697,20 @@ tangent_space_projection <- function(A, B, reverse=FALSE) {
 #'  cortical surface) and/or \code{"subcortical"} (subcortical and cerebellar
 #'  gray matter). Can also be \code{"all"} (obtain all three brain structures).
 #'  Default: \code{c("all")}.
-#' @param varTol Tolerance for variance of each data location. For each scan,
-#'  locations which do not meet this threshold are masked out of the 
-#'  harmonization.
-#'  Default: \code{1e-6}. Variance is calculated on the original data, before
-#'  any normalization.
-#' @param maskTol For computing the dual regression result for each subject:
-#'  tolerance for number of locations masked out due to low
-#'  variance or missing values. If more than this many locations are masked out,
-#'  a subject is not incldued in the harmonization analysis. \code{maskTol}
-#'  can be specified either as a proportion of the number of locations (between
-#'  zero and one), or as a number of locations (integers greater than one).
-#'  Default: \code{.1}, i.e. up to 10 percent of locations can be masked out.
 #'
 #' @keywords internal
 harmonize_DR_oneBOLD <- function(
   BOLD,
   format=c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti", "RDS", "data"),
-  GICA, mask=NULL, gii_hemi=NULL,
+  GICA,
+  mask=NULL,
+  gii_hemi=NULL,
   scale=c("local", "global", "none"),
   scale_sm_surfL=NULL, scale_sm_surfR=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
   GSR=FALSE,
   NA_limit=.1,
   brainstructures=c("all"),
-  varTol=1e-6, maskTol=.1,
   verbose=TRUE){
 
   if (verbose) { extime <- Sys.time() }
@@ -590,10 +726,18 @@ harmonize_DR_oneBOLD <- function(
   # Load helper variables.
   format <- match.arg(format, c("CIFTI", "xifti", "GIFTI", "gifti", "GIFTI2", "gifti2", "NIFTI", "nifti", "RDS", "data"))
   FORMAT <- get_FORMAT(format)
-  nQ <- ncol(GICA)
-  nI <- nV <- nrow(GICA)
-
   check_req_ifti_pkg(FORMAT)
+
+  nQ <- ncol(GICA)
+
+  if (is.null(mask)) {
+    nI <- nV <- nrow(GICA)
+  } else if (FORMAT=="NIFTI") {
+    nI <- dim(drop(mask))
+    nV <- sum(mask)
+  } else {
+    nI <- length(mask); nV <- sum(mask)
+  }
 
   # Get `BOLD` as a data matrix or array.  -------------------------------------
   if (verbose) { cat("\tReading and formatting data...") }
@@ -606,7 +750,6 @@ harmonize_DR_oneBOLD <- function(
       BOLD <- as.matrix(BOLD)
     }
     stopifnot(is.matrix(BOLD))
-    nI <- nV <- nrow(GICA)
   } else if (FORMAT == "GIFTI") {
     if (is.character(BOLD)) { BOLD <- gifti::readgii(BOLD) }
     stopifnot(gifti::is.gifti(BOLD))
@@ -634,7 +777,6 @@ harmonize_DR_oneBOLD <- function(
     }
     BOLD <- do.call(cbind, BOLD$data)
     stopifnot(is.matrix(BOLD))
-    nI <- nV <- nrow(GICA)
   } else if (FORMAT == "GIFTI2") {
     for (ii in seq(2)) {
       if (is.character(BOLD[[ii]])) { BOLD[[ii]] <- gifti::readgii(BOLD[[ii]]) }
@@ -657,11 +799,9 @@ harmonize_DR_oneBOLD <- function(
     if (is.character(BOLD)) { BOLD <- RNifti::readNifti(BOLD) }
     stopifnot(length(dim(BOLD)) > 1)
     stopifnot(!is.null(mask))
-    nI <- dim(drop(mask)); nV <- sum(mask)
   } else if (FORMAT == "MATRIX") {
     if (is.character(BOLD)) { BOLD <- readRDS(BOLD) }
     stopifnot(is.matrix(BOLD))
-    nI <- nV <- nrow(GICA)
   } else { stop() }
 
   dBOLD <- dim(BOLD)
@@ -679,18 +819,9 @@ harmonize_DR_oneBOLD <- function(
   }
 
   # Check for missing values. --------------------------------------------------
-  nV0 <- nV # not used
-  mask <- make_mask(BOLD, varTol=varTol)
-  use_mask <- !all(mask)
-  if (use_mask) {
-    # Coerce `maskTol` to number of locations.
-    stopifnot(is.numeric(maskTol) && length(maskTol)==1 && maskTol >= 0)
-    if (maskTol < 1) { maskTol <- maskTol * nV }
-    # Skip this scan if `maskTol` is surpassed.
-    if (sum(!mask) > maskTol) { return(NULL) }
+  if (!is.null(mask)) {
     # Mask out the locations.
     BOLD <- BOLD[mask,,drop=FALSE]
-    GICA <- GICA[mask,,drop=FALSE]
     if (!is.null(xii1)) {
       xiitmp <- as.matrix(xii1)
       xiitmp[!mask,] <- NA
@@ -704,15 +835,66 @@ harmonize_DR_oneBOLD <- function(
   }
 
   GSR <- FALSE
-  DR <- templateICAr::dual_reg(
+  DR <- dual_reg(
     BOLD, GICA,
-    scale=scale, scale_sm_xifti=xii1, scale_sm_FWHM=scale_sm_FWHM,
+    scale=scale,
+    scale_sm_xifti=xii1,
+    scale_sm_FWHM=scale_sm_FWHM,
     TR=TR, hpf=hpf,
     GSR=GSR
   )
   attr(DR$A, "scaled:center") <- NULL
 
-  if (use_mask) { DR$S <- unmask_mat(DR$S, mask, mask_dim=2, fill=NA) }
+  if (!is.null(mask)) { DR$S <- unmask_mat(DR$S, mask, mask_dim=2, fill=NA) }
 
   DR
+}
+
+#' Read GIFTI with expected hemisphere
+#'
+#' Read in a GIFTI file, and check that the hemisphere is as expected.
+#'
+#' @param gii A file path to a GIFTI metric file, or a \code{"gifti"} object.
+#' @param hemi Expected hemisphere. Default: \code{"left"}.
+#' @keywords internal
+read_gifti_expect_hemi <- function(gii, hemi=c("left", "right")){
+  hemi <- match.arg(hemi, c("left", "right"))
+
+  # Read in
+  if (is.character(gii)) { gii <- gifti::read_gifti(gii) }
+  stopifnot(inherits(gii, "gifti"))
+
+  # Check hemisphere metadata is left or right
+  hemi2 <- gii$file_meta["AnatomicalStructurePrimary"]
+  if (!(hemi2 %in% c("CortexLeft", "CortexRight"))) {
+    stop("AnatomicalStructurePrimary metadata missing or invalid for gii.")
+  }
+
+  # Check hemisphere is what's expected.
+  if (hemi != c(CortexLeft="left", CortexRight="right")[hemi2]) {
+    stop("`gii` was expected to be have ", hemi, " hemisphere data, but it has data for the opposite hemisphere.")
+  }
+
+  gii
+}
+
+#' Read GIFTI with mask data
+#'
+#' Read in a GIFTI file, and check that it has one binary/logical column.
+#'
+#' @param gii A file path to a GIFTI metric file, or a \code{"gifti"} object,
+#'  with a single column of zeroes and ones.
+#' @param hemi Expected hemisphere. Default: \code{"left"}.
+#' @keywords internal
+read_gifti_expect_mask <- function(gii, hemi=c("left", "right")) {
+  gii <- read_gifti_expect_hemi(gii, hemi=hemi)
+
+  # Convert to vector. Check there's only one column. [TO DO]
+  gii <- do.call(cbind, gii$data)
+
+  # Check logical/binary. Issue warning, but proceed, if not.
+  if (!all_binary(gii)) { warning("`gii` is not all binary.") }
+
+  # Convert to binary and return.
+  as.logical(gii)
 }

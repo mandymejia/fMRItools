@@ -4,12 +4,12 @@
 #'  centered.
 #' @param GICA Group-level independent components (\eqn{V \times Q})
 #' @param GSR Center BOLD across columns (each image)? This
-#'  is equivalent to performing global signal regression. Default: 
-#'  \code{FALSE}. 
+#'  is equivalent to performing global signal regression. Default:
+#'  \code{FALSE}.
 #' @param scale \code{"local"} (default), \code{"global"}, or \code{"none"}.
-#'  Local scaling will divide each data location's time series by its estimated 
-#'  standard deviation. Global scaling will divide the entire data matrix by the 
-#'  mean image standard deviation (\code{mean(sqrt(rowVars(BOLD)))}). 
+#'  Local scaling will divide each data location's time series by its estimated
+#'  standard deviation. Global scaling will divide the entire data matrix by the
+#'  mean image standard deviation (\code{mean(sqrt(rowVars(BOLD)))}).
 #' @param scale_sm_xifti,scale_sm_FWHM Only applies if \code{scale=="local"} and
 #'  \code{BOLD} represents CIFTI-format data. To smooth the standard deviation
 #'  estimates used for local scaling, provide a \code{"xifti"} object with data
@@ -21,12 +21,12 @@
 #' @param hpf The frequency at which to apply a highpass filter to the data
 #'  during pre-processing, in Hertz. Default: \code{0.01} Hertz. Set to \code{0}
 #'  to disable the highpass filter.
-#' 
-#' 
-#'  The highpass filter serves to detrend the data, since low-frequency 
-#'  variance is associated with noise. Highpass filtering is accomplished by 
-#'  nuisance regression of discrete cosine transform (DCT) bases. 
-#' 
+#'
+#'
+#'  The highpass filter serves to detrend the data, since low-frequency
+#'  variance is associated with noise. Highpass filtering is accomplished by
+#'  nuisance regression of discrete cosine transform (DCT) bases.
+#'
 #'  Note the \code{TR} argument is required for highpass filtering. If
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
 #'

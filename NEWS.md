@@ -1,6 +1,6 @@
-# 0.3.3
+# 0.4.0
 
-* Add a few functions from `templateICAr` that will be used for a future function.
+* Add `all_binary`.
 
 # 0.3.2
 
