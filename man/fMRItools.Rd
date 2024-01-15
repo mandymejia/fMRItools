@@ -2,8 +2,8 @@
 % Please edit documentation in R/fMRItools-package.R
 \docType{package}
 \name{fMRItools}
-\alias{fMRItools}
 \alias{fMRItools-package}
+\alias{fMRItools}
 \title{fMRItools: Routines for Common fMRI Processing Tasks}
 \description{
 See \code{help(package="fMRItools")} for a list of functions.
