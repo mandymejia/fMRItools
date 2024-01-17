@@ -40,9 +40,9 @@ color_palette <- function(pal="Beach") {
   switch(pal,
     Beach = ciftiTools::expand_color_pal(data.frame(
       color = c(
-        "#18187a", "#323cf0", "#4b88fa", "#96dcfa",
+        "#0e0eb3", "#323cf0", "#4b88fa", "#96dcfa",
         "#e1f7e9", "#fbfff9", "#f5f5da",
-        "#fadb8c", "#d4763f", "#b02720", "#660404"
+        "#fadb8c", "#d4763f", "#b02720", "#750000"
       ),
       value = c(0, .05, .15, .32, .42, .5, .58, .68, .85, .95, 1)
     ), COLOR_RES=400)$color
