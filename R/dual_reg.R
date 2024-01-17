@@ -104,6 +104,18 @@ dual_reg <- function(
   normA <- TRUE
   if (normA) { A <- scale(A) }
 
+  # Check rank of `A`.
+  A_rank <- qr(A)$rank
+  if (A_rank < ncol(A)) {
+    warning(
+      "DR has estimated an `A` matrix that has ", ncol(A), " columns, but its rank is ", A_rank, ". ",
+      "An `A` matrix that is not full rank can occur when the number of group ICs approaches the number of volumes in the subject data. ",
+      "This problem can be avoided by using a group ICA with fewer components, ",
+      "or by providing more volumes of data. ",
+      "Continuing, but an error may occur in further calculations."
+    )
+  }
+
   # Estimate S (IC maps).
   # Don't worry about the intercept: `BOLD` and `A` are centered across time.
   S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
