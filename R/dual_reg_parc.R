@@ -2,7 +2,9 @@
 #'
 #' @param BOLD Subject-level fMRI data matrix (\eqn{V \times T}). Rows will be
 #'  centered.
-#' @param parc Parcellation
+#' @param parc The parcellation as an integer vector.
+#' @param parc_vals The parcel values (keys) in desired order, e.g.
+#'  \code{sort(unique(parc))}.
 #' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
@@ -68,6 +70,7 @@ dual_reg_parc <- function(
   }
 
   stopifnot(all(unique(c(parc)) %in% parc_vals))
+  stopifnot(all(parc_vals %in% parc))
   nQ <- length(parc_vals) #number of parcels
   if(nQ > nV) warning('More parcels than voxels. Are you sure?')
   if(nQ > nT) warning('More parcels than time points. Are you sure?')

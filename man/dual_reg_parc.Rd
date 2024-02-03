@@ -20,7 +20,10 @@ dual_reg_parc(
 \item{BOLD}{Subject-level fMRI data matrix (\eqn{V \times T}). Rows will be
 centered.}
 
-\item{parc}{Parcellation}
+\item{parc}{The parcellation as an integer vector.}
+
+\item{parc_vals}{The parcel values (keys) in desired order, e.g.
+\code{sort(unique(parc))}.}
 
 \item{scale}{\code{"local"} (default), \code{"global"}, or \code{"none"}.
 Local scaling will divide each data location's time series by its estimated
