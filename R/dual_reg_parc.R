@@ -5,6 +5,8 @@
 #' @param parc The parcellation as an integer vector.
 #' @param parc_vals The parcel values (keys) in desired order, e.g.
 #'  \code{sort(unique(parc))}.
+#' @param method \code{"MLR"} (assumes additive components), or \code{"SLR"} for
+#'  separate regression.
 #' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
@@ -33,7 +35,7 @@
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
 #'
 #' @return A list containing
-#'  the subject-level independent components \strong{S} (\eqn{V \times Q}),
+#'  the subject-level independent components \strong{S} (\eqn{Q \times V}),
 #'  and subject-level mixing matrix \strong{A} (\eqn{TxQ}).
 #'
 #' @importFrom matrixStats rowMedians
@@ -41,12 +43,15 @@
 #'
 dual_reg_parc <- function(
   BOLD, parc, parc_vals,
+  method=c("MLR", "SLR"),
+  set_neg_S_to_zero=TRUE,
   scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
   GSR=FALSE){
 
   stopifnot(is.matrix(BOLD))
-  stopifnot(is.matrix(parc))
+  stopifnot(is.numeric(parc))
+  parc <- as.matrix(parc)
   if (is.null(scale) || isFALSE(scale)) { scale <- "none" }
   if (isTRUE(scale)) {
     warning(
@@ -58,6 +63,9 @@ dual_reg_parc <- function(
   scale <- match.arg(scale, c("local", "global", "none"))
   if (!is.null(scale_sm_xifti)) { stopifnot(ciftiTools::is.xifti(scale_sm_xifti)) }
   stopifnot(is.numeric(scale_sm_FWHM) && length(scale_sm_FWHM)==1)
+
+  method <- match.arg(method, c("MLR", "SLR"))
+  stopifnot(is_1(set_neg_S_to_zero, "logical"))
 
   if (any(is.na(BOLD))) { stop("`NA` values in `BOLD` not supported with DR.") }
   if (any(is.na(parc))) { stop("`NA` values in `parc` not supported with DR.") }
@@ -107,9 +115,18 @@ dual_reg_parc <- function(
     )
   }
 
-  # Estimate S (IC maps).
-  # Don't worry about the intercept: `BOLD` and `A` are centered across time.
-  S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
+  # Estimate S (IC maps). VxQ
+  if (method == "MLR") {
+    # Don't worry about the intercept: `BOLD` and `A` are centered across time.
+    S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
+  } else if (method == "SLR") {
+    S <- matrix(NA, nrow=nQ, ncol=nV)
+    for (qq in seq(nQ)) {
+      S[qq,] <- cor(BOLD, A[,qq])
+    }
+  } else { stop() }
+
+  if (set_neg_S_to_zero) { S[S<0] <- 0 }
 
   #return result
   list(S = S, A = A)

@@ -8,6 +8,8 @@ dual_reg_parc(
   BOLD,
   parc,
   parc_vals,
+  method = c("MLR", "SLR"),
+  set_neg_S_to_zero = TRUE,
   scale = c("local", "global", "none"),
   scale_sm_xifti = NULL,
   scale_sm_FWHM = 2,
@@ -24,6 +26,9 @@ centered.}
 
 \item{parc_vals}{The parcel values (keys) in desired order, e.g.
 \code{sort(unique(parc))}.}
+
+\item{method}{\code{"MLR"} (assumes additive components), or \code{"SLR"} for
+separate regression.}
 
 \item{scale}{\code{"local"} (default), \code{"global"}, or \code{"none"}.
 Local scaling will divide each data location's time series by its estimated
@@ -57,7 +62,7 @@ is equivalent to performing global signal regression. Default:
 }
 \value{
 A list containing
-the subject-level independent components \strong{S} (\eqn{V \times Q}),
+the subject-level independent components \strong{S} (\eqn{Q \times V}),
 and subject-level mixing matrix \strong{A} (\eqn{TxQ}).
 }
 \description{
