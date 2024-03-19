@@ -1,12 +1,10 @@
-#' Dual Regression
+#' Multiple regression for parcel data
 #'
 #' @param BOLD Subject-level fMRI data matrix (\eqn{V \times T}). Rows will be
 #'  centered.
 #' @param parc The parcellation as an integer vector.
 #' @param parc_vals The parcel values (keys) in desired order, e.g.
 #'  \code{sort(unique(parc))}.
-#' @param method \code{"MLR"} (assumes additive components), or \code{"SLR"} for
-#'  separate regression.
 #' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
@@ -43,8 +41,6 @@
 #'
 dual_reg_parc <- function(
   BOLD, parc, parc_vals,
-  method=c("MLR", "SLR"),
-  set_neg_S_to_zero=TRUE,
   scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
   GSR=FALSE){
@@ -63,9 +59,6 @@ dual_reg_parc <- function(
   scale <- match.arg(scale, c("local", "global", "none"))
   if (!is.null(scale_sm_xifti)) { stopifnot(ciftiTools::is.xifti(scale_sm_xifti)) }
   stopifnot(is.numeric(scale_sm_FWHM) && length(scale_sm_FWHM)==1)
-
-  method <- match.arg(method, c("MLR", "SLR"))
-  stopifnot(is_1(set_neg_S_to_zero, "logical"))
 
   if (any(is.na(BOLD))) { stop("`NA` values in `BOLD` not supported with DR.") }
   if (any(is.na(parc))) { stop("`NA` values in `parc` not supported with DR.") }
@@ -116,17 +109,7 @@ dual_reg_parc <- function(
   }
 
   # Estimate S (IC maps). VxQ
-  if (method == "MLR") {
-    # Don't worry about the intercept: `BOLD` and `A` are centered across time.
-    S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
-  } else if (method == "SLR") {
-    S <- matrix(NA, nrow=nQ, ncol=nV)
-    for (qq in seq(nQ)) {
-      S[qq,] <- cor(BOLD, A[,qq])
-    }
-  } else { stop() }
-
-  if (set_neg_S_to_zero) { S[S<0] <- 0 }
+  S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
 
   #return result
   list(S = S, A = A)
