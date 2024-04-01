@@ -7,7 +7,7 @@
 plot_FC(
   FC,
   zlim = c(-1, 1),
-  diag_val = NA,
+  diag_val = NULL,
   title = "FC matrix",
   cols = color_palette("Beach"),
   cleg_ticks_by = 0.5,
@@ -26,8 +26,8 @@ values between -1 and 1.}
 \item{zlim}{The minimum and maximum range of the color scale. Default:
 \code{c(-1, 1)}. If in descending order, the color scale will be reversed.}
 
-\item{diag_val}{Set to \code{NA} (default) for white, \code{1}, or
-\code{NULL} to not modify the diagonal values in \code{FC}.}
+\item{diag_val}{Set to \code{NA} for white, \code{1}, or \code{NULL}
+(default) to not modify the diagonal values in \code{FC}.}
 
 \item{title}{(Optional) Plot title.}
 

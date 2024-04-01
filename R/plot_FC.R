@@ -111,8 +111,8 @@ image.scale <- function(z, zlim, col = color_palette("Beach"),
 #'  values between -1 and 1.
 #' @param zlim The minimum and maximum range of the color scale. Default:
 #'  \code{c(-1, 1)}. If in descending order, the color scale will be reversed.
-#' @param diag_val Set to \code{NA} (default) for white, \code{1}, or
-#'  \code{NULL} to not modify the diagonal values in \code{FC}.
+#' @param diag_val Set to \code{NA} for white, \code{1}, or \code{NULL} 
+#'  (default) to not modify the diagonal values in \code{FC}.
 #' @param title (Optional) Plot title.
 #' @param cols Character vector of colors for the color scale. Default:
 #'  \code{color_palette("Beach")}.
@@ -132,7 +132,7 @@ image.scale <- function(z, zlim, col = color_palette("Beach"),
 #' @export
 plot_FC <- function(
   FC, zlim=c(-1,1),
-  diag_val=NA,
+  diag_val=NULL,
   title="FC matrix",
   cols=color_palette("Beach"),
   cleg_ticks_by=0.5, cleg_digits=1,
