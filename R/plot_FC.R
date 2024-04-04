@@ -28,23 +28,39 @@ cor_mat <- function(x_diag, diag_val=NA, names=NULL, newOrder=NULL, lowerOnly=FA
   mat
 }
 
-#' Palette
-#'
 #' Color palette
 #'
-#' @param pal \code{"Beach"} (default) is the only palette currently available.
+#' Color palettes for fMRI data analysis tasks
+#'
+#' @param pal \code{"div_Beach"} (default; blue to white to red), 
+#'  \code{"seq_Beach"} (white to red), or 
+#'  \code{"seq_Beach2"} (blue to white).
 #' @return A data.frame with two columns: \code{"col"} has the hex code of color,
 #' and \code{"val"} has the placement of colors between zero and one.
-#' @keywords internal
-color_palette <- function(pal="Beach") {
+#' @export
+color_palette <- function(pal="div_Beach") {
   switch(pal,
-    Beach = ciftiTools::expand_color_pal(data.frame(
+    div_Beach = ciftiTools::expand_color_pal(data.frame(
       color = c(
         "#1a188f", "#5e5eff", "#78bbff", "#9bf5ff",
         "#e1f7e9", "#fbfff9", "#f5f5da",
         "#fafa89", "#ffa500", "#ff2424", "#680000"
       ),
       value = c(0, .1, .2, .32, .42, .5, .58, .68, .8, .9, 1)
+    ), COLOR_RES=400)$color,
+    seq_Beach = ciftiTools::expand_color_pal(data.frame(
+      color = c(
+        "#fbfff9", "#f5f5da",
+        "#fafa89", "#ffa500", "#ff2424", "#680000"
+      ),
+      value = c(.5, .58, .68, .8, .9, 1) * 2 - 1
+    ), COLOR_RES=400)$color,
+    seq_Beach2 = ciftiTools::expand_color_pal(data.frame(
+      color = rev(c(
+        "#1a188f", "#5e5eff", "#78bbff", "#9bf5ff",
+        "#e1f7e9", "#fbfff9"
+      )),
+      value = rev(c(0, .1, .2, .32, .42, .5) * 2)
     ), COLOR_RES=400)$color
   )
 }
@@ -56,7 +72,7 @@ color_palette <- function(pal="Beach") {
 #' @param z,zlim,col,breaks,axis.pos,add.axis,... The arguments.
 #' @return Plots the image scale.
 #' @keywords internal
-image.scale <- function(z, zlim, col = color_palette("Beach"),
+image.scale <- function(z, zlim, col = color_palette("div_Beach"),
   breaks, axis.pos=1, add.axis=TRUE, ...){
 
   if (!requireNamespace("graphics", quietly = TRUE)) {
@@ -115,7 +131,7 @@ image.scale <- function(z, zlim, col = color_palette("Beach"),
 #'  (default) to not modify the diagonal values in \code{FC}.
 #' @param title (Optional) Plot title.
 #' @param cols Character vector of colors for the color scale. Default:
-#'  \code{color_palette("Beach")}.
+#'  \code{color_palette("div_Beach")}.
 #' @param cleg_ticks_by Spacing between ticks on the color legend. Default:
 #'  \code{0.5}.
 #' @param cleg_digits How many decimal digits for the color legend. Default:
@@ -134,7 +150,7 @@ plot_FC <- function(
   FC, zlim=c(-1,1),
   diag_val=NULL,
   title="FC matrix",
-  cols=color_palette("Beach"),
+  cols=color_palette("div_Beach"),
   cleg_ticks_by=0.5, cleg_digits=1,
   labels = NULL,
   lines = seq(nN),

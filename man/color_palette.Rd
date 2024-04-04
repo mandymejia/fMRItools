@@ -2,18 +2,19 @@
 % Please edit documentation in R/plot_FC.R
 \name{color_palette}
 \alias{color_palette}
-\title{Palette}
+\title{Color palette}
 \usage{
-color_palette(pal = "Beach")
+color_palette(pal = "div_Beach")
 }
 \arguments{
-\item{pal}{\code{"Beach"} (default) is the only palette currently available.}
+\item{pal}{\code{"div_Beach"} (default; blue to white to red),
+\code{"seq_Beach"} (white to red), or
+\code{"seq_Beach2"} (blue to white).}
 }
 \value{
 A data.frame with two columns: \code{"col"} has the hex code of color,
 and \code{"val"} has the placement of colors between zero and one.
 }
 \description{
-Color palette
+Color palettes for fMRI data analysis tasks
 }
-\keyword{internal}
