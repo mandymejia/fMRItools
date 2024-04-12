@@ -10,10 +10,10 @@ plot_FC(
   diag_val = NULL,
   title = "FC matrix",
   cols = color_palette("div_Beach"),
-  cleg_ticks_by = 0.5,
-  cleg_digits = 1,
+  cleg_ticks_by = diff(zlim)/2,
+  cleg_digits = NULL,
   labels = NULL,
-  lines = seq(nN),
+  lines = NULL,
   lines_col = "black",
   lines_lwd = 1,
   cex = 0.8
@@ -35,17 +35,18 @@ values between -1 and 1.}
 \code{color_palette("div_Beach")}.}
 
 \item{cleg_ticks_by}{Spacing between ticks on the color legend. Default:
-\code{0.5}.}
+\code{range(zlim)/2}.}
 
 \item{cleg_digits}{How many decimal digits for the color legend. Default:
-\code{1}.}
+\code{NULL} to set automatically.}
 
 \item{labels}{A character vector of length \code{length(lines)+1}, giving
 row/column labels for the submatrices divided by \code{lines}. If
 \code{NULL} (default), do not add labels.}
 
 \item{lines}{Add lines to divide the FC matrix into submatrices? Default:
-delineate each individual row and column.}
+\code{NULL} (do not draw lines). Use \code{seq(nN)} to delineate each
+individual row and column.}
 
 \item{lines_col, lines_lwd}{Color and line width of the \code{lines}. Default:
 black lines of width \code{1}.}

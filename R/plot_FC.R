@@ -32,8 +32,8 @@ cor_mat <- function(x_diag, diag_val=NA, names=NULL, newOrder=NULL, lowerOnly=FA
 #'
 #' Color palettes for fMRI data analysis tasks
 #'
-#' @param pal \code{"div_Beach"} (default; blue to white to red), 
-#'  \code{"seq_Beach"} (white to red), or 
+#' @param pal \code{"div_Beach"} (default; blue to white to red),
+#'  \code{"seq_Beach"} (white to red), or
 #'  \code{"seq_Beach2"} (blue to white).
 #' @return A data.frame with two columns: \code{"col"} has the hex code of color,
 #' and \code{"val"} has the placement of colors between zero and one.
@@ -127,20 +127,21 @@ image.scale <- function(z, zlim, col = color_palette("div_Beach"),
 #'  values between -1 and 1.
 #' @param zlim The minimum and maximum range of the color scale. Default:
 #'  \code{c(-1, 1)}. If in descending order, the color scale will be reversed.
-#' @param diag_val Set to \code{NA} for white, \code{1}, or \code{NULL} 
+#' @param diag_val Set to \code{NA} for white, \code{1}, or \code{NULL}
 #'  (default) to not modify the diagonal values in \code{FC}.
 #' @param title (Optional) Plot title.
 #' @param cols Character vector of colors for the color scale. Default:
 #'  \code{color_palette("div_Beach")}.
 #' @param cleg_ticks_by Spacing between ticks on the color legend. Default:
-#'  \code{0.5}.
+#'  \code{range(zlim)/2}.
 #' @param cleg_digits How many decimal digits for the color legend. Default:
-#'  \code{1}.
+#'  \code{NULL} to set automatically.
 #' @param labels A character vector of length \code{length(lines)+1}, giving
-#'  row/column labels for the submatrices divided by \code{lines}. If 
+#'  row/column labels for the submatrices divided by \code{lines}. If
 #'  \code{NULL} (default), do not add labels.
 #' @param lines Add lines to divide the FC matrix into submatrices? Default:
-#'  delineate each individual row and column. 
+#'  \code{NULL} (do not draw lines). Use \code{seq(nN)} to delineate each
+#'  individual row and column.
 #' @param lines_col,lines_lwd Color and line width of the \code{lines}. Default:
 #'  black lines of width \code{1}.
 #' @param cex Text size. Default: \code{0.8}.
@@ -151,9 +152,10 @@ plot_FC <- function(
   diag_val=NULL,
   title="FC matrix",
   cols=color_palette("div_Beach"),
-  cleg_ticks_by=0.5, cleg_digits=1,
+  cleg_ticks_by=diff(zlim)/2,
+  cleg_digits=NULL,
   labels = NULL,
-  lines = seq(nN),
+  lines = NULL,
   lines_col = 'black',
   lines_lwd = 1,
   cex = 0.8
@@ -186,9 +188,17 @@ plot_FC <- function(
   if (length(cols) < color_res) {
     cols <- grDevices::colorRampPalette(cols, space="Lab")(color_res)
   }
-  cleg_ticks <- format(round(
-    seq(zlim[1], zlim[2], cleg_ticks_by), cleg_digits
-  ), scientific=FALSE, digits = cleg_digits, nsmall = cleg_digits)
+
+  cleg_ticks <- seq(zlim[1], zlim[2], cleg_ticks_by)
+  cleg_ndec <- suppressWarnings(abs(log(cleg_ticks, base=10)))
+  cleg_ndec[is.infinite(cleg_ndec) | is.nan(cleg_ndec) | (cleg_ndec<0)] <- 0
+  cleg_ndigits <- max(nchar(gsub("[^0-9]", "", as.character(cleg_ticks))))
+
+  use_scientific <- max(cleg_ndec) > 8
+  if (is.null(cleg_digits)) {
+    cleg_digits <- if (use_scientific) { cleg_ndigits } else { cleg_ndec + 1 }
+  }
+  cleg_ticks <- format(cleg_ticks, scientific=use_scientific, nsmall = cleg_digits)
 
   # Plot -----
   graphics::layout(matrix(c(1,2,0,3), nrow=2, ncol=2), widths=c(5,1.2), heights=c(1.2,5))
