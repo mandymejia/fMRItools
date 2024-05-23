@@ -9,7 +9,7 @@ plot_FC(
   zlim = c(-1, 1),
   diag_val = NULL,
   title = "FC matrix",
-  cols = color_palette("div_Beach"),
+  cols = color_palette("Beach"),
   cleg_ticks_by = diff(zlim)/2,
   cleg_digits = NULL,
   labels = NULL,
@@ -32,7 +32,7 @@ values between -1 and 1.}
 \item{title}{(Optional) Plot title.}
 
 \item{cols}{Character vector of colors for the color scale. Default:
-\code{color_palette("div_Beach")}.}
+\code{color_palette("Beach")}.}
 
 \item{cleg_ticks_by}{Spacing between ticks on the color legend. Default:
 \code{range(zlim)/2}.}

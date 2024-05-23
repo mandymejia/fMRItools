@@ -7,7 +7,7 @@
 \method{image}{scale}(
   z,
   zlim,
-  col = color_palette("div_Beach"),
+  col = color_palette("Beach"),
   breaks,
   axis.pos = 1,
   add.axis = TRUE,

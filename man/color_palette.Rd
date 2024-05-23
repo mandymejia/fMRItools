@@ -4,12 +4,12 @@
 \alias{color_palette}
 \title{Color palette}
 \usage{
-color_palette(pal = "div_Beach")
+color_palette(pal = "Beach")
 }
 \arguments{
-\item{pal}{\code{"div_Beach"} (default; blue to white to red),
-\code{"seq_Beach"} (white to red), or
-\code{"seq_Beach2"} (blue to white).}
+\item{pal}{\code{"Beach"} (default; blue to white to red),
+\code{"Sand"} (white to red), or
+\code{"Water"} (white to blue).}
 }
 \value{
 A data.frame with two columns: \code{"col"} has the hex code of color,
