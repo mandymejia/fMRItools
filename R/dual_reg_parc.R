@@ -1,8 +1,10 @@
-#' Dual Regression
+#' Multiple regression for parcel data
 #'
 #' @param BOLD Subject-level fMRI data matrix (\eqn{V \times T}). Rows will be
 #'  centered.
-#' @param GICA Group-level independent components (\eqn{V \times Q})
+#' @param parc The parcellation as an integer vector.
+#' @param parc_vals The parcel values (keys) in desired order, e.g.
+#'  \code{sort(unique(parc))}.
 #' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
@@ -31,28 +33,21 @@
 #'  \code{TR} is not provided, \code{hpf} will be ignored.
 #'
 #' @return A list containing
-#'  the subject-level independent components \strong{S} (\eqn{V \times Q}),
+#'  the subject-level independent components \strong{S} (\eqn{Q \times V}),
 #'  and subject-level mixing matrix \strong{A} (\eqn{TxQ}).
 #'
+#' @importFrom matrixStats rowMedians
 #' @export
-#' @examples
-#' nT <- 30
-#' nV <- 400
-#' nQ <- 7
-#' mU <- matrix(rnorm(nV*nQ), nrow=nV)
-#' mS <- mU %*% diag(seq(nQ, 1)) %*% matrix(rnorm(nQ*nT), nrow=nQ)
-#' BOLD <- mS + rnorm(nV*nT, sd=.05)
-#' GICA <- mU
-#' dual_reg(BOLD=BOLD, GICA=mU, scale="local")
 #'
-dual_reg <- function(
-  BOLD, GICA,
+dual_reg_parc <- function(
+  BOLD, parc, parc_vals,
   scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
   TR=NULL, hpf=.01,
   GSR=FALSE){
 
   stopifnot(is.matrix(BOLD))
-  stopifnot(is.matrix(GICA))
+  stopifnot(is.numeric(parc))
+  parc <- as.matrix(parc)
   if (is.null(scale) || isFALSE(scale)) { scale <- "none" }
   if (isTRUE(scale)) {
     warning(
@@ -66,18 +61,20 @@ dual_reg <- function(
   stopifnot(is.numeric(scale_sm_FWHM) && length(scale_sm_FWHM)==1)
 
   if (any(is.na(BOLD))) { stop("`NA` values in `BOLD` not supported with DR.") }
-  if (any(is.na(GICA))) { stop("`NA` values in `GICA` not supported with DR.") }
+  if (any(is.na(parc))) { stop("`NA` values in `parc` not supported with DR.") }
 
   nV <- nrow(BOLD) #number of data locations
   nT <- ncol(BOLD) #length of timeseries
   if(nV < nT) warning('More time points than voxels. Are you sure?')
-  if(nV != nrow(GICA)) {
-    stop('The number of voxels in dat (', nV, ') and GICA (', nrow(GICA), ') must match')
+  if(nV != nrow(parc)) {
+    stop('The number of voxels in dat (', nV, ') and parc (', nrow(parc), ') must match')
   }
 
-  nQ <- ncol(GICA) #number of ICs
-  if(nQ > nV) warning('More ICs than voxels. Are you sure?')
-  if(nQ > nT) warning('More ICs than time points. Are you sure?')
+  stopifnot(all(unique(c(parc)) %in% parc_vals))
+  stopifnot(all(parc_vals %in% parc))
+  nQ <- length(parc_vals) #number of parcels
+  if(nQ > nV) warning('More parcels than voxels. Are you sure?')
+  if(nQ > nT) warning('More parcels than time points. Are you sure?')
 
   # Center each voxel timecourse. Do not center the image at each timepoint.
   # Standardize scale if `scale`, and detrend if `hpf>0`.
@@ -88,17 +85,12 @@ dual_reg <- function(
     TR=TR, hpf=hpf
   ))
 
-  # Center each group IC across space. (Used to be a function argument.)
-  center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- colCenter(GICA) }
-
   # Estimate A (IC timeseries).
   # We need to center `BOLD` across space because the linear model has no intercept.
-  A <- ((BOLD - rowMeans(BOLD, na.rm=TRUE)) %*% GICA) %*% chol2inv(chol(crossprod(GICA)))
-
-  # Center each subject IC timecourse across time.
-  # (Redundant. Since BOLD is column-centered, A is already column-centered.)
-  # A <- colCenter(A)
+  A <- matrix(NA, nrow=nT, ncol=nQ)
+  for (qq in seq(nQ)) {
+    A[,qq] <- matrixStats::rowMedians(BOLD[,c(parc==parc_vals[qq])])
+  }
 
   # Normalize each subject IC timecourse. (Used to be a function argument.)
   normA <- TRUE
@@ -116,8 +108,7 @@ dual_reg <- function(
     )
   }
 
-  # Estimate S (IC maps).
-  # Don't worry about the intercept: `BOLD` and `A` are centered across time.
+  # Estimate S (IC maps). VxQ
   S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
 
   #return result
