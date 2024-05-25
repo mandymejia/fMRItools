@@ -5,6 +5,8 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/fMRItools)](https://cran.r-project.org/package=fMRItools)
 [![R-CMD-check](https://github.com/mandymejia/fMRItools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mandymejia/fMRItools/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/mandymejia/fMRItools/branch/main/graph/badge.svg)](https://app.codecov.io/gh/mandymejia/fMRItools?branch=main)
