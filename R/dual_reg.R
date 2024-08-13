@@ -79,7 +79,7 @@ dual_reg <- function(
   if(nQ > nV) warning('More ICs than voxels. Are you sure?')
   if(nQ > nT) warning('More ICs than time points. Are you sure?')
 
-  # Center each voxel timecourse. Do not center the image at each timepoint.
+  # Center each voxel timecourse. Do not center the image at each timepoint unless GSR = TRUE.
   # Standardize scale if `scale`, and detrend if `hpf>0`.
   # Transpose it: now `BOLD` is TxV.
   BOLD <- t(norm_BOLD(
@@ -89,8 +89,7 @@ dual_reg <- function(
   ))
 
   # Center each group IC across space. (Used to be a function argument.)
-  center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- colCenter(GICA) }
+  GICA <- colCenter(GICA)
 
   # Estimate A (IC timeseries).
   # We need to center `BOLD` across space because the linear model has no intercept.
@@ -100,9 +99,8 @@ dual_reg <- function(
   # (Redundant. Since BOLD is column-centered, A is already column-centered.)
   # A <- colCenter(A)
 
-  # Normalize each subject IC timecourse. (Used to be a function argument.)
-  normA <- TRUE
-  if (normA) { A <- scale(A) }
+  # Normalize each subject IC timecourse to constrain the ICA. (Used to be a function argument.)
+  A <- scale(A)
 
   # Check rank of `A`.
   A_rank <- qr(A)$rank
@@ -120,6 +118,11 @@ dual_reg <- function(
   # Don't worry about the intercept: `BOLD` and `A` are centered across time.
   S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
 
+  # Re-estimate A (IC timeseries) based on the subject-level IC maps
+  # We need to center `BOLD` across space because the linear model has no intercept.
+  S_ctr <- colCenter(t(S))
+  A2 <- ((BOLD - rowMeans(BOLD, na.rm=TRUE)) %*% S_ctr) %*% chol2inv(chol(crossprod(S_ctr)))
+
   #return result
-  list(S = S, A = A)
+  list(S = S, A = A, A2 = A2)
 }
