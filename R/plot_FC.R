@@ -190,11 +190,16 @@ plot_FC <- function(
   }
 
   cleg_ticks <- seq(zlim[1], zlim[2], cleg_ticks_by)
+  # Patch: sometimes the middle value is a very small nonzero number 
+  if (max(abs(cleg_ticks)) > 1e-5) {
+    cleg_ticks[abs(cleg_ticks) < 1e-8] <- 0
+  }
+  # Get number of decimal values and number of digits
   cleg_ndec <- suppressWarnings(abs(log(cleg_ticks, base=10)))
   cleg_ndec[is.infinite(cleg_ndec) | is.nan(cleg_ndec) | (cleg_ndec<0)] <- 0
   cleg_ndigits <- max(nchar(gsub("[^0-9]", "", as.character(cleg_ticks))))
 
-  use_scientific <- max(cleg_ndec) > 8
+  use_scientific <- max(cleg_ndec) > 5
   if (is.null(cleg_digits)) {
     cleg_digits <- if (use_scientific) { cleg_ndigits } else { cleg_ndec + 1 }
   }
