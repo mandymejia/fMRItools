@@ -19,7 +19,11 @@ detrend(X, TR, hpf = 0.008, method = c("DCT", "FFT"))
 \arguments{
 \item{X}{A numeric matrix, with each column being a timeseries to filter
 For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain
-locations.}
+locations.
+
+Alternatively, a single integer giving the number of timepoints in data.
+The return value will be the suitable set of DCT bases. Only works with
+\code{method == "DCT"}.}
 
 \item{TR}{The time step between adjacent rows of \code{X}, in seconds.}
 
@@ -34,7 +38,8 @@ with \codE{lpf} yet.}
 \item{verbose}{Print messages? Default: \code{FALSE}.}
 }
 \value{
-Filtered \code{X}.
+Filtered \code{X}, or if \code{X} was an integer, the set of DCT
+bases to use for nuisance regression (not including an intercept).
 }
 \description{
 Temporal filtering (bandpass, highpass, lowpass) with DCT or FFT

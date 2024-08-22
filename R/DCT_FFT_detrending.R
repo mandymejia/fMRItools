@@ -98,6 +98,10 @@ fft_detrend <- function(X, N) {
 #' @param X A numeric matrix, with each column being a timeseries to filter
 #'  For fMRI data, \code{X} should be \code{T} timepoints by \code{V} brain
 #'  locations.
+#' 
+#'  Alternatively, a single integer giving the number of timepoints in data.
+#'  The return value will be the suitable set of DCT bases. Only works with
+#'  \code{method == "DCT"}.
 #' @param TR The time step between adjacent rows of \code{X}, in seconds.
 #' @param hpf The frequency of the highpass filter, in Hertz. Default: \code{.008}.
 #' @param lpf The frequency of the lowpass filter, in Hertz. Default: \code{NULL}
@@ -106,7 +110,8 @@ fft_detrend <- function(X, N) {
 #'  with \codE{lpf} yet.
 #' @param verbose Print messages? Default: \code{FALSE}.
 #'
-#' @return Filtered \code{X}.
+#' @return Filtered \code{X}, or if \code{X} was an integer, the set of DCT
+#'  bases to use for nuisance regression (not including an intercept).
 #'
 #' @export
 #'
@@ -119,8 +124,11 @@ temporal_filter <- function(
   verbose=FALSE) {
 
   # Argument checks.
-  X <- as.matrix(X)
-  stopifnot(is.numeric(X))
+  X_int <- is_posNum(X) && X == round(X)
+  if (!X_int) {
+    X <- as.matrix(X)
+    stopifnot(is.numeric(X))
+  }
   stopifnot(is_posNum(TR))
   stopifnot(is.null(hpf) || is_posNum(hpf))
   stopifnot(is.null(lpf) || is_posNum(lpf))
@@ -130,7 +138,7 @@ temporal_filter <- function(
   method <- match.arg(method, c("DCT", "FFT"))
 
   # Get number of timepoints.
-  T_ <- nrow(X)
+  T_ <- if (X_int) { X } else { nrow(X) }
 
   # DCT ------------------------------------------------------------------------
   if (method == "DCT") {
@@ -140,8 +148,8 @@ temporal_filter <- function(
     # Compute the bases. 
     bases <- dct_bases(T_, T_)
 
-    # Initialize nuisance matrix with an intercept column.
-    nmat <- as.matrix(rep(1, T_))
+    # Initialize nuisance matrix.
+    nmat <- NULL
 
     # Collect DCT HPF bases.
     if (!is.null(hpf)) {
@@ -153,7 +161,9 @@ temporal_filter <- function(
       } else {
         if (verbose) { cat(hpf_idx, "bases for HPF.\n") }
         if (hpf_idx == T_) { warning("No DOF left.") }
-        nmat <- cbind(nmat, bases[,seq(hpf_idx)])
+        nmat_hpf <- bases[,seq(hpf_idx),drop=FALSE]
+        colnames(nmat_hpf) <- paste(round(freq_exp[1+seq(hpf_idx)], 4), "Hz")
+        nmat <- cbind(nmat, nmat_hpf)
       }
     }
 
@@ -176,15 +186,21 @@ temporal_filter <- function(
       } else {
         if (verbose) { cat(T_ - lpf_idx + 1, "bases for LPF.\n") }
         if (lpf_idx == 1) { warning("No DOF left.") }
-        nmat <- cbind(nmat, bases[,seq(lpf_idx, T_)])
+        nmat_lpf <- bases[,seq(lpf_idx, T_),drop=FALSE]
+        colnames(nmat_lpf) <- paste(round(freq_exp[1+seq(lpf_idx, T_)], 4), "Hz")
+        nmat <- cbind(nmat, nmat_lpf)
       }
     }
 
+    if (X_int) { return(nmat) } 
+
     # Do nuisance regression with an intercept and the collected DCT bases.
+    nmat <- cbind(1, nmat)
     out <- nuisance_regression(X, nmat)
 
   # FFT ------------------------------------------------------------------------
   } else if (method == "FFT") {
+    if (X_int) { stop("Not applicable: integer X value for FFT (number of timepoints). Please provide data.") }
     if (!is.null(lpf)) { stop("Not implemented: lowpass-filtering with FFT.") }
 
     # [NOTE] This code used to be used for DCT too, before lpf was implemented.
