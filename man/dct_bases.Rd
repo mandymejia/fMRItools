@@ -15,5 +15,5 @@ dct_bases(T_, n)
 Matrix with cosine bases along columns
 }
 \description{
-Generate cosine bases for the DCT
+https://en.wikipedia.org/wiki/Discrete_cosine_transform "DCT II"
 }
