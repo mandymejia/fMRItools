@@ -89,9 +89,9 @@ norm_BOLD <- function(
       stop("Cannot apply `lpf` because `TR` was not provided. Either provide `TR` or set `lpf=NULL`.")
     }
   } else {
-    stopifnot(fMRItools::is_posNum(TR))
-    stopifnot(fMRItools::is_posNum(hpf, zero_ok=TRUE))
-    stopifnot(fMRItools::is_posNum(lpf, zero_ok=TRUE))
+    stopifnot(is_posNum(TR))
+    stopifnot(is.null(hpf) || is_posNum(hpf))
+    stopifnot(is.null(lpf) || is_posNum(lpf))
   }
 
   # Center.
