@@ -1,7 +1,7 @@
 Package: fMRItools
 Type: Package
 Title: Routines for Common fMRI Processing Tasks
-Version: 0.4.8
+Version: 0.5.0
 Authors@R: c(
     person(given = "Amanda",
            family = "Mejia",
