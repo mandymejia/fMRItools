@@ -77,11 +77,13 @@ norm_BOLD <- function(
   if (length(hpf)==1 && hpf==0) { hpf <- NULL }
   if (length(lpf)==1 && lpf==Inf) { lpf <- NULL }
   if (is.null(TR)) {
-    if (hpf==.01) {
-      message("Setting `hpf=NULL` because `TR` was not provided. Either provide `TR` or set `hpf=NULL` to disable this message.")
-      hpf <- NULL
-    } else if (!is.null(hpf)) {
-      stop("Cannot apply `hpf` because `TR` was not provided. Either provide `TR` or set `hpf=NULL`.")
+    if (!is.null(hpf)) {
+      if (hpf==.01) {
+        message("Setting `hpf=NULL` because `TR` was not provided. Either provide `TR` or set `hpf=NULL` to disable this message.")
+        hpf <- NULL
+      } else {
+        stop("Cannot apply `hpf` because `TR` was not provided. Either provide `TR` or set `hpf=NULL`.")
+      }
     }
     if (!is.null(lpf)) {
       stop("Cannot apply `lpf` because `TR` was not provided. Either provide `TR` or set `lpf=NULL`.")
