@@ -107,7 +107,7 @@ fft_detrend <- function(X, N) {
 #' @param lpf The frequency of the lowpass filter, in Hertz. Default: \code{NULL}
 #'  (skip lowpass filtering). If both are provided, \code{lpf > hpf} must be true.
 #' @param method \code{"DCT"} (default) or \code{"FFT"}. FFT is not compatible
-#'  with \codE{lpf} yet.
+#'  with \code{lpf} yet.
 #' @param verbose Print messages? Default: \code{FALSE}.
 #'
 #' @return Filtered \code{X}, or if \code{X} was an integer, the set of DCT

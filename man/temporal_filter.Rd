@@ -33,7 +33,7 @@ The return value will be the suitable set of DCT bases. Only works with
 (skip lowpass filtering). If both are provided, \code{lpf > hpf} must be true.}
 
 \item{method}{\code{"DCT"} (default) or \code{"FFT"}. FFT is not compatible
-with \codE{lpf} yet.}
+with \code{lpf} yet.}
 
 \item{verbose}{Print messages? Default: \code{FALSE}.}
 }
