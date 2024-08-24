@@ -115,9 +115,10 @@ norm_BOLD <- function(
   # [NOTE]: If `center_cols`, columns won't be exactly centered anymore after the filter.
   if (!is.null(hpf) || !is.null(lpf)) {
     if (!center_rows) { voxMeans <- rowMeans(BOLD, na.rm=TRUE) }
-    BOLD <- fMRItools::temporal_filter(
-      X=BOLD, TR=TR, hpf=hpf, lpf=lpf, method="DCT", verbose=FALSE
+    dct <- fMRItools::temporal_filter(
+      X=ncol(BOLD), TR=TR, hpf=hpf, lpf=lpf, method="DCT", verbose=FALSE
     ) # [TO DO] carry over verbose arg?
+    BOLD <- nuisance_regression(BOLD, cbind(1, dct))
     if (!center_rows) { BOLD <- BOLD + voxMeans }
   }
 
