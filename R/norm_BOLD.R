@@ -154,7 +154,12 @@ norm_BOLD <- function(
       # Compute and smooth the SD.
       sig <- ciftiTools::newdata_xifti(ciftiTools::select_xifti(scale_sm_xifti, 1), sig)
       sig <- ciftiTools::move_to_mwall(sig, NA)
-      sig_mask <- do.call(c, sig$meta$cortex$medial_wall_mask)
+      if (!is.null(sig$data$subcort)) {
+        sub_mask <- !is.na(sig$data$subcort[,1])
+        sig$data$subcort <- sig$data$subcort[sub_mask,,drop=FALSE]
+        sig$meta$subcort$labels <- sig$meta$subcort$labels[sub_mask]
+        sig$meta$subcort$mask[sig$meta$subcort$mask][!sub_mask] <- FALSE
+      }
       sig <- ciftiTools::smooth_xifti(sig, surf_FWHM=scale_sm_FWHM, vol_FWHM=scale_sm_FWHM)
       sig <- c(as.matrix(sig))
     }
