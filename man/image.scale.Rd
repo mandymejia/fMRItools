@@ -4,7 +4,7 @@
 \alias{image.scale}
 \title{image.scale}
 \usage{
-image.scale(
+\method{image}{scale}(
   z,
   zlim,
   col = color_palette("Beach"),

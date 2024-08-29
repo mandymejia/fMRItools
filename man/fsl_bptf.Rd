@@ -4,12 +4,14 @@
 \alias{fsl_bptf}
 \title{\code{bptf} function from FSL}
 \usage{
-fsl_bptf(orig_data, HP_sigma = 2000)
+fsl_bptf(orig_data, HP_sigma = 2000, LP_sigma = NULL)
 }
 \arguments{
 \item{orig_data}{\eqn{T \times V} data matrix whose columns will be detrended}
 
-\item{HP_sigma}{The frequency parameter for the highpass filter}
+\item{HP_sigma}{The frequency parameter, sigma, for the highpass filter}
+
+\item{LP_sigma}{The frequency parameter, sigma, for the lowpass filter}
 }
 \value{
 The data with detrended columns
@@ -21,7 +23,7 @@ but not identical.
 \details{
 Sources:
 https://cpb-us-w2.wpmucdn.com/sites.udel.edu/dist/7/4542/files/2016/09/fsl_temporal_filt-15sywxn.m
-https://github.com/rordenlab/niimath/blob/master/src/core32.c
+https://github.com/rordenlab/niimath/blob/master/src/coreFLT.c#L1935
 }
 \section{References}{
 
