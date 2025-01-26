@@ -9,9 +9,13 @@ fsl_bptf(orig_data, HP_sigma = 2000, LP_sigma = NULL)
 \arguments{
 \item{orig_data}{\eqn{T \times V} data matrix whose columns will be detrended}
 
-\item{HP_sigma}{The frequency parameter, sigma, for the highpass filter}
+\item{HP_sigma}{The frequency parameter, sigma, for the highpass filter.
+Recommended \code{HP_sigma}: \code{1/(2*f*TR)}, where \code{f} is the cutoff
+filter in Hz and \code{TR} is the time resolution in seconds (See jiscmail
+link in function description).
+Default: \code{2000}.}
 
-\item{LP_sigma}{The frequency parameter, sigma, for the lowpass filter}
+\item{LP_sigma}{The frequency parameter, sigma, for the lowpass filter.}
 }
 \value{
 The data with detrended columns
@@ -24,6 +28,7 @@ but not identical.
 Sources:
 https://cpb-us-w2.wpmucdn.com/sites.udel.edu/dist/7/4542/files/2016/09/fsl_temporal_filt-15sywxn.m
 https://github.com/rordenlab/niimath/blob/master/src/coreFLT.c#L1935
+https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=FSL;f6fd75a6.1709
 }
 \section{References}{
 
