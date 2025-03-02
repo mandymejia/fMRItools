@@ -10,20 +10,8 @@
 
 BayesfMRI 0.3.11 passes checks.
 fMRIscrub 0.14.5 passes checks.
-templateICAr 0.6.4 passes checks.
+templateICAr 0.9.1 passes checks.
 
 ## Tests
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
-
-## Previous submission
-
-  * checking CRAN incoming feasibility ... NOTE
-  Maintainer: 'Amanda Mejia <mandy.mejia@gmail.com>'
-
-  Package has a VignetteBuilder field but no prebuilt vignette index.
-
-  * checking package dependencies ... NOTE
-  Vignette dependency required without any vignettes:: 'knitr'
-
-We have removed "VignetteBuilder: knitr" from the DESCRIPTION.
