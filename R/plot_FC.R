@@ -65,14 +65,14 @@ color_palette <- function(pal="Beach") {
   )
 }
 
-#' image.scale
+#' image_scale
 #'
-#' image.scale. Source: r-bloggers.com/2013/12/new-version-of-image-scale-function/
+#' image_scale. Source: r-bloggers.com/2013/12/new-version-of-image-scale-function/
 #'
 #' @param z,zlim,col,breaks,axis.pos,add.axis,... The arguments.
 #' @return Plots the image scale.
 #' @keywords internal
-image.scale <- function(z, zlim, col = color_palette("Beach"),
+image_scale <- function(z, zlim, col = color_palette("Beach"),
   breaks, axis.pos=1, add.axis=TRUE, ...){
 
   if (!requireNamespace("graphics", quietly = TRUE)) {
@@ -240,7 +240,7 @@ plot_FC <- function(
 
   ### Color scale -----
   graphics::par(mar=c(1, 0.7, 0, 4))
-  image.scale(
+  image_scale(
     FC, col=cols,
     zlim=zlim,
     axis.pos=4, add.axis=FALSE
