@@ -35,6 +35,7 @@
 # @importFrom grDevices dev.off pdf png gray.colors
 #' 
 #' @importFrom stats quantile
+#' @importFrom graphics image
 #' @return The image or \code{NULL, invisibly} if a file was written.
 #' 
 #' @section References:

@@ -4,21 +4,22 @@
 \alias{UT2mat}
 \title{Upper Triangular Vector to Matrix}
 \usage{
-UT2mat(x, diag = 0, LT = 0)
+UT2mat(x, diag = 1, LT = TRUE)
 }
 \arguments{
 \item{x}{A vector containing the upper triangular elements of a square,
 symmetric matrix.}
 
 \item{diag}{A scalar value to use for the diagonal values of the matrix, or
-\code{"x"} if \code{x} includes the diagonal values. Default: \code{NA}.}
+\code{"x"} if \code{x} includes the diagonal values. Default: \code{1}.}
 
-\item{LT}{A scalar value to use for the lower triangular values of the
-matrix. Default: \code{0}.}
+\item{LT}{Change from \code{TRUE} (default) to \code{FALSE} to set lower
+triangle values to zero.}
 }
 \value{
-A symmetric matrix with the values of \code{x} in the upper and
-lower triangles and the value \code{diag} on the diagonal.
+If \code{LT}, a symmetric matrix with the values of \code{x} in the
+upper and lower triangles and the value \code{diag} on the diagonal. If
+\code{!LT}, the lower triangle values will be zero instead.
 }
 \description{
 Returns the symmatric square matrix from a vector containing

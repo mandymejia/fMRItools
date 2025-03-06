@@ -11,8 +11,10 @@ norm_BOLD(
   scale = c("local", "global", "none"),
   scale_sm_xifti = NULL,
   scale_sm_FWHM = 2,
+  scale_sm_xifti_mask = NULL,
   TR = NULL,
-  hpf = 0.01
+  hpf = 0.01,
+  lpf = NULL
 )
 }
 \arguments{
@@ -34,19 +36,25 @@ locations in alignment with \code{BOLD}, as well as the smoothing FWHM
 (default: \code{2}). If no \code{"xifti"} object is provided (default), do
 not smooth.}
 
+\item{scale_sm_xifti_mask}{For local scaling with smoothing, the data must
+be unmasked to be mapped back to the surface. So if the data are masked,
+provide the mask here.}
+
 \item{TR}{The temporal resolution of the data, i.e. the time between volumes,
 in seconds. \code{TR} is required for detrending with \code{hpf}.}
 
-\item{hpf}{The frequency at which to apply a highpass filter to the data
-during pre-processing, in Hertz. Default: \code{0.01} Hertz. Set to \code{0}
-to disable the highpass filter.
+\item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
+data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
+Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
+filter (disabled). Filtering is accomplished by nuisance regression of
+discrete cosine transform (DCT) bases.
 
 The highpass filter serves to detrend the data, since low-frequency
-variance is associated with noise. Highpass filtering is accomplished by
-nuisance regression of discrete cosine transform (DCT) bases.
+variance is associated with noise. The lowpass filter removes high-frequency
+variance, which is also thought to be from non-neuronal noise.
 
-Note the \code{TR} argument is required for highpass filtering. If
-\code{TR} is not provided, \code{hpf} will be ignored.}
+Note the \code{TR} argument is required for temporal filtering. If
+\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
 }
 \value{
 Normalized BOLD data matrix (\eqn{V \times T})

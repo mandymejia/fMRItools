@@ -65,14 +65,14 @@ color_palette <- function(pal="Beach") {
   )
 }
 
-#' image.scale
+#' image_scale
 #'
-#' image.scale. Source: r-bloggers.com/2013/12/new-version-of-image-scale-function/
+#' image_scale. Source: r-bloggers.com/2013/12/new-version-of-image-scale-function/
 #'
 #' @param z,zlim,col,breaks,axis.pos,add.axis,... The arguments.
 #' @return Plots the image scale.
 #' @keywords internal
-image.scale <- function(z, zlim, col = color_palette("Beach"),
+image_scale <- function(z, zlim, col = color_palette("Beach"),
   breaks, axis.pos=1, add.axis=TRUE, ...){
 
   if (!requireNamespace("graphics", quietly = TRUE)) {
@@ -190,11 +190,16 @@ plot_FC <- function(
   }
 
   cleg_ticks <- seq(zlim[1], zlim[2], cleg_ticks_by)
+  # Patch: sometimes the middle value is a very small nonzero number 
+  if (max(abs(cleg_ticks)) > 1e-5) {
+    cleg_ticks[abs(cleg_ticks) < 1e-8] <- 0
+  }
+  # Get number of decimal values and number of digits
   cleg_ndec <- suppressWarnings(abs(log(cleg_ticks, base=10)))
   cleg_ndec[is.infinite(cleg_ndec) | is.nan(cleg_ndec) | (cleg_ndec<0)] <- 0
   cleg_ndigits <- max(nchar(gsub("[^0-9]", "", as.character(cleg_ticks))))
 
-  use_scientific <- max(cleg_ndec) > 8
+  use_scientific <- max(cleg_ndec) > 5
   if (is.null(cleg_digits)) {
     cleg_digits <- if (use_scientific) { cleg_ndigits } else { cleg_ndec + 1 }
   }
@@ -235,7 +240,7 @@ plot_FC <- function(
 
   ### Color scale -----
   graphics::par(mar=c(1, 0.7, 0, 4))
-  image.scale(
+  image_scale(
     FC, col=cols,
     zlim=zlim,
     axis.pos=4, add.axis=FALSE

@@ -5,15 +5,16 @@
 #' @param x A vector containing the upper triangular elements of a square, 
 #' symmetric matrix.
 #' @param diag A scalar value to use for the diagonal values of the matrix, or
-#'  \code{"x"} if \code{x} includes the diagonal values. Default: \code{NA}.
-#' @param LT A scalar value to use for the lower triangular values of the
-#'  matrix. Default: \code{0}.
+#'  \code{"x"} if \code{x} includes the diagonal values. Default: \code{1}.
+#' @param LT Change from \code{TRUE} (default) to \code{FALSE} to set lower
+#'  triangle values to zero.
 #' 
 #' @export
-#' @return A symmetric matrix with the values of \code{x} in the upper and 
-#' lower triangles and the value \code{diag} on the diagonal.
+#' @return If \code{LT}, a symmetric matrix with the values of \code{x} in the 
+#'  upper and lower triangles and the value \code{diag} on the diagonal. If
+#'  \code{!LT}, the lower triangle values will be zero instead.
 #' 
-UT2mat <- function(x, diag=0, LT=0) {
+UT2mat <- function(x, diag=1, LT=TRUE) {
   stopifnot(length(diag)==1)
   x_has_diag <- is.character(diag) && (diag=="x")
   if (!x_has_diag) { stopifnot(is.numeric(diag) | is.na(diag)) }
@@ -30,9 +31,12 @@ UT2mat <- function(x, diag=0, LT=0) {
       stop('Length of x not equal to V(V-1)/2, for some integer V.')
     }
   }
-  mat <- matrix(LT, nrow=V, ncol=V)
+  mat <- matrix(0, nrow=V, ncol=V)
   mat[upper.tri(mat, diag=x_has_diag)] <- x
-  #mat <- mat + t(mat) #for summetric matrices only
+  if (LT) {
+    mat <- mat + t(mat)
+    if (x_has_diag) { diag(mat) <- diag(mat)/2 }
+  }
   if (!x_has_diag) { diag(mat) <- diag }
   
   mat

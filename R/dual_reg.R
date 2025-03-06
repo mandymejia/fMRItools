@@ -18,17 +18,20 @@
 #'  not smooth.
 #' @param TR The temporal resolution of the data, i.e. the time between volumes,
 #'  in seconds. \code{TR} is required for detrending with \code{hpf}.
-#' @param hpf The frequency at which to apply a highpass filter to the data
-#'  during pre-processing, in Hertz. Default: \code{0.01} Hertz. Set to \code{0}
-#'  to disable the highpass filter.
-#'
+#' @param hpf,lpf The frequencies at which to apply a highpass filter or lowpass
+#'  filter to the data during pre-processing, in Hertz. Set either to 
+#'  \code{NULL} to disable filtering. Default: \code{0.01} Hertz for the 
+#'  highpass filter, and \code{NULL} for the lowpass filter.
 #'
 #'  The highpass filter serves to detrend the data, since low-frequency
 #'  variance is associated with noise. Highpass filtering is accomplished by
 #'  nuisance regression of discrete cosine transform (DCT) bases.
+#' 
+#'  The lowpass filter removes high-frequency variance also thought to be
+#'  associated with non-neuronal noise. 
 #'
-#'  Note the \code{TR} argument is required for highpass filtering. If
-#'  \code{TR} is not provided, \code{hpf} will be ignored.
+#'  Note the \code{TR} argument is required for temporal filtering. If
+#'  \code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.
 #'
 #' @return A list containing
 #'  the subject-level independent components \strong{S} (\eqn{V \times Q}),
@@ -48,7 +51,7 @@
 dual_reg <- function(
   BOLD, GICA,
   scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
-  TR=NULL, hpf=.01,
+  TR=NULL, hpf=.01, lpf=NULL,
   GSR=FALSE){
 
   stopifnot(is.matrix(BOLD))
@@ -79,18 +82,17 @@ dual_reg <- function(
   if(nQ > nV) warning('More ICs than voxels. Are you sure?')
   if(nQ > nT) warning('More ICs than time points. Are you sure?')
 
-  # Center each voxel timecourse. Do not center the image at each timepoint.
+  # Center each voxel timecourse. Do not center the image at each timepoint unless GSR = TRUE.
   # Standardize scale if `scale`, and detrend if `hpf>0`.
   # Transpose it: now `BOLD` is TxV.
   BOLD <- t(norm_BOLD(
     BOLD, center_rows=TRUE, center_cols=GSR,
     scale=scale, scale_sm_xifti=scale_sm_xifti, scale_sm_FWHM=scale_sm_FWHM,
-    TR=TR, hpf=hpf
+    TR=TR, hpf=hpf, lpf=lpf
   ))
 
   # Center each group IC across space. (Used to be a function argument.)
-  center_Gcols <- TRUE
-  if (center_Gcols) { GICA <- colCenter(GICA) }
+  GICA <- colCenter(GICA)
 
   # Estimate A (IC timeseries).
   # We need to center `BOLD` across space because the linear model has no intercept.
@@ -100,9 +102,8 @@ dual_reg <- function(
   # (Redundant. Since BOLD is column-centered, A is already column-centered.)
   # A <- colCenter(A)
 
-  # Normalize each subject IC timecourse. (Used to be a function argument.)
-  normA <- TRUE
-  if (normA) { A <- scale(A) }
+  # Normalize each subject IC timecourse to constrain the ICA. (Used to be a function argument.)
+  A <- scale(A)
 
   # Check rank of `A`.
   A_rank <- qr(A)$rank
@@ -120,6 +121,11 @@ dual_reg <- function(
   # Don't worry about the intercept: `BOLD` and `A` are centered across time.
   S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
 
+  # Re-estimate A (IC timeseries) based on the subject-level IC maps
+  # We need to center `BOLD` across space because the linear model has no intercept.
+  S_ctr <- colCenter(t(S))
+  A2 <- ((BOLD - rowMeans(BOLD, na.rm=TRUE)) %*% S_ctr) %*% chol2inv(chol(crossprod(S_ctr)))
+
   #return result
-  list(S = S, A = A)
+  list(S = S, A = A, A2 = A2)
 }
