@@ -15,15 +15,3 @@ templateICAr 0.9.1 passes checks.
 ## Tests
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
-
-## Previous submission
-
-  Mismatches for apparent methods not registered:
-  image:
-    function(x, ...)
-  image.scale:
-    function(z, zlim, col, breaks, axis.pos, add.axis, ...)
-  See section 'Registering S3 methods' in the 'Writing R Extensions'
-  manual.
-
-This function has been renamed to `image_scale`.
