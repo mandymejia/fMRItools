@@ -85,14 +85,13 @@ dual_reg_parc <- function(
     TR=TR, hpf=hpf
   ))
 
-  # Estimate A (IC timeseries).
-  # We need to center `BOLD` across space because the linear model has no intercept.
+  # Estimate A (parcel timeseries).
   A <- matrix(NA, nrow=nT, ncol=nQ)
   for (qq in seq(nQ)) {
     A[,qq] <- matrixStats::rowMedians(BOLD[,c(parc==parc_vals[qq])])
   }
 
-  # Normalize each subject IC timecourse. (Used to be a function argument.)
+  # Normalize each subject parcel timecourse. (Used to be a function argument.)
   normA <- TRUE
   if (normA) { A <- scale(A) }
 
