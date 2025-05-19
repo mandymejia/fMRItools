@@ -45,7 +45,7 @@ row/column labels for the submatrices divided by \code{lines}. If
 \code{NULL} (default), do not add labels.}
 
 \item{lines}{Add lines to divide the FC matrix into submatrices? Default:
-\code{NULL} (do not draw lines). Use \code{seq(nN)} to delineate each
+\code{NULL} (do not draw lines). Set to \code{"all"} to delineate each
 individual row and column.}
 
 \item{lines_col, lines_lwd}{Color and line width of the \code{lines}. Default:

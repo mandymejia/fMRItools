@@ -140,7 +140,7 @@ image_scale <- function(z, zlim, col = color_palette("Beach"),
 #'  row/column labels for the submatrices divided by \code{lines}. If
 #'  \code{NULL} (default), do not add labels.
 #' @param lines Add lines to divide the FC matrix into submatrices? Default:
-#'  \code{NULL} (do not draw lines). Use \code{seq(nN)} to delineate each
+#'  \code{NULL} (do not draw lines). Set to \code{"all"} to delineate each
 #'  individual row and column.
 #' @param lines_col,lines_lwd Color and line width of the \code{lines}. Default:
 #'  black lines of width \code{1}.
@@ -221,6 +221,7 @@ plot_FC <- function(
     xaxt="n", yaxt="n", ylab="", xlab=""
   )
   ##### Lines -----
+  if (is_1(lines, "character") && lines=="all") { lines <- seq(nN) }
   graphics::abline(h=nN-lines+0.5, v=lines+0.5, col = lines_col, lwd=lines_lwd)
   ##### Labels -----
   if(!is.null(labels)){
