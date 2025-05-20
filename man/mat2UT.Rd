@@ -4,10 +4,12 @@
 \alias{mat2UT}
 \title{Matrix to Upper Triangular Vector}
 \usage{
-mat2UT(x)
+mat2UT(x, diag = FALSE)
 }
 \arguments{
 \item{x}{A square matrix}
+
+\item{diag}{Get the diagonal values too? Default: \code{FALSE}}
 }
 \value{
 The vectorized upper triangle of x.

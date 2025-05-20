@@ -1,3 +1,15 @@
+# 0.6.0
+
+* Update `UT2mat`. Default: symmatric matrix. 
+* Add `plot_FC_gg` from `templateICAr`
+* enable `lines="all"` in `plot_FC`.
+
+# 0.5.0
+
+* Add `expand_RPs`
+* Add highpass filter to `fsl_bptf`
+
+
 # 0.4.0
 
 * Add `all_binary`.

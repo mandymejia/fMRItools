@@ -78,10 +78,11 @@ UT2mat <- function(x, diag="x", LT="x") {
 #'
 #' @description Returns the vectorized upper triangle of a square matrix
 #' @param x A square matrix
+#' @param diag Get the diagonal values too? Default: \code{FALSE}
 #' 
 #' @export
 #' @return The vectorized upper triangle of x.  
 #'
-mat2UT <- function(x){
-  x[upper.tri(x)]  
+mat2UT <- function(x, diag=FALSE){
+  x[upper.tri(x, diag=diag)]  
 }

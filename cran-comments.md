@@ -1,6 +1,6 @@
 ## Test environments
 
-* Mac x86_64-apple-darwin17.0, R 4.4.0
+* Mac x86_64-apple-darwin17.0, R 4.5.0
 
 ## R CMD check results
 
@@ -8,9 +8,9 @@
 
 ## Downstream dependencies
 
-BayesfMRI 0.3.11 passes checks.
+BayesfMRI 0.10.1 passes checks.
 fMRIscrub 0.14.5 passes checks.
-templateICAr 0.9.1 passes checks.
+templateICAr 0.10.0 passes checks.
 
 ## Tests
 
