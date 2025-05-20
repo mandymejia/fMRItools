@@ -4,24 +4,49 @@
 \alias{UT2mat}
 \title{Upper Triangular Vector to Matrix}
 \usage{
-UT2mat(x, diag = 1, LT = TRUE)
+UT2mat(x, diag = "x", LT = "x")
 }
 \arguments{
-\item{x}{A vector containing the upper triangular elements of a square,
-symmetric matrix.}
+\item{x}{A vector of values for the upper triangular elements of the desired
+square matrix.}
 
-\item{diag}{A scalar value to use for the diagonal values of the matrix, or
-\code{"x"} if \code{x} includes the diagonal values. Default: \code{1}.}
+\item{diag}{The values to put on the diagonal, or \code{"x"} (default) if
+\code{x} includes the diagonal values.}
 
-\item{LT}{Change from \code{TRUE} (default) to \code{FALSE} to set lower
-triangle values to zero.}
+\item{LT}{The values to put on the lower triangle, or \code{"x"} (default)
+to use the upper triangular values such that the result is symmetric.
+(\code{LT} should not contain the diagonal values, which are provided with
+\code{diag} or \code{x}).}
 }
 \value{
-If \code{LT}, a symmetric matrix with the values of \code{x} in the
-upper and lower triangles and the value \code{diag} on the diagonal. If
-\code{!LT}, the lower triangle values will be zero instead.
+A square matrix.
 }
 \description{
-Returns the symmatric square matrix from a vector containing
-the upper triangular elements
+Creates a square matrix from a vector which gives the values for the upper
+triangle. By default, the vector is expected to include the diagonal values,
+and the values in the upper triangle are copied to the lower triangle so
+that the result is symmetric.
+}
+\examples{
+ UT2mat(seq(10)) # defaults: diag="x", LT="x"
+ #      [,1] [,2] [,3] [,4]
+ # [1,]    1    2    4    7
+ # [2,]    2    3    5    8
+ # [3,]    4    5    6    9
+ # [4,]    7    8    9   10
+ UT2mat(seq(3), LT=8)
+ #      [,1] [,2]
+ # [1,]    1    2
+ # [2,]    8    3
+ UT2mat(seq(6), diag=0, LT=seq(7,12))
+ #      [,1] [,2] [,3] [,4]
+ # [1,]    0    1    2    4
+ # [2,]    7    0    3    5
+ # [3,]    8   10    0    6
+ # [4,]    9   11   12    0
+UT2mat(rep(-1, 3), diag=c(4,5,6), LT=0)
+ #      [,1] [,2] [,3]
+ # [1,]    4   -1   -1
+ # [2,]    0    5   -1
+ # [3,]    0    0    6
 }

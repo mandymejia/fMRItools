@@ -1,27 +1,56 @@
 #' Upper Triangular Vector to Matrix
-#' @description  Returns the symmatric square matrix from a vector containing 
-#' the upper triangular elements
+#' 
+#' Creates a square matrix from a vector which gives the values for the upper 
+#'  triangle. By default, the vector is expected to include the diagonal values,
+#'  and the values in the upper triangle are copied to the lower triangle so 
+#'  that the result is symmetric. 
 #'
-#' @param x A vector containing the upper triangular elements of a square, 
-#' symmetric matrix.
-#' @param diag A scalar value to use for the diagonal values of the matrix, or
-#'  \code{"x"} if \code{x} includes the diagonal values. Default: \code{1}.
-#' @param LT Change from \code{TRUE} (default) to \code{FALSE} to set lower
-#'  triangle values to zero.
+#' @param x A vector of values for the upper triangular elements of the desired
+#'  square matrix.
+#' @param diag The values to put on the diagonal, or \code{"x"} (default) if
+#'  \code{x} includes the diagonal values.
+#' @param LT The values to put on the lower triangle, or \code{"x"} (default)
+#'  to use the upper triangular values such that the result is symmetric.
+#'  (\code{LT} should not contain the diagonal values, which are provided with
+#'  \code{diag} or \code{x}).
+#' 
 #' 
 #' @export
-#' @return If \code{LT}, a symmetric matrix with the values of \code{x} in the 
-#'  upper and lower triangles and the value \code{diag} on the diagonal. If
-#'  \code{!LT}, the lower triangle values will be zero instead.
+#' @return A square matrix. 
 #' 
-UT2mat <- function(x, diag=1, LT=TRUE) {
-  stopifnot(length(diag)==1)
-  x_has_diag <- is.character(diag) && (diag=="x")
-  if (!x_has_diag) { stopifnot(is.numeric(diag) | is.na(diag)) }
-
-  if(!is.vector(x) | !is.numeric(x)) stop('`x` must be a numeric vector.')
+#' @examples 
+#'  UT2mat(seq(10)) # defaults: diag="x", LT="x"
+#'  #      [,1] [,2] [,3] [,4]
+#'  # [1,]    1    2    4    7
+#'  # [2,]    2    3    5    8
+#'  # [3,]    4    5    6    9
+#'  # [4,]    7    8    9   10
+#'  UT2mat(seq(3), LT=8)
+#'  #      [,1] [,2]
+#'  # [1,]    1    2
+#'  # [2,]    8    3
+#'  UT2mat(seq(6), diag=0, LT=seq(7,12))
+#'  #      [,1] [,2] [,3] [,4]
+#'  # [1,]    0    1    2    4
+#'  # [2,]    7    0    3    5
+#'  # [3,]    8   10    0    6
+#'  # [4,]    9   11   12    0
+#' UT2mat(rep(-1, 3), diag=c(4,5,6), LT=0)
+#'  #      [,1] [,2] [,3]
+#'  # [1,]    4   -1   -1
+#'  # [2,]    0    5   -1
+#'  # [3,]    0    0    6
+UT2mat <- function(x, diag="x", LT="x") {
+  # Check arguments.
+  x_has_diag <- is_1(diag, "character") && (diag=="x")
+  if (!x_has_diag) { stopifnot(all(is.numeric(diag) | is.na(diag))) }
+  x_for_lt <- is_1(LT, "character") && (LT=="x")
+  if (!x_for_lt) { stopifnot(all(is.numeric(LT) | is.na(LT))) }
+  if (!is.vector(x) || !is.numeric(x)) stop('`x` must be a numeric vector.')
   
-  #determine V based on M (solution to quadratic formula since M = V*(V+1)/2 (diag=TRUE) or V*(V-1)/2 (diag=FALSE))
+  # Determine V based on M 
+  # (solution to quadratic formula since 
+  #   M = V*(V+1)/2 (diag=TRUE) or V*(V-1)/2 (diag=FALSE))
   M <- length(x)
   V <- if (x_has_diag) { (-1+sqrt(8*M+1))/2 } else { (1+sqrt(8*M+1))/2 }
   if (round(V) != V) {
@@ -31,11 +60,14 @@ UT2mat <- function(x, diag=1, LT=TRUE) {
       stop('Length of x not equal to V(V-1)/2, for some integer V.')
     }
   }
+
   mat <- matrix(0, nrow=V, ncol=V)
   mat[upper.tri(mat, diag=x_has_diag)] <- x
-  if (LT) {
+  if (x_for_lt) {
     mat <- mat + t(mat)
-    if (x_has_diag) { diag(mat) <- diag(mat)/2 }
+    if (x_has_diag) { diag(mat) <- diag(mat)/2 } # because added twice
+  } else {
+    mat[lower.tri(mat, diag=FALSE)] <- LT
   }
   if (!x_has_diag) { diag(mat) <- diag }
   
