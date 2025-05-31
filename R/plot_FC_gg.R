@@ -85,13 +85,10 @@ plot_FC_gg <- function(
         )
       }
     }
-  }
-  if (!is.null(diagVal)) {
-    mat[is.na(mat)] <- diagVal
-  }
-  if (uppertri_means && use_groups) {
     mat[seq(nD), rev(seq(nD))][lower.tri(mat)] <- mat2[seq(nD), rev(seq(nD))][lower.tri(mat)]
   }
+
+  if (!is.null(diagVal)) { diag(mat) <- diagVal }
 
   # Limits
   if (!is.null(lim)) {
@@ -116,6 +113,9 @@ plot_FC_gg <- function(
     stop("`y_labs` length should match the number of rows or groups in the FC matrix.")
   }
 
+  mat <- mat[rev(seq(nrow(mat))),] # couldn't see how to rev y-axis w/ coord_equal also happening
+  #browser()
+
   plt <- ggcorrplot::ggcorrplot(mat, outline.color = "#00000000", title=title, digits=12)
   plt$scales$scales <- list() # stops warning about replacing scales
   plt$coordinates$default <- TRUE # stops warning about replacing coordinates
@@ -139,15 +139,14 @@ plot_FC_gg <- function(
       axis.ticks.x = ggplot2::element_blank(),
       legend.position = "bottom"#, legend.text.align = 1
     ) +
-    ggplot2::annotate(
-      "raster", x=seq(nD), y=rev(seq(nD)), fill=divColor
-    ) +
+    # ggplot2::annotate( # [NOTE] Damon removed this because it didn't seem to align with the diagonal.
+    #   "raster", x=seq(nD), y=rev(seq(nD)), fill=divColor
+    # ) +
     # four edges
     ggplot2::annotate("rect", xmin=.5-dw, xmax=.5,       ymin=.5-dw,            ymax=.5+nD+lim_expand+dw, fill=divColor) +
     ggplot2::annotate("rect", xmin=.5+nD, xmax=.5+nD+dw, ymin=.5-dw,            ymax=.5+nD+lim_expand+dw, fill=divColor) +
     ggplot2::annotate("rect", ymin=.5-dw, ymax=.5,       xmin=.5-lim_expand-dw, xmax=.5+nD+dw,            fill=divColor) +
     ggplot2::annotate("rect", ymin=.5+nD, ymax=.5+nD+dw, xmin=.5-lim_expand-dw, xmax=.5+nD+dw,            fill=divColor)
-
 
   if (use_groups) {
     # brain region label color bar
