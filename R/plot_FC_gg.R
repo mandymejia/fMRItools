@@ -13,7 +13,7 @@
 #'  25, set \code{group_divs=c(1, 9, 16)}. Groups will be indicated by a color
 #'  bar along the left and top sides of the plot. Use \code{group_cols} to
 #'  change the colors. By default, \code{group_divs} is \code{NULL} (no groups).
-#' @param y_labs Labels to place along the y-axis? If \code{is.null(group_divs)},
+#' @param labs Labels to place along the y-axis? If \code{is.null(group_divs)},
 #'  this should be a character vector labeling each row of \code{mat}, or a
 #'  dot dot dot. If \code{!is.null(group_divs)}, this may alternatively be a
 #'  character vector labeling each group.
@@ -35,7 +35,7 @@ plot_FC_gg <- function(
   colFUN=NULL,
   title="FC Matrix", legTitle="FC",
   group_divs=NULL, group_cols=RColorBrewer::brewer.pal(8, "Set2"),
-  y_labs=NULL, uppertri_means=TRUE, divColor="black", lim=NULL, diagVal=1
+  labs=NULL, uppertri_means=TRUE, divColor="black", lim=NULL, diagVal=1
   ){
 
   if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
@@ -102,15 +102,15 @@ plot_FC_gg <- function(
 
   lim_expand <- ifelse(use_groups, nD*.1, 0)
 
-  # Handle y_labs
-  if (is.null(y_labs)) {
-    y_breaks <- NULL
-  } else if (use_groups && length(y_labs)==length(group_divs)-1) {
-    y_breaks <- group_divs[seq(length(group_divs)-1)]
-  } else if (length(y_labs)==nD) {
-    y_breaks <- seq(nD)
+  # Handle labs
+  if (is.null(labs)) {
+    breaks <- NULL
+  } else if (use_groups && length(labs)==length(group_divs)-1) {
+    breaks <- group_divs[seq(length(group_divs)-1)]
+  } else if (length(labs)==nD) {
+    breaks <- seq(nD)
   } else {
-    stop("`y_labs` length should match the number of rows or groups in the FC matrix.")
+    stop("`labs` length should match the number of rows or groups in the FC matrix.")
   }
 
   mat <- mat[,rev(seq(ncol(mat)))] # couldn't see how to rev y-axis w/ coord_equal also happening
@@ -121,7 +121,8 @@ plot_FC_gg <- function(
   plt$coordinates$default <- TRUE # stops warning about replacing coordinates
 
   plt <- plt +
-    ggplot2::scale_y_continuous(breaks=rev(nD-y_breaks+1), labels=rev(y_labs)) +
+    ggplot2::scale_x_continuous(position="top", breaks=nD-breaks+1, labels=rev(labs)) +
+    ggplot2::scale_y_continuous(breaks=rev(nD-breaks+1), labels=rev(labs)) +
     ggplot2::coord_equal(
       xlim=.5+c(-1-lim_expand-dw, nD+dw),
       ylim=.5+c(-dw, nD+1+lim_expand+dw),
@@ -134,8 +135,9 @@ plot_FC_gg <- function(
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=1)),
-      axis.text.x = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=0)),
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 0),
+      #axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
       legend.position = "bottom"#, legend.text.align = 1
     ) +

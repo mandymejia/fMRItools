@@ -11,7 +11,7 @@ plot_FC_gg(
   legTitle = "FC",
   group_divs = NULL,
   group_cols = RColorBrewer::brewer.pal(8, "Set2"),
-  y_labs = NULL,
+  labs = NULL,
   uppertri_means = TRUE,
   divColor = "black",
   lim = NULL,
@@ -35,7 +35,7 @@ element in each group. For example, if the groups are 1-8, 9-15, and 16 to
 bar along the left and top sides of the plot. Use \code{group_cols} to
 change the colors. By default, \code{group_divs} is \code{NULL} (no groups).}
 
-\item{y_labs}{Labels to place along the y-axis? If \code{is.null(group_divs)},
+\item{labs}{Labels to place along the y-axis? If \code{is.null(group_divs)},
 this should be a character vector labeling each row of \code{mat}, or a
 dot dot dot. If \code{!is.null(group_divs)}, this may alternatively be a
 character vector labeling each group.}
