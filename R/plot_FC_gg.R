@@ -113,7 +113,7 @@ plot_FC_gg <- function(
     stop("`y_labs` length should match the number of rows or groups in the FC matrix.")
   }
 
-  mat <- mat[rev(seq(nrow(mat))),] # couldn't see how to rev y-axis w/ coord_equal also happening
+  mat <- mat[,rev(seq(ncol(mat)))] # couldn't see how to rev y-axis w/ coord_equal also happening
   #browser()
 
   plt <- ggcorrplot::ggcorrplot(mat, outline.color = "#00000000", title=title, digits=12)
