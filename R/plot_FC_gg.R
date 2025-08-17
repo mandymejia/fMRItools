@@ -134,7 +134,7 @@ plot_FC_gg <- function(
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=10)),
+      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=1)),
       axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
       legend.position = "bottom"#, legend.text.align = 1
