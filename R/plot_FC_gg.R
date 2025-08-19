@@ -143,6 +143,7 @@ plot_FC_gg <- function(
     ) +
     ggplot2::labs(fill=legTitle) +
     ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
       axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin_y)),
