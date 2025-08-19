@@ -15,7 +15,8 @@ plot_FC_gg(
   uppertri_means = TRUE,
   divColor = "black",
   lim = NULL,
-  diagVal = 1
+  diagVal = 1,
+  labs_margin = pmin(0, ncol(mat)/10 - 10)
 )
 }
 \arguments{
@@ -54,6 +55,9 @@ clipping).}
 
 \item{diagVal}{On-diagonal values will be set to this value.
 (\code{uppertri_means} are calculated before \code{diagVal} is used.)}
+
+\item{labs_margin}{Margin value for labels. Default:
+\code{pmin(0, ncol(mat)/10-10)}.}
 }
 \value{
 The plot

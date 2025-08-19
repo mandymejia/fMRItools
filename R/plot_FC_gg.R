@@ -28,6 +28,8 @@
 #'  clipping).
 #' @param diagVal On-diagonal values will be set to this value.
 #'  (\code{uppertri_means} are calculated before \code{diagVal} is used.)
+#' @param labs_margin Margin value for labels. Default: 
+#'  \code{pmin(0, ncol(mat)/10-10)}.
 #' @return The plot
 #' @export
 plot_FC_gg <- function(
@@ -35,7 +37,8 @@ plot_FC_gg <- function(
   colFUN=NULL,
   title="FC Matrix", legTitle="FC",
   group_divs=NULL, group_cols=RColorBrewer::brewer.pal(8, "Set2"),
-  labs=NULL, uppertri_means=TRUE, divColor="black", lim=NULL, diagVal=1
+  labs=NULL, uppertri_means=TRUE, divColor="black", lim=NULL, diagVal=1,
+  labs_margin=pmin(0, ncol(mat)/10-10)
   ){
 
   if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
@@ -114,7 +117,6 @@ plot_FC_gg <- function(
   }
 
   mat <- mat[,rev(seq(ncol(mat)))] # couldn't see how to rev y-axis w/ coord_equal also happening
-  #browser()
 
   plt <- ggcorrplot::ggcorrplot(mat, outline.color = "#00000000", title=title, digits=12)
   plt$scales$scales <- list() # stops warning about replacing scales
@@ -135,8 +137,8 @@ plot_FC_gg <- function(
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=0)),
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 0),
+      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin)),
+      axis.text.x.top = ggplot2::element_text(angle=45, hjust=0, margin=ggplot2::margin(b=labs_margin)),
       #axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
       legend.position = "bottom"#, legend.text.align = 1
