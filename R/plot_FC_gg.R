@@ -97,11 +97,11 @@ plot_FC_gg <- function(
   if (!is.null(lim)) {
     if (length(lim)==1) { lim <- c(-lim, lim) }
     stopifnot(length(lim)==2)
-    mat[] <- pmax(lim[1], pmin(lim[2], mat))
   } else {
-    lim <- max(abs(mat[]))
+    lim <- max(abs(mat[upper.tri(mat)]))
     lim <- c(-lim, lim)
   }
+  mat[] <- pmax(lim[1], pmin(lim[2], mat))
 
   lim_expand <- ifelse(use_groups, nD*.1, 0)
 
