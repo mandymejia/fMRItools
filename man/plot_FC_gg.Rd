@@ -16,14 +16,16 @@ plot_FC_gg(
   divColor = "black",
   lim = NULL,
   diagVal = 1,
-  labs_margin = pmin(0, ncol(mat)/10 - 10)
+  labs_margin_y = pmin(0, ncol(mat)/10 - 10),
+  labs_margin_x = 0
 )
 }
 \arguments{
 \item{mat}{The FC matrix}
 
-\item{colFUN}{A \code{scale_fill} function. If \code{NULL}, use this default:
-\code{function(limits=c(0,1), ...){viridis::scale_fill_viridis(option="inferno", limits=limits, ...)}}}
+\item{colFUN}{A \code{scale_fill} function. If \code{NULL}, use a red-blue
+diverging palette if there are negative values in \code{mat}, and a
+white-blue sequential palette otherwise.}
 
 \item{title}{The plot title. Default: \code{"FC Matrix"}.}
 
@@ -56,8 +58,8 @@ clipping).}
 \item{diagVal}{On-diagonal values will be set to this value.
 (\code{uppertri_means} are calculated before \code{diagVal} is used.)}
 
-\item{labs_margin}{Margin value for labels. Default:
-\code{pmin(0, ncol(mat)/10-10)}.}
+\item{labs_margin_y, labs_margin_x}{Margin value for labels. Default:
+\code{pmin(0, ncol(mat)/10-10)} for the y-axis and \code{0} for the x-axis.}
 }
 \value{
 The plot

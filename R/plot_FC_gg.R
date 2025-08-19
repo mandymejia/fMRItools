@@ -3,8 +3,9 @@
 #' Plot a FC matrix.
 #'
 #' @param mat The FC matrix
-#' @param colFUN A \code{scale_fill} function. If \code{NULL}, use this default:
-#'  \code{function(limits=c(0,1), ...){viridis::scale_fill_viridis(option="inferno", limits=limits, ...)}}
+#' @param colFUN A \code{scale_fill} function. If \code{NULL}, use a red-blue
+#'  diverging palette if there are negative values in \code{mat}, and a
+#'  white-blue sequential palette otherwise.
 #' @param title The plot title. Default: \code{"FC Matrix"}.
 #' @param legTitle The legend title. Default: \code{"FC"}.
 #' @param group_divs,group_cols Split the FC matrix into groups of contiguous
@@ -28,8 +29,8 @@
 #'  clipping).
 #' @param diagVal On-diagonal values will be set to this value.
 #'  (\code{uppertri_means} are calculated before \code{diagVal} is used.)
-#' @param labs_margin Margin value for labels. Default: 
-#'  \code{pmin(0, ncol(mat)/10-10)}.
+#' @param labs_margin_y,labs_margin_x Margin value for labels. Default:
+#'  \code{pmin(0, ncol(mat)/10-10)} for the y-axis and \code{0} for the x-axis.
 #' @return The plot
 #' @export
 plot_FC_gg <- function(
@@ -38,20 +39,20 @@ plot_FC_gg <- function(
   title="FC Matrix", legTitle="FC",
   group_divs=NULL, group_cols=RColorBrewer::brewer.pal(8, "Set2"),
   labs=NULL, uppertri_means=TRUE, divColor="black", lim=NULL, diagVal=1,
-  labs_margin=pmin(0, ncol(mat)/10-10)
+  labs_margin_y=pmin(0, ncol(mat)/10-10), labs_margin_x=0
   ){
 
   if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
-    stop("Package \"RColorBrewer\" needed to read `x`. Please install it", call. = FALSE)
+    stop("Package \"RColorBrewer\" needed for FC plot. Please install it", call. = FALSE)
   }
-  if (!requireNamespace("viridis", quietly = TRUE)) {
-    stop("Package \"viridis\" needed to read `x`. Please install it", call. = FALSE)
+  if (!requireNamespace("scales", quietly = TRUE)) {
+    stop("Package \"scales\" needed for FC plot. Please install it", call. = FALSE)
   }
   if (!requireNamespace("ggcorrplot", quietly = TRUE)) {
-    stop("Package \"ggcorrplot\" needed to read `x`. Please install it", call. = FALSE)
+    stop("Package \"ggcorrplot\" needed for FC plot. Please install it", call. = FALSE)
   }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("Package \"ggplot2\" needed to read `x`. Please install it", call. = FALSE)
+    stop("Package \"ggplot2\" needed for FC plot. Please install it", call. = FALSE)
   }
 
   nD <- nrow(mat)
@@ -72,12 +73,6 @@ plot_FC_gg <- function(
     gdiv_cols <- as.numeric(cut(seq(nD)+1, c(-Inf, group_divs2, Inf)))
   }
 
-  if (is.null(colFUN)) {
-    colFUN <- function(limits=c(0,1), ...){
-      viridis::scale_fill_viridis(option="inferno", limits=limits, ...)
-    }
-  }
-
   # Take network-network means in upper tri
   if (uppertri_means && use_groups) {
     mat2 <- mat
@@ -95,13 +90,26 @@ plot_FC_gg <- function(
 
   # Limits
   if (!is.null(lim)) {
-    if (length(lim)==1) { lim <- c(-lim, lim) }
+    if (length(lim)==1) { lim <- c(if(min(mat[])>=0) {0} else {-lim}, lim) }
     stopifnot(length(lim)==2)
   } else {
-    lim <- max(abs(mat[upper.tri(mat)]))
-    lim <- c(-lim, lim)
+    lim <- max(abs(c(mat[upper.tri(mat)], mat[lower.tri(mat)])))
+    lim <- c(if(min(mat[])>=0) {0} else {-lim}, lim)
   }
-  mat[] <- pmax(lim[1], pmin(lim[2], mat))
+  #mat[] <- pmax(lim[1], pmin(lim[2], mat)) # scales::squish instead
+
+  if (is.null(colFUN)) {
+    use_seq <- lim[1] >= 0
+    gvals <- c(
+      "#5d0928", "#892041", "#b63b59", "#d26767", "#eb8e74", "#f4b794", "#fcdcba",
+      "#fffee6",
+      "#c7e7d8", "#99cbcf", "#68aec6", "#478db7", "#226ca7", "#1b4984", "#132560"
+    )
+    if (use_seq) { gvals <- gvals[seq(8, 15)] }
+    colFUN <- function(limits=c(if(use_seq) {0} else {-1},1), ...) {
+      ggplot2::scale_fill_gradientn(colours=gvals, limits=limits, ...)
+    }
+  }
 
   lim_expand <- ifelse(use_groups, nD*.1, 0)
 
@@ -123,7 +131,7 @@ plot_FC_gg <- function(
   plt$coordinates$default <- TRUE # stops warning about replacing coordinates
 
   plt <- plt +
-    ggplot2::scale_x_continuous(position="top", breaks=nD-breaks+1, labels=rev(labs)) +
+    ggplot2::scale_x_continuous(breaks=nD-breaks+1, labels=rev(labs)) +
     ggplot2::scale_y_continuous(breaks=rev(nD-breaks+1), labels=rev(labs)) +
     ggplot2::coord_equal(
       xlim=.5+c(-1-lim_expand-dw, nD+dw),
@@ -131,17 +139,17 @@ plot_FC_gg <- function(
       expand=FALSE) +
     colFUN(
       c(lim[1], lim[2]), guide=ggplot2::guide_colorbar(ticks.colour = divColor, ticks.linewidth = 1),
-      labels = function(x){gsub("0.", ".", x, fixed=TRUE)}, na.value="red"
+      labels = function(x){gsub("0.", ".", x, fixed=TRUE)}, na.value="red", oob = scales::squish
     ) +
     ggplot2::labs(fill=legTitle) +
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin)),
-      axis.text.x.top = ggplot2::element_text(angle=45, hjust=0, margin=ggplot2::margin(b=labs_margin)),
-      #axis.text.x = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      legend.position = "bottom"#, legend.text.align = 1
+      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin_y)),
+      axis.text.x = ggplot2::element_text(angle=45, margin=ggplot2::margin(t=labs_margin_x)),
+      #axis.ticks.y = ggplot2::element_blank(),
+      #axis.ticks.x = ggplot2::element_blank(),
+      legend.position = "right"#, legend.text.align = 1
     ) +
     # ggplot2::annotate( # [NOTE] Damon removed this because it didn't seem to align with the diagonal.
     #   "raster", x=seq(nD), y=rev(seq(nD)), fill=divColor
