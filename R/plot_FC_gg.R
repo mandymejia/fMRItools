@@ -24,9 +24,10 @@
 #' @param divColor Color of group dividers and outline of the FC matrix.
 #'  Default: \code{"black"}.
 #' @param lim Length-two numeric vector indicating the limits for the color bar.
-#'  Values beyond \code{lim} will be clipped. If \code{NULL} (default), the
-#'  limits will be set to the largest magnitude value in \code{mat} (no
-#'  clipping).
+#'  Values beyond \code{lim} will be clipped. If \code{NULL}, the
+#'  limits will be set based on the largest magnitude value in \code{mat} (no
+#'  clipping). If length-one, the left limit will be 0 if there are no
+#'  negative values, or \code{-lim} if there are. Default: \code{.5}. 
 #' @param diagVal On-diagonal values will be set to this value.
 #'  (\code{uppertri_means} are calculated before \code{diagVal} is used.)
 #' @param labs_margin_y,labs_margin_x Margin value for labels. Default:
@@ -38,7 +39,7 @@ plot_FC_gg <- function(
   colFUN=NULL,
   title="FC Matrix", legTitle="FC",
   group_divs=NULL, group_cols=RColorBrewer::brewer.pal(8, "Set2"),
-  labs=NULL, uppertri_means=TRUE, divColor="black", lim=NULL, diagVal=1,
+  labs=NULL, uppertri_means=TRUE, divColor="black", lim=.5, diagVal=1,
   labs_margin_y=pmin(0, ncol(mat)/10-10), labs_margin_x=0
   ){
 

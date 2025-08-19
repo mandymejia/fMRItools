@@ -14,7 +14,7 @@ plot_FC_gg(
   labs = NULL,
   uppertri_means = TRUE,
   divColor = "black",
-  lim = NULL,
+  lim = 0.5,
   diagVal = 1,
   labs_margin_y = pmin(0, ncol(mat)/10 - 10),
   labs_margin_x = 0
@@ -51,9 +51,10 @@ Has no effect if \code{group_divs} is \code{NULL}.}
 Default: \code{"black"}.}
 
 \item{lim}{Length-two numeric vector indicating the limits for the color bar.
-Values beyond \code{lim} will be clipped. If \code{NULL} (default), the
-limits will be set to the largest magnitude value in \code{mat} (no
-clipping).}
+Values beyond \code{lim} will be clipped. If \code{NULL}, the
+limits will be set based on the largest magnitude value in \code{mat} (no
+clipping). If length-one, the left limit will be 0 if there are no
+negative values, or \code{-lim} if there are. Default: \code{.5}.}
 
 \item{diagVal}{On-diagonal values will be set to this value.
 (\code{uppertri_means} are calculated before \code{diagVal} is used.)}
