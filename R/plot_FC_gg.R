@@ -101,14 +101,11 @@ plot_FC_gg <- function(
 
   if (is.null(colFUN)) {
     use_seq <- lim[1] >= 0
-    gvals <- c(
-      "#5d0928", "#892041", "#b63b59", "#d26767", "#eb8e74", "#f4b794", "#fcdcba",
-      "#fffee6",
-      "#c7e7d8", "#99cbcf", "#68aec6", "#478db7", "#226ca7", "#1b4984", "#132560"
-    )
-    if (use_seq) { gvals <- gvals[seq(8, 15)] }
+    gcols <- c("#1a319c", "#1373eb", "#43e0e3", "#fcfff2", "#ffb8bc", "#e01428", "#7a001b")
+    gvals <- c(0, .1, .25, .5, .75, .9, 1)
+    if (use_seq) { gcols <- gcols[seq(4,7)]; gvals <- gvals[seq(4,7)]*2-1 }
     colFUN <- function(limits=c(if(use_seq) {0} else {-1},1), ...) {
-      ggplot2::scale_fill_gradientn(colours=gvals, limits=limits, ...)
+      ggplot2::scale_fill_gradientn(colours=gcols, limits=limits, values=gvals, ...)
     }
   }
 
