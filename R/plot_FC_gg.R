@@ -27,7 +27,7 @@
 #'  Values beyond \code{lim} will be clipped. If \code{NULL}, the
 #'  limits will be set based on the largest magnitude value in \code{mat} (no
 #'  clipping). If length-one, the left limit will be 0 if there are no
-#'  negative values, or \code{-lim} if there are. Default: \code{.5}. 
+#'  negative values, or \code{-lim} if there are. Default: \code{.5}.
 #' @param diagVal On-diagonal values will be set to this value.
 #'  (\code{uppertri_means} are calculated before \code{diagVal} is used.)
 #' @param labs_margin_y,labs_margin_x Margin value for labels. Default:
@@ -101,11 +101,23 @@ plot_FC_gg <- function(
 
   if (is.null(colFUN)) {
     use_seq <- lim[1] >= 0
-    gcols <- c("#1a319c", "#1373eb", "#43e0e3", "#fcfff2", "#ffb8bc", "#e01428", "#7a001b")
-    gvals <- c(0, .1, .25, .5, .75, .9, 1)
-    if (use_seq) { gcols <- gcols[seq(4,7)]; gvals <- gvals[seq(4,7)]*2-1 }
-    colFUN <- function(limits=c(if(use_seq) {0} else {-1},1), ...) {
-      ggplot2::scale_fill_gradientn(colours=gcols, limits=limits, values=gvals, ...)
+    colFUN <- if (use_seq) {
+      function(limits=c(0,.5), ...){
+        viridis::scale_fill_viridis(
+          option="inferno", limits=limits, direction=-1, ...)
+      }
+    } else {
+      function(limits=c(-.5, .5), ...) {
+        ggplot2::scale_fill_gradientn(
+          colours=c(
+            "#1a319c", "#1373eb", "#43e0e3",
+            "#fcfff2",
+            "#ffb8bc", "#e01428", "#7a001b"),
+          limits=limits,
+          values=c(0, .1, .25, .5, .75, .9, 1),
+          ...
+        )
+      }
     }
   }
 
