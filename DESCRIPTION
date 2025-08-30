@@ -50,7 +50,8 @@ Suggests:
     RColorBrewer,
     viridis,
     ggcorrplot,
-    ggplot2
+    ggplot2,
+    scales
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 URL: https://github.com/mandymejia/fMRItools
