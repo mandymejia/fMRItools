@@ -7,7 +7,7 @@
 #'  diverging palette if there are negative values in \code{mat}, and a
 #'  white-blue sequential palette otherwise.
 #' @param title The plot title. Default: \code{"FC Matrix"}.
-#' @param legTitle The legend title. Default: \code{"FC"}.
+#' @param legTitle The legend title. Default: \code{""}.
 #' @param group_divs,group_cols Split the FC matrix into groups of contiguous
 #'  rows/columns? Use \code{group_divs} to indicate the index of the first
 #'  element in each group. For example, if the groups are 1-8, 9-15, and 16 to
@@ -31,16 +31,16 @@
 #' @param diagVal On-diagonal values will be set to this value.
 #'  (\code{uppertri_means} are calculated before \code{diagVal} is used.)
 #' @param labs_margin_y,labs_margin_x Margin value for labels. Default:
-#'  \code{pmin(0, ncol(mat)/10-10)} for the y-axis and \code{0} for the x-axis.
+#'  \code{0} for the both axes.
 #' @return The plot
 #' @export
 plot_FC_gg <- function(
   mat,
   colFUN=NULL,
-  title="FC Matrix", legTitle="FC",
+  title="FC Matrix", legTitle="",
   group_divs=NULL, group_cols=RColorBrewer::brewer.pal(8, "Set2"),
   labs=NULL, uppertri_means=TRUE, divColor="black", lim=.5, diagVal=1,
-  labs_margin_y=pmin(0, ncol(mat)/10-10), labs_margin_x=0
+  labs_margin_y=0, labs_margin_x=0
   ){
 
   if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
@@ -158,8 +158,8 @@ plot_FC_gg <- function(
       panel.grid.minor = ggplot2::element_blank(),
       axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin_y)),
       axis.text.x = ggplot2::element_text(angle=45, margin=ggplot2::margin(t=labs_margin_x)),
-      #axis.ticks.y = ggplot2::element_blank(),
-      #axis.ticks.x = ggplot2::element_blank(),
+      #axis.ticks.y.left=ggplot2::element_blank(), # doesn't work, nor w/o the "left", in this line + below.
+      #axis.ticks.length.y.left = ggplot2::unit(0, "pt"),
       legend.position = "right"#, legend.text.align = 1
     ) +
     # ggplot2::annotate( # [NOTE] Damon removed this because it didn't seem to align with the diagonal.

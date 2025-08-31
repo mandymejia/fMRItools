@@ -8,7 +8,7 @@ plot_FC_gg(
   mat,
   colFUN = NULL,
   title = "FC Matrix",
-  legTitle = "FC",
+  legTitle = "",
   group_divs = NULL,
   group_cols = RColorBrewer::brewer.pal(8, "Set2"),
   labs = NULL,
@@ -16,7 +16,7 @@ plot_FC_gg(
   divColor = "black",
   lim = 0.5,
   diagVal = 1,
-  labs_margin_y = pmin(0, ncol(mat)/10 - 10),
+  labs_margin_y = 0,
   labs_margin_x = 0
 )
 }
@@ -29,7 +29,7 @@ white-blue sequential palette otherwise.}
 
 \item{title}{The plot title. Default: \code{"FC Matrix"}.}
 
-\item{legTitle}{The legend title. Default: \code{"FC"}.}
+\item{legTitle}{The legend title. Default: \code{""}.}
 
 \item{group_divs, group_cols}{Split the FC matrix into groups of contiguous
 rows/columns? Use \code{group_divs} to indicate the index of the first
@@ -60,7 +60,7 @@ negative values, or \code{-lim} if there are. Default: \code{.5}.}
 (\code{uppertri_means} are calculated before \code{diagVal} is used.)}
 
 \item{labs_margin_y, labs_margin_x}{Margin value for labels. Default:
-\code{pmin(0, ncol(mat)/10-10)} for the y-axis and \code{0} for the x-axis.}
+\code{0} for the both axes.}
 }
 \value{
 The plot
