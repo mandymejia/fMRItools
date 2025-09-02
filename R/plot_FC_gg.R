@@ -157,7 +157,7 @@ plot_FC_gg <- function(
     } else {
       -50 + (nD-2)*30/8
     }
-    cat('`labs_margin_y` is set to', round(labs_margin_y, digits=3), '\n')
+    # cat('`labs_margin_y` is set to', round(labs_margin_y, digits=3), '\n')
   }
 
   plt <- plt +
