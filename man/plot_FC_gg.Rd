@@ -16,7 +16,7 @@ plot_FC_gg(
   divColor = "black",
   lim = 0.5,
   diagVal = 1,
-  labs_margin_y = 0,
+  labs_margin_y = NULL,
   labs_margin_x = 0
 )
 }
@@ -59,8 +59,11 @@ negative values, or \code{-lim} if there are. Default: \code{.5}.}
 \item{diagVal}{On-diagonal values will be set to this value.
 (\code{uppertri_means} are calculated before \code{diagVal} is used.)}
 
-\item{labs_margin_y, labs_margin_x}{Margin value for labels. Default:
-\code{0} for the both axes.}
+\item{labs_margin_y, labs_margin_x}{Margin value for labels. For the y-axis,
+a value of \code{NULL} (default) will set the margin value adaptively
+depending on the size of the FC matrix such that the labels are almost flush
+with the y-axis. The default for the x-axis is \code{0}, which also results
+in labels almost flush with the x-axis.}
 }
 \value{
 The plot

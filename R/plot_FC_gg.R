@@ -30,8 +30,12 @@
 #'  negative values, or \code{-lim} if there are. Default: \code{.5}.
 #' @param diagVal On-diagonal values will be set to this value.
 #'  (\code{uppertri_means} are calculated before \code{diagVal} is used.)
-#' @param labs_margin_y,labs_margin_x Margin value for labels. Default:
-#'  \code{0} for the both axes.
+#' @param labs_margin_y,labs_margin_x Margin value for labels. For the y-axis,
+#'  a value of \code{NULL} (default) will set the margin value adaptively
+#'  depending on the size of the FC matrix such that the labels are almost flush
+#'  with the y-axis. The default for the x-axis is \code{0}, which also results
+#'  in labels almost flush with the x-axis.
+#' 
 #' @return The plot
 #' @export
 plot_FC_gg <- function(
@@ -40,7 +44,7 @@ plot_FC_gg <- function(
   title="FC Matrix", legTitle="",
   group_divs=NULL, group_cols=RColorBrewer::brewer.pal(8, "Set2"),
   labs=NULL, uppertri_means=TRUE, divColor="black", lim=.5, diagVal=1,
-  labs_margin_y=0, labs_margin_x=0
+  labs_margin_y=NULL, labs_margin_x=0
   ){
 
   if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
@@ -139,6 +143,22 @@ plot_FC_gg <- function(
   plt <- ggcorrplot::ggcorrplot(mat, outline.color = "#00000000", title=title, digits=12)
   plt$scales$scales <- list() # stops warning about replacing scales
   plt$coordinates$default <- TRUE # stops warning about replacing coordinates
+
+  if (is.null(labs_margin_y)) {
+    #  2x2 it's -50, 10x10 it's -20, 20x20 it's -10, 50x50 it's -5, 100x100 it's 0
+    labs_margin_y <- if (nD >= 100) {
+      0
+    } else if (nD >= 50) {
+      -5 + (nD-50)/10
+    } else if (nD >= 20) {
+      -10 + (nD-20)/6
+    } else if (nD >= 10) {
+      -20 + (nD-10)
+    } else {
+      -50 + (nD-2)*30/8
+    }
+    cat('`labs_margin_y` is set to', round(labs_margin_y, digits=3), '\n')
+  }
 
   plt <- plt +
     ggplot2::scale_x_continuous(breaks=nD-breaks+1, labels=rev(labs)) +
