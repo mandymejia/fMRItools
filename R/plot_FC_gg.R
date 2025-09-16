@@ -4,8 +4,8 @@
 #'
 #' @param mat The FC matrix
 #' @param colFUN A \code{scale_fill} function. If \code{NULL}, use a red-blue
-#'  diverging palette if there are negative values in \code{mat}, and a
-#'  white-blue sequential palette otherwise.
+#'  diverging palette if there are negative values in \code{mat}, and viridis' 
+#'  inferno sequential palette otherwise.
 #' @param title The plot title. Default: \code{"FC Matrix"}.
 #' @param legTitle The legend title. Default: \code{""}.
 #' @param group_divs,group_cols Split the FC matrix into groups of contiguous
@@ -105,10 +105,15 @@ plot_FC_gg <- function(
 
   if (is.null(colFUN)) {
     use_seq <- lim[1] >= 0
+    if (use_seq) {
+      if (!requireNamespace("viridis", quietly = TRUE)) {
+        stop("Package \"viridis\" needed for sequential FC plot. Please install it", call. = FALSE)
+      }
+    }
     colFUN <- if (use_seq) {
       function(limits=c(0,.5), ...){
         viridis::scale_fill_viridis(
-          option="inferno", limits=limits, direction=-1, ...)
+          option="inferno", limits=limits, direction=1, ...)
       }
     } else {
       function(limits=c(-.5, .5), ...) {

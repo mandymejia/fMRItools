@@ -24,8 +24,8 @@ plot_FC_gg(
 \item{mat}{The FC matrix}
 
 \item{colFUN}{A \code{scale_fill} function. If \code{NULL}, use a red-blue
-diverging palette if there are negative values in \code{mat}, and a
-white-blue sequential palette otherwise.}
+diverging palette if there are negative values in \code{mat}, and viridis'
+inferno sequential palette otherwise.}
 
 \item{title}{The plot title. Default: \code{"FC Matrix"}.}
 
