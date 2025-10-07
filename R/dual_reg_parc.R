@@ -87,11 +87,13 @@ dual_reg_parc <- function(
 
   # Estimate A (parcel timeseries).
   # Neccesary to temporarily center BOLD (like in standard dual regression since there is no intecept)
-  BOLD_centered <- BOLD - rowMeans(BOLD, na.rm=TRUE)
+  BOLD_rowMeans <- rowMeans(BOLD, na.rm=TRUE)
   A <- matrix(NA, nrow=nT, ncol=nQ)
   for (qq in seq(nQ)) {
-    A[,qq] <- matrixStats::rowMedians(BOLD_centered[,c(parc==parc_vals[qq])])
+    BOLD_qq <- BOLD[,parc==parc_vals[qq],drop=FALSE]
+    A[,qq] <- matrixStats::rowMedians(BOLD_qq - BOLD_rowMeans)
   }
+  rm(BOLD_rowMeans)
 
   # Normalize each subject parcel timecourse. (Used to be a function argument.)
   normA <- TRUE
