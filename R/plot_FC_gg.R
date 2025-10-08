@@ -4,7 +4,7 @@
 #'
 #' @param mat The FC matrix
 #' @param colFUN A \code{scale_fill} function. If \code{NULL}, use a red-blue
-#'  diverging palette if there are negative values in \code{mat}, and viridis' 
+#'  diverging palette if there are negative values in \code{mat}, and viridis'
 #'  inferno sequential palette otherwise.
 #' @param title The plot title. Default: \code{"FC Matrix"}.
 #' @param legTitle The legend title. Default: \code{""}.
@@ -35,7 +35,7 @@
 #'  depending on the size of the FC matrix such that the labels are almost flush
 #'  with the y-axis. The default for the x-axis is \code{0}, which also results
 #'  in labels almost flush with the x-axis.
-#' 
+#'
 #' @return The plot
 #' @export
 plot_FC_gg <- function(
@@ -176,13 +176,13 @@ plot_FC_gg <- function(
       c(lim[1], lim[2]), guide=ggplot2::guide_colorbar(ticks.colour = divColor, ticks.linewidth = 1),
       labels = function(x){gsub("0.", ".", x, fixed=TRUE)}, na.value="red", oob = scales::squish
     ) +
-    ggplot2::labs(fill=legTitle) +
+    ggplot2::labs(fill=legTitle) + 
     ggplot2::theme(
       plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin_y)),
-      axis.text.x = ggplot2::element_text(angle=45, margin=ggplot2::margin(t=labs_margin_x)),
+      axis.text.y.left = ggplot2::element_text(margin=ggplot2::margin(r=labs_margin_y)),
+      axis.text.x.bottom = ggplot2::element_text(angle=45, margin=ggplot2::margin(t=labs_margin_x)),
       #axis.ticks.y.left=ggplot2::element_blank(), # doesn't work, nor w/o the "left", in this line + below.
       #axis.ticks.length.y.left = ggplot2::unit(0, "pt"),
       legend.position = "right"#, legend.text.align = 1
