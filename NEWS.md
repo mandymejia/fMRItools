@@ -1,3 +1,10 @@
+# 0.7.0
+
+* Remove `dim_reduce`
+* Fixes and updates to `plot_FC_gg`
+* Add `dice_overlap`
+* Center BOLD data for `dual_reg_parc` 
+
 # 0.6.0
 
 * Update `UT2mat`. Default: symmatric matrix. 
