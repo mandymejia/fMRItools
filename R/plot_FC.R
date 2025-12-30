@@ -1,9 +1,9 @@
 #' Un-vectorize correlation matrix
 #'
-#' Converted a vectorized lower triangular correlation matrix back to its full
+#' Converted a vectorized upper triangular correlation matrix back to its full
 #'  matrix form.
 #'
-#' @param x_diag The vectorized lower triangular correlation matrix.
+#' @param x_diag The vectorized upper triangular correlation matrix.
 #' @param diag_val The value to put on the diagonals of the correlation matrix.
 #'  Default: \code{NA}.
 #' @param names (Optional) row/column names.

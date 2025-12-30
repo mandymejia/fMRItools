@@ -13,7 +13,7 @@ cor_mat(
 )
 }
 \arguments{
-\item{x_diag}{The vectorized lower triangular correlation matrix.}
+\item{x_diag}{The vectorized upper triangular correlation matrix.}
 
 \item{diag_val}{The value to put on the diagonals of the correlation matrix.
 Default: \code{NA}.}
@@ -28,7 +28,7 @@ Default: \code{NA}.}
 A square correlation matrix
 }
 \description{
-Converted a vectorized lower triangular correlation matrix back to its full
+Converted a vectorized upper triangular correlation matrix back to its full
 matrix form.
 }
 \keyword{internal}

@@ -8,25 +8,28 @@ plot_FC_gg(
   mat,
   colFUN = NULL,
   title = "FC Matrix",
-  legTitle = "FC",
+  legTitle = "",
   group_divs = NULL,
   group_cols = RColorBrewer::brewer.pal(8, "Set2"),
-  y_labs = NULL,
+  labs = NULL,
   uppertri_means = TRUE,
   divColor = "black",
-  lim = NULL,
-  diagVal = 1
+  lim = 0.5,
+  diagVal = 1,
+  labs_margin_y = NULL,
+  labs_margin_x = 0
 )
 }
 \arguments{
 \item{mat}{The FC matrix}
 
-\item{colFUN}{A \code{scale_fill} function. If \code{NULL}, use this default:
-\code{function(limits=c(0,1), ...){viridis::scale_fill_viridis(option="inferno", limits=limits, ...)}}}
+\item{colFUN}{A \code{scale_fill} function. If \code{NULL}, use a red-blue
+diverging palette if there are negative values in \code{mat}, and viridis'
+inferno sequential palette otherwise.}
 
 \item{title}{The plot title. Default: \code{"FC Matrix"}.}
 
-\item{legTitle}{The legend title. Default: \code{"FC"}.}
+\item{legTitle}{The legend title. Default: \code{""}.}
 
 \item{group_divs, group_cols}{Split the FC matrix into groups of contiguous
 rows/columns? Use \code{group_divs} to indicate the index of the first
@@ -35,7 +38,7 @@ element in each group. For example, if the groups are 1-8, 9-15, and 16 to
 bar along the left and top sides of the plot. Use \code{group_cols} to
 change the colors. By default, \code{group_divs} is \code{NULL} (no groups).}
 
-\item{y_labs}{Labels to place along the y-axis? If \code{is.null(group_divs)},
+\item{labs}{Labels to place along the y-axis? If \code{is.null(group_divs)},
 this should be a character vector labeling each row of \code{mat}, or a
 dot dot dot. If \code{!is.null(group_divs)}, this may alternatively be a
 character vector labeling each group.}
@@ -48,12 +51,19 @@ Has no effect if \code{group_divs} is \code{NULL}.}
 Default: \code{"black"}.}
 
 \item{lim}{Length-two numeric vector indicating the limits for the color bar.
-Values beyond \code{lim} will be clipped. If \code{NULL} (default), the
-limits will be set to the largest magnitude value in \code{mat} (no
-clipping).}
+Values beyond \code{lim} will be clipped. If \code{NULL}, the
+limits will be set based on the largest magnitude value in \code{mat} (no
+clipping). If length-one, the left limit will be 0 if there are no
+negative values, or \code{-lim} if there are. Default: \code{.5}.}
 
 \item{diagVal}{On-diagonal values will be set to this value.
 (\code{uppertri_means} are calculated before \code{diagVal} is used.)}
+
+\item{labs_margin_y, labs_margin_x}{Margin value for labels. For the y-axis,
+a value of \code{NULL} (default) will set the margin value adaptively
+depending on the size of the FC matrix such that the labels are almost flush
+with the y-axis. The default for the x-axis is \code{0}, which also results
+in labels almost flush with the x-axis.}
 }
 \value{
 The plot
