@@ -8,12 +8,15 @@ match_nets(A, B = "Yeo_7", B_zero_drop = TRUE, brainstructures = "existing")
 }
 \arguments{
 \item{A}{The networks to find matches for. Can be a CIFTI file path, a
-\code{"xifti"} object, or a numeric matrix (locations by networks). The
-networks can be continuous maps or binary parcellations.}
+\code{"xifti"} object, a numeric matrix (locations by networks, and can be
+continuous or binary), or a locations-length vector giving the network index
+each location belongs to.}
 
 \item{B}{The networks to match to. Can be a CIFTI file path, a
-\code{"xifti"} object, a numeric matrix (locations by networks), or the name
-of a parcellation included in \code{ciftiTools}. Default: \code{"Yeo_7"}.}
+\code{"xifti"} object, a numeric matrix (locations by networks, and can be
+continuous or binary), a locations-length vector giving the network index
+each location belongs to, or the name of a parcellation included in
+\code{ciftiTools}. Default: \code{"Yeo_7"}.}
 
 \item{B_zero_drop}{If B is a parcellation (i.e. a vector of network indices),
 and the lowest parcel index is 0, drop that level? Sometimes the zero-valued
