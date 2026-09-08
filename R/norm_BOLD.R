@@ -8,21 +8,21 @@
 #' @param center_rows,center_cols Center BOLD data across rows (each data
 #'  location's time series) or columns (each time point's image)? Default:
 #'  \code{TRUE} for row centering, and \code{FALSE} for column centering.
-#' @param scale_by Scale the BOLD at each voxel based on either its 
-#'  \code{"mean"} (default), its \code{"sd"}, or do not scale (\code{"none"}). 
-#'  Mean scaling cannot be used if the \code{BOLD} have already been de-meaned. 
+#' @param scale_by Scale the BOLD at each voxel based on either its
+#'  \code{"mean"} (default), its \code{"sd"}, or do not scale (\code{"none"}).
+#'  Mean scaling cannot be used if the \code{BOLD} have already been de-meaned.
 #' @param scale_sm_FWHM Full width at half maximum (FWHM) for smoothing the
 #'  estimates of scale across brain locations (see \code{scale_by}), to reduce
 #'  the variance of the estimates. Set to \code{0} to disable smoothing, or
-#'  \code{Inf} for "global" smoothing (estimate and use one measure of scale 
+#'  \code{Inf} for "global" smoothing (estimate and use one measure of scale
 #'  across the entire brain). Otherwise, for "local" smoothing, this should be a
 #'  positive number. Default: \code{4}.
 #' @param scale_sm_xifti Required only for "local" smoothing of the scale
-#'  estimates with CIFTI data (see \code{scale_sm_FWHM}). To smooth the scale 
+#'  estimates with CIFTI data (see \code{scale_sm_FWHM}). To smooth the scale
 #'  estimates, provide a \code{"xifti"} object aligned with \code{BOLD}. If no
 #'  \code{"xifti"} object is provided (default) smoothing must be skipped.
 #' @param scale_sm_xifti_mask For local smoothing of scale estimates, the data
-#'  must be unmasked to be mapped back to the surface. So if the data are 
+#'  must be unmasked to be mapped back to the surface. So if the data are
 #'  masked, provide the mask here.
 #' @param scale_precomp (Optional) pre-computed image or scalar of BOLD average
 #'  or SD, for \code{"mean"} or \code{"sd"} scaling respectively.
@@ -30,14 +30,14 @@
 #'  in seconds. \code{TR} is required for detrending with \code{hpf}.
 #' @param hpf,lpf The frequencies at which to apply temporal filtering to the
 #'  data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
-#'  Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass 
+#'  Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
 #'  filter (disabled). Filtering is accomplished by nuisance regression of
 #'  discrete cosine transform (DCT) bases.
-#' 
-#'  The highpass filter serves to detrend the data, since low-frequency 
+#'
+#'  The highpass filter serves to detrend the data, since low-frequency
 #'  variance is associated with noise. The lowpass filter removes high-frequency
 #'  variance, which is also thought to be from non-neuronal noise.
-#' 
+#'
 #'  Note the \code{TR} argument is required for temporal filtering. If
 #'  \code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.
 #'
@@ -50,7 +50,7 @@ norm_BOLD <- function(
   scale_by=c("mean", "sd", "none"),
   scale_sm_FWHM=4,
   scale_sm_xifti=NULL,
-  scale_sm_xifti_mask=NULL, 
+  scale_sm_xifti_mask=NULL,
   scale_precomp=NULL,
   TR=NULL, hpf=.01, lpf=NULL){
 
@@ -62,11 +62,11 @@ norm_BOLD <- function(
   stopifnot(is.logical(center_cols) && length(center_cols)==1)
   scale_by <- match.arg(scale_by, c("mean", "sd", "none"))
   stopifnot(fMRItools::is_1(scale_sm_FWHM, "numeric"))
-  # [NOTE]: 
+  # [NOTE]:
   #   `scale_by=="none"` skips scaling completely
   #   `scale_sm=="none"` skips smoothing of scale estimates
   scale_sm <- switch(
-    as.character(scale_sm_FWHM), 
+    as.character(scale_sm_FWHM),
     "0"="none", "Inf"="global", "local"
   )
   if (scale_by != "none" && scale_sm == "local") {
@@ -81,6 +81,14 @@ norm_BOLD <- function(
         stop("Package \"ciftiTools\" needed to work with CIFTI data. Please install it.", call. = FALSE)
       }
       stopifnot(ciftiTools::is.xifti(scale_sm_xifti))
+      if (dim(scale_sm_xifti)[1] == 0) {
+        if (!is.null(scale_sm_xifti$surf$cortex_left)) {
+          scale_sm_xifti$data$cortex_left <- as.matrix(rep(0, nrow(scale_sm_xifti$surf$cortex_left$vertices)))
+        }
+        if (!is.null(scale_sm_xifti$surf$cortex_right)) {
+          scale_sm_xifti$data$cortex_right <- as.matrix(rep(0, nrow(scale_sm_xifti$surf$cortex_right$vertices)))
+        }
+      }
       if (!is.null(scale_sm_xifti_mask)) {
         stopifnot(is.vector(scale_sm_xifti_mask) && is.logical(scale_sm_xifti_mask))
         stopifnot(sum(scale_sm_xifti_mask) == nV)
@@ -184,6 +192,7 @@ norm_BOLD <- function(
 
     # Convert `scale_meas` to `"xifti"`.
     scale_meas <- ciftiTools::newdata_xifti(ciftiTools::select_xifti(scale_sm_xifti, 1), scale_meas)
+    scale_meas <- ciftiTools::convert_to_dscalar(scale_meas)
     scale_meas <- ciftiTools::move_to_mwall(scale_meas, NA)
     if (!is.null(scale_meas$data$subcort)) {
       sub_mask <- !is.na(scale_meas$data$subcort[,1])
@@ -194,7 +203,7 @@ norm_BOLD <- function(
 
     # Smooth `scale_meas`.
     scale_meas <- ciftiTools::smooth_xifti(scale_meas, surf_FWHM=scale_sm_FWHM, vol_FWHM=scale_sm_FWHM)
-    
+
     # Convert `scale_meas` back to matrix.
     scale_meas <- c(as.matrix(scale_meas))
 
