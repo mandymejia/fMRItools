@@ -1,36 +1,10 @@
 #' Multiple regression for parcel data
 #'
-#' @param BOLD Subject-level fMRI data matrix (\eqn{V \times T}). Rows will be
-#'  centered.
 #' @param parc The parcellation as an integer vector.
 #' @param parc_vals The parcel values (keys) in desired order, e.g.
 #'  \code{sort(unique(parc))}.
-#' @param GSR Center BOLD across columns (each image)? This
-#'  is equivalent to performing global signal regression. Default:
-#'  \code{FALSE}.
-#' @param scale \code{"local"} (default), \code{"global"}, or \code{"none"}.
-#'  Local scaling will divide each data location's time series by its estimated
-#'  standard deviation. Global scaling will divide the entire data matrix by the
-#'  mean image standard deviation (\code{mean(sqrt(rowVars(BOLD)))}).
-#' @param scale_sm_xifti,scale_sm_FWHM Only applies if \code{scale=="local"} and
-#'  \code{BOLD} represents CIFTI-format data. To smooth the standard deviation
-#'  estimates used for local scaling, provide a \code{"xifti"} object with data
-#'  locations in alignment with \code{BOLD}, as well as the smoothing FWHM
-#'  (default: \code{2}). If no \code{"xifti"} object is provided (default), do
-#'  not smooth.
-#' @param TR The temporal resolution of the data, i.e. the time between volumes,
-#'  in seconds. \code{TR} is required for detrending with \code{hpf}.
-#' @param hpf The frequency at which to apply a highpass filter to the data
-#'  during pre-processing, in Hertz. Default: \code{0.01} Hertz. Set to \code{0}
-#'  to disable the highpass filter.
-#'
-#'
-#'  The highpass filter serves to detrend the data, since low-frequency
-#'  variance is associated with noise. Highpass filtering is accomplished by
-#'  nuisance regression of discrete cosine transform (DCT) bases.
-#'
-#'  Note the \code{TR} argument is required for highpass filtering. If
-#'  \code{TR} is not provided, \code{hpf} will be ignored.
+#' @inheritParams norm_BOLD
+#' @inheritParams dual_reg
 #'
 #' @return A list containing
 #'  the subject-level independent components \strong{S} (\eqn{Q \times V}),
@@ -41,25 +15,42 @@
 #'
 dual_reg_parc <- function(
   BOLD, parc, parc_vals,
-  scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
-  TR=NULL, hpf=.01,
+  scale_by=c("mean", "sd", "none"),
+  scale_sm_FWHM=4,
+  scale_sm_xifti=NULL,
+  TR=NULL, hpf=.01, lpf=NULL,
   GSR=FALSE){
+
+  # [NOTE] to devs: if updating this function, please also make appropriate
+  #   updates to `dual_reg`.
 
   stopifnot(is.matrix(BOLD))
   stopifnot(is.numeric(parc))
   parc <- as.matrix(parc)
-  if (is.null(scale) || isFALSE(scale)) { scale <- "none" }
-  if (isTRUE(scale)) {
-    warning(
-      "Setting `scale='global'`. Use `'global'` or `'local'` ",
-      "instead of `TRUE`, which has been deprecated."
-    )
-    scale <- "global"
+  scale_by <- match.arg(scale_by, c("mean", "sd", "none"))
+  stopifnot(fMRItools::is_1(scale_sm_FWHM, "numeric"))
+  # [NOTE]: 
+  #   `scale_by=="none"` skips scaling completely
+  #   `scale_sm=="none"` skips smoothing of scale estimates
+  scale_sm <- switch(
+    as.character(scale_sm_FWHM), 
+    "0"="none", "Inf"="global", "local"
+  )
+  if (scale_sm == "local") {
+    stopifnot(scale_sm_FWHM > 0)
+    if (is.null(scale_sm_xifti)) {
+      warning("Skipping smoothing of scale estimate because `scale_sm_xifti` ",
+        "was not provided. If intended, set `scale_sm_FWHM=0` to disable this ",
+        "warning.")
+      scale_sm_FWHM <- 0; scale_sm <- "none"
+    } else {
+      if (!requireNamespace("ciftiTools", quietly = TRUE)) {
+        stop("Package \"ciftiTools\" needed to work with CIFTI data. Please install it.", call. = FALSE)
+      }
+      stopifnot(ciftiTools::is.xifti(scale_sm_xifti))
+    }
   }
-  scale <- match.arg(scale, c("local", "global", "none"))
-  if (!is.null(scale_sm_xifti)) { stopifnot(ciftiTools::is.xifti(scale_sm_xifti)) }
   stopifnot(is.numeric(scale_sm_FWHM) && length(scale_sm_FWHM)==1)
-
   if (any(is.na(BOLD))) { stop("`NA` values in `BOLD` not supported with DR.") }
   if (any(is.na(parc))) { stop("`NA` values in `parc` not supported with DR.") }
 
@@ -76,13 +67,17 @@ dual_reg_parc <- function(
   if(nQ > nV) warning('More parcels than voxels. Are you sure?')
   if(nQ > nT) warning('More parcels than time points. Are you sure?')
 
-  # Center each voxel timecourse. Do not center the image at each timepoint.
-  # Standardize scale if `scale`, and detrend if `hpf>0`.
+  # Center each voxel timecourse. 
+  #  Do not center the image at each timepoint unless `GSR == TRUE`.
+  # Standardize scale if `scale_by != "none`, and do temporal filtering.
   # Transpose it: now `BOLD` is TxV.
   BOLD <- t(norm_BOLD(
     BOLD, center_rows=TRUE, center_cols=GSR,
-    scale=scale, scale_sm_xifti=scale_sm_xifti, scale_sm_FWHM=scale_sm_FWHM,
-    TR=TR, hpf=hpf
+    scale_by=scale_by, scale_sm_FWHM=scale_sm_FWHM, 
+    scale_sm_xifti=scale_sm_xifti, 
+    # [NOTE]: could add the below arguments?
+    # scale_sm_xifti_mask=scale_sm_xifti_mask, scale_precomp=scale_precomp,
+    TR=TR, hpf=hpf, lpf=lpf
   ))
 
   # Estimate A (parcel timeseries).
@@ -111,9 +106,14 @@ dual_reg_parc <- function(
     )
   }
 
-  # Estimate S (IC maps). VxQ
+  # Estimate S (IC maps).
   S <- solve(a=crossprod(A), b=crossprod(A, BOLD))
 
+  # Re-estimate A (IC timeseries) based on the subject-level IC maps
+  # We need to center `BOLD` across space because the linear model has no intercept.
+  S_ctr <- colCenter(t(S))
+  A2 <- ((BOLD - rowMeans(BOLD, na.rm=TRUE)) %*% S_ctr) %*% chol2inv(chol(crossprod(S_ctr)))
+
   #return result
-  list(S = S, A = A)
+  list(S = S, A = A, A2 = A2)
 }

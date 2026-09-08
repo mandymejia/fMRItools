@@ -6,7 +6,8 @@ Authors@R: c(
     person(given = "Amanda",
            family = "Mejia",
            email = "mandy.mejia@gmail.com",
-           role = c("aut", "cre")),
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4312-8974")),
     person(given = "Damon",
            family = "Pham",
            email = "damondpham@gmail.com",
@@ -55,4 +56,4 @@ Suggests:
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/mandymejia/fMRItools
 BugReports: https://github.com/mandymejia/fMRItools/issues
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

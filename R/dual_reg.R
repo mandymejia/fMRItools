@@ -6,35 +6,11 @@
 #' @param GSR Center BOLD across columns (each image)? This
 #'  is equivalent to performing global signal regression. Default:
 #'  \code{FALSE}.
-#' @param scale \code{"local"} (default), \code{"global"}, or \code{"none"}.
-#'  Local scaling will divide each data location's time series by its estimated
-#'  standard deviation. Global scaling will divide the entire data matrix by the
-#'  mean image standard deviation (\code{mean(sqrt(rowVars(BOLD)))}).
-#' @param scale_sm_xifti,scale_sm_FWHM Only applies if \code{scale=="local"} and
-#'  \code{BOLD} represents CIFTI-format data. To smooth the standard deviation
-#'  estimates used for local scaling, provide a \code{"xifti"} object with data
-#'  locations in alignment with \code{BOLD}, as well as the smoothing FWHM
-#'  (default: \code{2}). If no \code{"xifti"} object is provided (default), do
-#'  not smooth.
-#' @param TR The temporal resolution of the data, i.e. the time between volumes,
-#'  in seconds. \code{TR} is required for detrending with \code{hpf}.
-#' @param hpf,lpf The frequencies at which to apply a highpass filter or lowpass
-#'  filter to the data during pre-processing, in Hertz. Set either to 
-#'  \code{NULL} to disable filtering. Default: \code{0.01} Hertz for the 
-#'  highpass filter, and \code{NULL} for the lowpass filter.
-#'
-#'  The highpass filter serves to detrend the data, since low-frequency
-#'  variance is associated with noise. Highpass filtering is accomplished by
-#'  nuisance regression of discrete cosine transform (DCT) bases.
-#' 
-#'  The lowpass filter removes high-frequency variance also thought to be
-#'  associated with non-neuronal noise. 
-#'
-#'  Note the \code{TR} argument is required for temporal filtering. If
-#'  \code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.
+# Below: inherit the scaling and temporal filtering parameters' documentation.
+#' @inheritParams norm_BOLD 
 #'
 #' @return A list containing
-#'  the subject-level independent components \strong{S} (\eqn{V \times Q}),
+#'  the subject-level independent components \strong{S} (\eqn{Q \times V}),
 #'  and subject-level mixing matrix \strong{A} (\eqn{TxQ}).
 #'
 #' @export
@@ -44,30 +20,47 @@
 #' nQ <- 7
 #' mU <- matrix(rnorm(nV*nQ), nrow=nV)
 #' mS <- mU %*% diag(seq(nQ, 1)) %*% matrix(rnorm(nQ*nT), nrow=nQ)
-#' BOLD <- mS + rnorm(nV*nT, sd=.05)
+#' BOLD <- mS + rnorm(nV*nT, sd=.05) + 10
 #' GICA <- mU
-#' dual_reg(BOLD=BOLD, GICA=mU, scale="local")
+#' dual_reg(BOLD=BOLD, GICA=mU, scale_sm_FWHM=Inf, TR=.72)
 #'
 dual_reg <- function(
   BOLD, GICA,
-  scale=c("local", "global", "none"), scale_sm_xifti=NULL, scale_sm_FWHM=2,
+  scale_by=c("mean", "sd", "none"),
+  scale_sm_FWHM=4,
+  scale_sm_xifti=NULL,
   TR=NULL, hpf=.01, lpf=NULL,
   GSR=FALSE){
 
+  # [NOTE] to devs: if updating this function, please also make appropriate
+  #   updates to `dual_reg_parc`.
+
   stopifnot(is.matrix(BOLD))
   stopifnot(is.matrix(GICA))
-  if (is.null(scale) || isFALSE(scale)) { scale <- "none" }
-  if (isTRUE(scale)) {
-    warning(
-      "Setting `scale='global'`. Use `'global'` or `'local'` ",
-      "instead of `TRUE`, which has been deprecated."
-    )
-    scale <- "global"
+  scale_by <- match.arg(scale_by, c("mean", "sd", "none"))
+  stopifnot(fMRItools::is_1(scale_sm_FWHM, "numeric"))
+  # [NOTE]: 
+  #   `scale_by=="none"` skips scaling completely
+  #   `scale_sm=="none"` skips smoothing of scale estimates
+  scale_sm <- switch(
+    as.character(scale_sm_FWHM), 
+    "0"="none", "Inf"="global", "local"
+  )
+  if (scale_sm == "local") {
+    stopifnot(scale_sm_FWHM > 0)
+    if (is.null(scale_sm_xifti)) {
+      warning("Skipping smoothing of scale estimate because `scale_sm_xifti` ",
+        "was not provided. If intended, set `scale_sm_FWHM=0` to disable this ",
+        "warning.")
+      scale_sm_FWHM <- 0; scale_sm <- "none"
+    } else {
+      if (!requireNamespace("ciftiTools", quietly = TRUE)) {
+        stop("Package \"ciftiTools\" needed to work with CIFTI data. Please install it.", call. = FALSE)
+      }
+      stopifnot(ciftiTools::is.xifti(scale_sm_xifti))
+    }
   }
-  scale <- match.arg(scale, c("local", "global", "none"))
-  if (!is.null(scale_sm_xifti)) { stopifnot(ciftiTools::is.xifti(scale_sm_xifti)) }
   stopifnot(is.numeric(scale_sm_FWHM) && length(scale_sm_FWHM)==1)
-
   if (any(is.na(BOLD))) { stop("`NA` values in `BOLD` not supported with DR.") }
   if (any(is.na(GICA))) { stop("`NA` values in `GICA` not supported with DR.") }
 
@@ -82,12 +75,16 @@ dual_reg <- function(
   if(nQ > nV) warning('More ICs than voxels. Are you sure?')
   if(nQ > nT) warning('More ICs than time points. Are you sure?')
 
-  # Center each voxel timecourse. Do not center the image at each timepoint unless GSR = TRUE.
-  # Standardize scale if `scale`, and detrend if `hpf>0`.
+  # Center each voxel timecourse. 
+  #  Do not center the image at each timepoint unless `GSR == TRUE`.
+  # Standardize scale if `scale_by != "none`, and do temporal filtering.
   # Transpose it: now `BOLD` is TxV.
   BOLD <- t(norm_BOLD(
     BOLD, center_rows=TRUE, center_cols=GSR,
-    scale=scale, scale_sm_xifti=scale_sm_xifti, scale_sm_FWHM=scale_sm_FWHM,
+    scale_by=scale_by, scale_sm_FWHM=scale_sm_FWHM, 
+    scale_sm_xifti=scale_sm_xifti, 
+    # [NOTE]: could add the below arguments?
+    # scale_sm_xifti_mask=scale_sm_xifti_mask, scale_precomp=scale_precomp,
     TR=TR, hpf=hpf, lpf=lpf
   ))
 

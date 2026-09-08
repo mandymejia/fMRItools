@@ -8,10 +8,11 @@ norm_BOLD(
   BOLD,
   center_rows = TRUE,
   center_cols = FALSE,
-  scale = c("local", "global", "none"),
+  scale_by = c("mean", "sd", "none"),
+  scale_sm_FWHM = 4,
   scale_sm_xifti = NULL,
-  scale_sm_FWHM = 2,
   scale_sm_xifti_mask = NULL,
+  scale_precomp = NULL,
   TR = NULL,
   hpf = 0.01,
   lpf = NULL
@@ -24,21 +25,28 @@ norm_BOLD(
 location's time series) or columns (each time point's image)? Default:
 \code{TRUE} for row centering, and \code{FALSE} for column centering.}
 
-\item{scale}{\code{"global"} (default), \code{"local"}, or \code{"none"}.
-Global scaling will divide the entire data matrix by the mean image standard
-deviation (\code{mean(sqrt(rowVars(BOLD)))}). Local scaling will divide each
-data location's time series by its estimated standard deviation.}
+\item{scale_by}{Scale the BOLD at each voxel based on either its
+\code{"mean"} (default), its \code{"sd"}, or do not scale (\code{"none"}).
+Mean scaling cannot be used if the \code{BOLD} have already been de-meaned.}
 
-\item{scale_sm_xifti, scale_sm_FWHM}{Only applies if \code{scale=="local"} and
-\code{BOLD} represents CIFTI-format data. To smooth the standard deviation
-estimates used for local scaling, provide a \code{"xifti"} object with data
-locations in alignment with \code{BOLD}, as well as the smoothing FWHM
-(default: \code{2}). If no \code{"xifti"} object is provided (default), do
-not smooth.}
+\item{scale_sm_FWHM}{Full width at half maximum (FWHM) for smoothing the
+estimates of scale across brain locations (see \code{scale_by}), to reduce
+the variance of the estimates. Set to \code{0} to disable smoothing, or
+\code{Inf} for "global" smoothing (estimate and use one measure of scale
+across the entire brain). Otherwise, for "local" smoothing, this should be a
+positive number. Default: \code{4}.}
 
-\item{scale_sm_xifti_mask}{For local scaling with smoothing, the data must
-be unmasked to be mapped back to the surface. So if the data are masked,
-provide the mask here.}
+\item{scale_sm_xifti}{Required only for "local" smoothing of the scale
+estimates with CIFTI data (see \code{scale_sm_FWHM}). To smooth the scale
+estimates, provide a \code{"xifti"} object aligned with \code{BOLD}. If no
+\code{"xifti"} object is provided (default) smoothing must be skipped.}
+
+\item{scale_sm_xifti_mask}{For local smoothing of scale estimates, the data
+must be unmasked to be mapped back to the surface. So if the data are
+masked, provide the mask here.}
+
+\item{scale_precomp}{(Optional) pre-computed image or scalar of BOLD average
+or SD, for \code{"mean"} or \code{"sd"} scaling respectively.}
 
 \item{TR}{The temporal resolution of the data, i.e. the time between volumes,
 in seconds. \code{TR} is required for detrending with \code{hpf}.}

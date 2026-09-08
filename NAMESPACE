@@ -59,13 +59,17 @@ export(validate_design_mat)
 export(var_decomp)
 export(vox_locations)
 importFrom(graphics,image)
-importFrom(matrixStats,rowMedians)
-importFrom(matrixStats,rowVars)
-importFrom(stats,cor)
-importFrom(stats,fitted)
-importFrom(stats,mad)
-importFrom(stats,median)
-importFrom(stats,mvfft)
-importFrom(stats,quantile)
-importFrom(stats,residuals)
-importFrom(stats,var)
+importFrom(matrixStats,
+  rowMedians,
+  rowVars
+)
+importFrom(stats,
+  cor,
+  fitted,
+  mad,
+  median,
+  mvfft,
+  quantile,
+  residuals,
+  var
+)

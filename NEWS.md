@@ -1,3 +1,8 @@
+# 0.8.0
+
+* Replace `dice_overlap` with `dice_coef`. Draft `match_nets`.
+* Update scaling args to `norm_BOLD`; enable both mean and SD-based scaling.
+
 # 0.7.0
 
 * Remove `dim_reduce`
