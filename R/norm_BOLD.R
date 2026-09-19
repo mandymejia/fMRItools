@@ -35,7 +35,8 @@
 #'  by a non-linear filter: \code{\link{fsl_bptf}}.
 #' 
 #'  Note the \code{TR} argument is required for temporal filtering. If
-#'  \code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.
+#'  \code{TR} is not provided, an error is raised if \code{hpf} and \code{lpf}
+#'  have been set.
 #' @param center_rows,center_cols Center BOLD data across rows (each data
 #'  location's time series) or columns (each time point's image)? Default:
 #'  \code{TRUE} for row centering, and \code{FALSE} for column centering.
@@ -66,6 +67,7 @@
 #'  a list with three elements: the normed BOLD, the intercept estimate, and the
 #'  residual SD estimate.
 #'
+#' @importFrom matrixStats rowVars
 #' @export
 #'
 norm_BOLD <- function(
@@ -228,21 +230,37 @@ norm_BOLD <- function(
   }
 
   ### Do the regression. -------------------------------------------------------
-  # Calculate mu as the intercept from nuisance regression.
-  BOLD_mu <- (solve(crossprod(big_nmat)) %*% t(big_nmat) %*% t(BOLD))[1,]
+  if (ncol(big_nmat) > 1) {
+    # Calculate mu as the intercept from nuisance regression.
+    # BOLD_mu <- (solve(crossprod(big_nmat)) %*% t(big_nmat) %*% t(BOLD))[1,]
+    # More efficient (avoids t()); identical b/c the inverse is symmetric:
+    w <- big_nmat %*% solve(crossprod(big_nmat))[,1]
+    BOLD_mu <- c(BOLD %*% w)
+    rm(w)
 
-  # Do the nuisance regression. (BOLD is now centered.)
-  BOLD <- nuisance_regression(BOLD, big_nmat)
+    # Do the nuisance regression. (BOLD is now centered.)
+    BOLD <- nuisance_regression(BOLD, big_nmat)
 
-  # Compute the DOF for SD estimate calculation.
-  # (DOF lost by scrubbing accounted for in `nmat` rather than dropped columns).
-  BOLD_dof <- nT - qr(big_nmat)$rank
+    # Compute the DOF for SD estimate calculation.
+    # (DOF lost by scrubbing accounted for in `nmat` rather than dropped columns).
+    BOLD_dof <- nT - qr(big_nmat)$rank
 
-  # Compute the SD estimates for SD scaling.
-  BOLD_sd <- sqrt(rowSums(BOLD^2, na.rm=TRUE) / BOLD_dof)
+    # Compute the SD estimates for SD scaling. (Skip if not needed.)
+    BOLD_sd <- if (scale_by=="sd" || give_stats) { 
+      sqrt(rowSums(BOLD^2, na.rm=TRUE) / BOLD_dof)
+    } else {
+      NULL
+    }
 
-  # Drop scrubbed volumes.
-  if (!is.null(scrub)) { BOLD <- BOLD[,-scrub,drop=FALSE] }
+    # Drop scrubbed volumes.
+    if (!is.null(scrub)) { BOLD <- BOLD[,-scrub,drop=FALSE] }
+
+  } else {
+    # Do not do nuisance regression (avoid unnecessary computation)
+    BOLD_mu <- rowMeans(BOLD)
+    BOLD <- BOLD - BOLD_mu
+    BOLD_sd <- if (scale_by=="sd" || give_stats) { sqrt(matrixStats::rowVars(BOLD)) } else { NULL }
+  }
 
   # Define the scaling measure.
   scale_meas <- switch(scale_by,
@@ -288,7 +306,7 @@ norm_BOLD <- function(
 
   if (mean(scale_meas, na.rm=TRUE) < 1e-8) {
     stop("Estimated mean scale is near zero. ",
-      "Set `scale = 'none'` or provide non-centered data.")
+      "Set `scale_by = 'none'` or provide non-centered data.")
   }
 
   ## Smooth scale measure, if applicable.
@@ -338,7 +356,7 @@ norm_BOLD <- function(
   # Checks.
   if (any(scale_meas < 0) || any(abs(scale_meas) < 1e-8)) {
     stop("Some locations have zero or negative scaling measures. ",
-      "Set `scale = 'none'` or double-check the data. Note, ",
+      "Set `scale_by = 'none'` or double-check the data. Note, ",
       "mean scaling requires uncentered data, and ",
       "SD scaling requires that constant volumes be masked prior to `norm_BOLD`."
     )
