@@ -54,8 +54,12 @@ in seconds. \code{TR} is required for detrending with \code{hpf}.}
 \item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
 data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
 Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
-filter (disabled). Filtering is accomplished by nuisance regression of
-discrete cosine transform (DCT) bases.}
+filter (disabled). Highpass filtering is accomplished by nuisance regression
+of discrete cosine transform (DCT) bases. Lowpass filtering is accomplished
+by a non-linear filter: \code{\link{fsl_bptf}}.
+
+Note the \code{TR} argument is required for temporal filtering. If
+\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
 
 \item{center_rows, center_cols}{Center BOLD data across rows (each data
 location's time series) or columns (each time point's image)? Default:
@@ -87,14 +91,7 @@ to compute the scaling measure from BOLD, after it has been centered
 scrubbing, and temporal filtering). Otherwise, ignored.}
 
 \item{give_stats}{Return the intercept and residual SD estimates from the
-nuisance regression? Default: \code{FALSE}
-
-The highpass filter serves to detrend the data, since low-frequency
-variance is associated with noise. The lowpass filter removes high-frequency
-variance, which is also thought to be from non-neuronal noise.
-
-Note the \code{TR} argument is required for temporal filtering. If
-\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
+nuisance regression? Default: \code{FALSE}}
 }
 \value{
 Normalized BOLD data matrix (\eqn{V \times T}), or if \code{give_stats},
