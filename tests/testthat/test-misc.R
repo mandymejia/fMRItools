@@ -34,7 +34,7 @@ test_that("Miscellaneous functions are working", {
   nQ <- 13
   mU <- matrix(rnorm(nV*nQ), nrow=nV)
   mS <- mU %*% diag(seq(nQ, 1)) %*% matrix(rnorm(nQ*nT), nrow=nQ)
-  BOLD <- mS + rnorm(nV*nT, sd=.1) + 11
+  BOLD <- mS + rnorm(nV*nT, sd=.1) + 110
 
   testthat::expect_equal(
     BOLD,
@@ -67,7 +67,7 @@ test_that("Miscellaneous functions are working", {
 
   bvars <- xiiL
   bvars$data$cortex_left <- cbind(
-    rowVars(nBOLD_mean_0), rowVars(nBOLD_mean_sm), rowVars(nBOLD_mean_1)
+    rowVars(nBOLD_mean_0), rowVars(nBOLD_mean_sm), rowVars(nBOLD_mean_Inf)
   )
   plot(bvars, idx=seq(3))
 

@@ -6,20 +6,56 @@
 \usage{
 norm_BOLD(
   BOLD,
+  drop_first = 0,
+  nuisance = NULL,
+  scrub = NULL,
+  TR = NULL,
+  hpf = 0.01,
+  lpf = NULL,
   center_rows = TRUE,
   center_cols = FALSE,
-  scale_by = c("mean", "sd", "none"),
+  scale_by = c("mean", "sd", "FUN", "none"),
   scale_sm_FWHM = 4,
   scale_sm_xifti = NULL,
   scale_sm_xifti_mask = NULL,
-  scale_precomp = NULL,
-  TR = NULL,
-  hpf = 0.01,
-  lpf = NULL
+  scale_FUN = NULL,
+  give_stats = FALSE
 )
 }
 \arguments{
 \item{BOLD}{fMRI numeric data matrix (\eqn{V \times T})}
+
+\item{drop_first}{(Optional) Number of volumes to drop from the start of each
+BOLD session. Default: \code{0}.}
+
+\item{nuisance}{(Optional) Nuisance matrix to regress from the BOLD data.
+
+Nuisance regression is performed in a simultaneous regression with any spike
+regressors from \code{scrub} and DCT bases from \code{hpf}.
+
+Note that the nuisance matrix should be provided with timepoints matching
+the original \code{BOLD} irregardless of \code{drop_first}.
+Nuisance matrices will be truncated automatically if \code{drop_first>0}.}
+
+\item{scrub}{(Optional) Numeric vector of integers giving the indices
+of volumes to scrub from the BOLD data. (List the volumes to remove, not the
+ones to keep.)
+
+Scrubbing is performed within a nuisance regression by adding a spike
+regressor to the nuisance design matrix for each volume to scrub.
+
+Note that indices are counted beginning with the first index in the
+\code{BOLD} session irregardless of \code{drop_first}. The indices will be
+adjusted automatically if \code{drop_first>0}.}
+
+\item{TR}{The temporal resolution of the data, i.e. the time between volumes,
+in seconds. \code{TR} is required for detrending with \code{hpf}.}
+
+\item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
+data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
+Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
+filter (disabled). Filtering is accomplished by nuisance regression of
+discrete cosine transform (DCT) bases.}
 
 \item{center_rows, center_cols}{Center BOLD data across rows (each data
 location's time series) or columns (each time point's image)? Default:
@@ -45,17 +81,13 @@ estimates, provide a \code{"xifti"} object aligned with \code{BOLD}. If no
 must be unmasked to be mapped back to the surface. So if the data are
 masked, provide the mask here.}
 
-\item{scale_precomp}{(Optional) pre-computed image or scalar of BOLD average
-or SD, for \code{"mean"} or \code{"sd"} scaling respectively.}
+\item{scale_FUN}{If \code{scale_by} is \code{"FUN"}, this function is used
+to compute the scaling measure from BOLD, after it has been centered
+(and so after dropping any volumes, and applying nuisance regression,
+scrubbing, and temporal filtering). Otherwise, ignored.}
 
-\item{TR}{The temporal resolution of the data, i.e. the time between volumes,
-in seconds. \code{TR} is required for detrending with \code{hpf}.}
-
-\item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
-data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
-Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
-filter (disabled). Filtering is accomplished by nuisance regression of
-discrete cosine transform (DCT) bases.
+\item{give_stats}{Return the intercept and residual SD estimates from the
+nuisance regression? Default: \code{FALSE}
 
 The highpass filter serves to detrend the data, since low-frequency
 variance is associated with noise. The lowpass filter removes high-frequency
@@ -65,10 +97,12 @@ Note the \code{TR} argument is required for temporal filtering. If
 \code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
 }
 \value{
-Normalized BOLD data matrix (\eqn{V \times T})
+Normalized BOLD data matrix (\eqn{V \times T}), or if \code{give_stats},
+a list with three elements: the normed BOLD, the intercept estimate, and the
+residual SD estimate.
 }
 \description{
-Center the data across space and/or time, detrend, and scale, in that order.
-For dual regression, row centering is required and column centering is not
-recommended. Scaling and detrending depend on the user preference.
+Clean the data (scrubbing, detrending, nuisance regression, and temporal
+filtering in a simultaneous framework), then center it, then scale it, in
+that order.
 }
