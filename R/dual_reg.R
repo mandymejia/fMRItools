@@ -53,7 +53,7 @@ dual_reg <- function(
     as.character(scale_sm_FWHM), 
     "0"="none", "Inf"="global", "local"
   )
-  if (scale_sm == "local") {
+  if (scale_by != "none" && scale_sm == "local") {
     stopifnot(scale_sm_FWHM > 0)
     if (is.null(scale_sm_xifti)) {
       warning("Skipping smoothing of scale estimate because `scale_sm_xifti` ",
