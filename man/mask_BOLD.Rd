@@ -22,4 +22,3 @@ A logical vector indicating valid vertices
 \description{
 Create a mask based on vertices that are invalid
 }
-\keyword{internal}

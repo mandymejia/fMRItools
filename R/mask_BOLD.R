@@ -10,7 +10,7 @@
 #' @importFrom matrixStats rowVars
 #' @return A logical vector indicating valid vertices
 #'
-#' @keywords internal
+#' @export
 mask_BOLD <- function(BOLD, meanTol=-Inf, varTol=1e-6, verbose=TRUE){
   stopifnot(is.matrix(BOLD))
 
