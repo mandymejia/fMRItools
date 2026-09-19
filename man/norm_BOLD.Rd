@@ -59,7 +59,8 @@ of discrete cosine transform (DCT) bases. Lowpass filtering is accomplished
 by a non-linear filter: \code{\link{fsl_bptf}}.
 
 Note the \code{TR} argument is required for temporal filtering. If
-\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
+\code{TR} is not provided, an error is raised if \code{hpf} and \code{lpf}
+have been set.}
 
 \item{center_rows, center_cols}{Center BOLD data across rows (each data
 location's time series) or columns (each time point's image)? Default:

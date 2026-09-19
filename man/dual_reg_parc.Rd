@@ -63,7 +63,8 @@ of discrete cosine transform (DCT) bases. Lowpass filtering is accomplished
 by a non-linear filter: \code{\link{fsl_bptf}}.
 
 Note the \code{TR} argument is required for temporal filtering. If
-\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
+\code{TR} is not provided, an error is raised if \code{hpf} and \code{lpf}
+have been set.}
 
 \item{scale_by}{Scale the BOLD at each voxel based on either its
 \code{"mean"} (default), its \code{"sd"}, or do not scale (\code{"none"}).
