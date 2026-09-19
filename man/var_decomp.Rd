@@ -15,8 +15,9 @@ variable exists.)}
 \code{FALSE}.}
 }
 \value{
-The variance decomposition
+The variance decomposition.
 }
 \description{
 Calculate the various ANOVA sums of squares for repeated measures data.
+For each variable, subjects with any missing measurement are excluded.
 }
