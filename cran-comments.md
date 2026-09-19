@@ -14,3 +14,16 @@
 ## Tests
 
 Passes all the tests in `tests/run_fMRItools_tests.R`
+
+## Previous submission
+
+Changes to worse in reverse depends:
+
+Package: BayesBrainMap
+Check: examples
+New result: ERROR
+
+  Found the following significant warnings:
+    Note: possible error in 'dual_reg(BOLD, prior$mean, ': argument 4 matches multiple formal arguments
+
+> This error is expected because the arguments to functions imported by `BayesBrainMap` have changed. A new version of `BayesBrainMap` compatible with the new version of `fMRItools` has been submitted to CRAN.
