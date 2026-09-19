@@ -1,4 +1,6 @@
-#' Multiple regression for parcel data
+#' Dual Regression for parcel data
+#' 
+#' Perform multiple regression for parcel data.
 #'
 #' @param parc The parcellation as an integer vector.
 #' @param parc_vals The parcel values (keys) in desired order, e.g.
@@ -15,10 +17,12 @@
 #'
 dual_reg_parc <- function(
   BOLD, parc, parc_vals,
-  scale_by=c("mean", "sd", "none"),
+  drop_first=0, nuisance=NULL, scrub=NULL,
+  TR=NULL, hpf=.01, lpf=NULL,
+  scale_by=c("mean", "sd", "FUN", "none"),
   scale_sm_FWHM=4,
   scale_sm_xifti=NULL,
-  TR=NULL, hpf=.01, lpf=NULL,
+  scale_FUN=NULL,
   GSR=FALSE){
 
   # [NOTE] to devs: if updating this function, please also make appropriate
@@ -27,8 +31,8 @@ dual_reg_parc <- function(
   stopifnot(is.matrix(BOLD))
   stopifnot(is.numeric(parc))
   parc <- as.matrix(parc)
-  scale_by <- match.arg(scale_by, c("mean", "sd", "none"))
-  stopifnot(fMRItools::is_1(scale_sm_FWHM, "numeric"))
+  scale_by <- match.arg(scale_by, c("mean", "sd", "FUN", "none"))
+  stopifnot(is_1(scale_sm_FWHM, "numeric"))
   # [NOTE]: 
   #   `scale_by=="none"` skips scaling completely
   #   `scale_sm=="none"` skips smoothing of scale estimates
@@ -67,18 +71,24 @@ dual_reg_parc <- function(
   if(nQ > nV) warning('More parcels than voxels. Are you sure?')
   if(nQ > nT) warning('More parcels than time points. Are you sure?')
 
+  # (Drop first volumes)
+  # (Do a big regression for: nuisance, scrubbing, detrending) (& nonlinear LPF)
   # Center each voxel timecourse. 
-  #  Do not center the image at each timepoint unless `GSR == TRUE`.
-  # Standardize scale if `scale_by != "none`, and do temporal filtering.
-  # Transpose it: now `BOLD` is TxV.
+  # (Center image at each timepoint if `GSR`)
+  # (Standardize scale)
+  # Transpose: now `BOLD` is TxV.
   BOLD <- t(norm_BOLD(
-    BOLD, center_rows=TRUE, center_cols=GSR,
+    BOLD, 
+    drop_first=drop_first, nuisance=nuisance, scrub=scrub, 
+    TR=TR, hpf=hpf, lpf=lpf,
+    center_rows=TRUE, center_cols=GSR,
     scale_by=scale_by, scale_sm_FWHM=scale_sm_FWHM, 
     scale_sm_xifti=scale_sm_xifti, 
-    # [NOTE]: could add the below arguments?
-    # scale_sm_xifti_mask=scale_sm_xifti_mask, scale_precomp=scale_precomp,
-    TR=TR, hpf=hpf, lpf=lpf
+    scale_FUN=scale_FUN
+    # [NOTE]: could add scale_sm_xifti_mask
   ))
+  
+  nT <- ncol(BOLD) # scrubbing and `drop_first`
 
   # Estimate A (parcel timeseries).
   # Neccesary to temporarily center BOLD (like in standard dual regression since there is no intecept)

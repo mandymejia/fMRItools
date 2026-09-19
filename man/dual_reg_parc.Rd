@@ -2,18 +2,22 @@
 % Please edit documentation in R/dual_reg_parc.R
 \name{dual_reg_parc}
 \alias{dual_reg_parc}
-\title{Multiple regression for parcel data}
+\title{Dual Regression for parcel data}
 \usage{
 dual_reg_parc(
   BOLD,
   parc,
   parc_vals,
-  scale_by = c("mean", "sd", "none"),
-  scale_sm_FWHM = 4,
-  scale_sm_xifti = NULL,
+  drop_first = 0,
+  nuisance = NULL,
+  scrub = NULL,
   TR = NULL,
   hpf = 0.01,
   lpf = NULL,
+  scale_by = c("mean", "sd", "FUN", "none"),
+  scale_sm_FWHM = 4,
+  scale_sm_xifti = NULL,
+  scale_FUN = NULL,
   GSR = FALSE
 )
 }
@@ -24,6 +28,38 @@ dual_reg_parc(
 
 \item{parc_vals}{The parcel values (keys) in desired order, e.g.
 \code{sort(unique(parc))}.}
+
+\item{drop_first}{(Optional) Number of volumes to drop from the start of each
+BOLD session. Default: \code{0}.}
+
+\item{nuisance}{(Optional) Nuisance matrix to regress from the BOLD data.
+
+Nuisance regression is performed in a simultaneous regression with any spike
+regressors from \code{scrub} and DCT bases from \code{hpf}.
+
+Note that the nuisance matrix should be provided with timepoints matching
+the original \code{BOLD} irregardless of \code{drop_first}.
+Nuisance matrices will be truncated automatically if \code{drop_first>0}.}
+
+\item{scrub}{(Optional) Numeric vector of integers giving the indices
+of volumes to scrub from the BOLD data. (List the volumes to remove, not the
+ones to keep.)
+
+Scrubbing is performed within a nuisance regression by adding a spike
+regressor to the nuisance design matrix for each volume to scrub.
+
+Note that indices are counted beginning with the first index in the
+\code{BOLD} session irregardless of \code{drop_first}. The indices will be
+adjusted automatically if \code{drop_first>0}.}
+
+\item{TR}{The temporal resolution of the data, i.e. the time between volumes,
+in seconds. \code{TR} is required for detrending with \code{hpf}.}
+
+\item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
+data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
+Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
+filter (disabled). Filtering is accomplished by nuisance regression of
+discrete cosine transform (DCT) bases.}
 
 \item{scale_by}{Scale the BOLD at each voxel based on either its
 \code{"mean"} (default), its \code{"sd"}, or do not scale (\code{"none"}).
@@ -41,21 +77,10 @@ estimates with CIFTI data (see \code{scale_sm_FWHM}). To smooth the scale
 estimates, provide a \code{"xifti"} object aligned with \code{BOLD}. If no
 \code{"xifti"} object is provided (default) smoothing must be skipped.}
 
-\item{TR}{The temporal resolution of the data, i.e. the time between volumes,
-in seconds. \code{TR} is required for detrending with \code{hpf}.}
-
-\item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
-data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
-Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
-filter (disabled). Filtering is accomplished by nuisance regression of
-discrete cosine transform (DCT) bases.
-
-The highpass filter serves to detrend the data, since low-frequency
-variance is associated with noise. The lowpass filter removes high-frequency
-variance, which is also thought to be from non-neuronal noise.
-
-Note the \code{TR} argument is required for temporal filtering. If
-\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
+\item{scale_FUN}{If \code{scale_by} is \code{"FUN"}, this function is used
+to compute the scaling measure from BOLD, after it has been centered
+(and so after dropping any volumes, and applying nuisance regression,
+scrubbing, and temporal filtering). Otherwise, ignored.}
 
 \item{GSR}{Center BOLD across columns (each image)? This
 is equivalent to performing global signal regression. Default:
@@ -67,5 +92,5 @@ the subject-level independent components \strong{S} (\eqn{Q \times V}),
 and subject-level mixing matrix \strong{A} (\eqn{TxQ}).
 }
 \description{
-Multiple regression for parcel data
+Perform multiple regression for parcel data.
 }
