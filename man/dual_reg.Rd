@@ -55,8 +55,12 @@ in seconds. \code{TR} is required for detrending with \code{hpf}.}
 \item{hpf, lpf}{The frequencies at which to apply temporal filtering to the
 data during pre-processing, in Hertz. Set either to \code{NULL} to disable.
 Default: \code{0.01} Hz highpass filter, and \code{NULL} for the lowpass
-filter (disabled). Filtering is accomplished by nuisance regression of
-discrete cosine transform (DCT) bases.}
+filter (disabled). Highpass filtering is accomplished by nuisance regression
+of discrete cosine transform (DCT) bases. Lowpass filtering is accomplished
+by a non-linear filter: \code{\link{fsl_bptf}}.
+
+Note the \code{TR} argument is required for temporal filtering. If
+\code{TR} is not provided, \code{hpf} and \code{lpf} will be ignored.}
 
 \item{scale_by}{Scale the BOLD at each voxel based on either its
 \code{"mean"} (default), its \code{"sd"}, or do not scale (\code{"none"}).
