@@ -15,7 +15,8 @@ filter in Hz and \code{TR} is the time resolution in seconds (See jiscmail
 link in function description).
 Default: \code{2000}.}
 
-\item{LP_sigma}{The frequency parameter, sigma, for the lowpass filter.}
+\item{LP_sigma}{The frequency parameter, sigma, for the lowpass filter.
+Recommended \code{LP_sigma}: \code{1/(18*f*TR)}.}
 }
 \value{
 The data with detrended columns
