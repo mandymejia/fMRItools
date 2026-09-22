@@ -12,3 +12,4 @@ if (!endsWith(getwd(), "tests")) { tests_dir <- file.path("tests", tests_dir) }
 
 source(file.path(tests_dir, "test-misc.R"))
 source(file.path(tests_dir, "test-norm_BOLD.R"))
+source(file.path(tests_dir, "test-varDecomp.R"))

@@ -67,7 +67,9 @@ test_that("Miscellaneous functions are working", {
 
   bvars <- xiiL
   bvars$data$cortex_left <- cbind(
-    rowVars(nBOLD_mean_0), rowVars(nBOLD_mean_sm), rowVars(nBOLD_mean_Inf)
+    matrixStats::rowVars(nBOLD_mean_0),
+    matrixStats::rowVars(nBOLD_mean_sm),
+    matrixStats::rowVars(nBOLD_mean_Inf)
   )
   plot(bvars, idx=seq(3))
 
@@ -77,7 +79,9 @@ test_that("Miscellaneous functions are working", {
 
   bvars <- xiiL
   bvars$data$cortex_left <- cbind(
-    rowVars(nBOLD_sd_0), rowVars(nBOLD_sd_sm), rowVars(nBOLD_sd_Inf)
+    matrixStats::rowVars(nBOLD_sd_0),
+    matrixStats::rowVars(nBOLD_sd_sm),
+    matrixStats::rowVars(nBOLD_sd_Inf)
   )
   plot(bvars, idx=seq(3))
 

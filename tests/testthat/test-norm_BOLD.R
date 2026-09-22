@@ -398,7 +398,7 @@ test_that("comparing mean/sd scaling", {
     # plot(xii, zlim=c(.5, 2.2), title="scale_vec")
 
     rowVars_from_norm <- function(FWHM, scale_by) {
-      rowVars(norm_BOLD(
+      matrixStats::rowVars(norm_BOLD(
         as.matrix(xii2), scale_by=scale_by, scale_sm_xifti=xii,
         scale_sm_FWHM=FWHM, hpf=0
       ))
