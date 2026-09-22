@@ -96,7 +96,8 @@ test_that("invariant to subject order and visit order", {
 })
 
 test_that("shift and scale behave", {
-  x <- make_dr(N = 12, V = 4); x[c(5, 30, 100)] <- NA
+  x <- make_dr(N = 12, V = 4)
+  x[c(5, 30, 41)] <- NA
   vd <- var_decomp(x)
   sh <- var_decomp(x + 1e6)
   expect_equal(unname(sh$grand_mean), unname(vd$grand_mean + 1e6))

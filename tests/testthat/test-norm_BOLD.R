@@ -381,8 +381,11 @@ test_that("combined: hpf + lpf band-pass removes both drift and high-frequency n
 
 test_that("comparing mean/sd scaling", {
 
-  # [TO DO]: write quantitative testthat checks.
+  if (is.null(ciftiTools:::ciftiTools.getOption("wb_path"))) {
+    skip("Connectome Workbench is not available.")
+  }
 
+  # [TO DO]: write quantitative testthat checks.
   if (interactive()) {
     xii <- read_cifti(ciftiTools::ciftiTools.files()$cifti["dscalar"], idx=1)
     scale_vec <- 17 * c(as.matrix(xii))
@@ -413,7 +416,7 @@ test_that("comparing mean/sd scaling", {
       rowVars_from_norm(150, "mean"),
       rowVars_from_norm(Inf, "mean")
     ))
-    plot(xii4, idx=seq(4), title=c("0","20","150","Inf"), together="idx")
+    plot(xii4, idx=seq(4))
 
     # Data with variable mean, constant SD + SD scaling:
     #   expect SD always similar across locations
