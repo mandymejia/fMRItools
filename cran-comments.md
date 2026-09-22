@@ -17,6 +17,8 @@ Passes all the tests in `tests/run_fMRItools_tests.R`
 
 ## Previous submission
 
+> We've included additional updates since our most recent submission on Sep 8.
+
 Changes to worse in reverse depends:
 
 Package: BayesBrainMap
