@@ -91,8 +91,8 @@ to compute the scaling measure from BOLD, after it has been centered
 (and so after dropping any volumes, and applying nuisance regression,
 scrubbing, and temporal filtering). Otherwise, ignored.}
 
-\item{give_stats}{Return the intercept and residual SD estimates from the
-nuisance regression? Default: \code{FALSE}}
+\item{give_stats}{Return the intercept, residual SD estimates, and full
+design matrix from the nuisance regression? Default: \code{FALSE}}
 }
 \value{
 Normalized BOLD data matrix (\eqn{V \times T}), or if \code{give_stats},
