@@ -60,8 +60,8 @@
 #'  to compute the scaling measure from BOLD, after it has been centered
 #'  (and so after dropping any volumes, and applying nuisance regression,
 #'  scrubbing, and temporal filtering). Otherwise, ignored.
-#' @param give_stats Return the intercept and residual SD estimates from the
-#'  nuisance regression? Default: \code{FALSE}
+#' @param give_stats Return the intercept, residual SD estimates, and full
+#'  design matrix from the nuisance regression? Default: \code{FALSE}
 #' 
 #' @return Normalized BOLD data matrix (\eqn{V \times T}), or if \code{give_stats},
 #'  a list with three elements: the normed BOLD, the intercept estimate, and the
@@ -135,6 +135,7 @@ norm_BOLD <- function(
   # Create `scrub_mat` (spike regressor matrix) if any `scrub`.
   # Do not scrub volumes that are one of the first `drop_first`.
   if (!is.null(scrub)) {
+    if (is.logical(scrub) && length(scrub)==nT) { scrub <- which(scrub) }
     stopifnot(is.numeric(scrub))
     if (!is.null(drop_first)) {
       stopifnot(is_posNum(drop_first, zero_ok=TRUE))
@@ -292,7 +293,7 @@ norm_BOLD <- function(
   # Skip and return if no scaling.
   if (scale_by == "none") {
     out <- if (give_stats) {
-      list(BOLD=BOLD, mu=BOLD_mu, sd=BOLD_sd)
+      list(BOLD=BOLD, mu=BOLD_mu, sd=BOLD_sd, nmat=big_nmat)
     } else {
       BOLD
     }
@@ -372,7 +373,7 @@ norm_BOLD <- function(
 
   # Return. --------------------------------------------------------------------
   out <- if (give_stats) {
-    list(BOLD=BOLD, mu=BOLD_mu, sd=BOLD_sd, scale_meas=scale_meas)
+    list(BOLD=BOLD, mu=BOLD_mu, sd=BOLD_sd, nmat=big_nmat, scale_meas=scale_meas)
   } else {
     BOLD
   }
