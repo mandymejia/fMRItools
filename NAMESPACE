@@ -60,7 +60,6 @@ export(unvec_vol)
 export(validate_design_mat)
 export(var_decomp)
 export(vox_locations)
-importFrom(graphics,image)
 importFrom(matrixStats,
   rowMedians,
   rowVars

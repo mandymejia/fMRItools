@@ -35,7 +35,6 @@
 # @importFrom grDevices dev.off pdf png gray.colors
 #' 
 #' @importFrom stats quantile
-#' @importFrom graphics image
 #' @return The image or \code{NULL, invisibly} if a file was written.
 #' 
 #' @section References:
@@ -49,10 +48,10 @@ carpetplot <- function(
   x, qcut=.1, fname=NULL, center=TRUE, scale=FALSE, colors="gray255", sortSub=TRUE, ...){
 
   if (!requireNamespace("graphics", quietly = TRUE)) {
-    stop("Package \"graphics\" needed since `svd` failed. Please install it.", call. = FALSE)
+    stop("Package \"graphics\" needed. Please install it.", call. = FALSE)
   }
   if (!requireNamespace("grDevices", quietly = TRUE)) {
-    stop("Package \"graphics\" needed since `svd` failed. Please install it.", call. = FALSE)
+    stop("Package \"grDevices\" needed. Please install it.", call. = FALSE)
   }
 
   # Get T x V matrix.
