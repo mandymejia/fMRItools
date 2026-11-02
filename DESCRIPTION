@@ -56,4 +56,4 @@ Suggests:
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/mandymejia/fMRItools
 BugReports: https://github.com/mandymejia/fMRItools/issues
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
