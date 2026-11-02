@@ -12,6 +12,7 @@ CompCor(
   noise_erosion = NULL,
   center = TRUE,
   scale = TRUE,
+  prelim_nuisance = NULL,
   nuisance = NULL
 )
 }
@@ -97,6 +98,11 @@ performed if the noise ROIs are volumetric.}
 and scale by their MADs? Default: \code{TRUE} for both. Note that this argument
 affects the noise ROI data and not the data that is being cleaned with aCompCor.
 Centering and scaling of the data being cleaned can be done after this function call.}
+
+\item{prelim_nuisance}{Nuisance signals to regress from the noise ROIs before
+computing the PCs. Should be a \eqn{T} by \eqn{P} numeric matrix where
+\eqn{P} represents the number of preliminary nuisance signals. Default:
+\code{NULL} (do not do any preliminary nuisance regression).}
 
 \item{nuisance}{Nuisance signals to regress from each data column in addition
 to the noise ROI PCs. Should be a \eqn{T} by \eqn{N} numeric matrix where
