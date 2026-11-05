@@ -2,6 +2,7 @@
 
 export(CompCor)
 export(CompCor_HCP)
+export(CompCor_HCP_cii)
 export(Mode)
 export(PCA)
 export(UT2mat)
