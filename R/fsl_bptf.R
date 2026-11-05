@@ -91,10 +91,10 @@ fmat_mult <- function(dat, fmat, dat_idx_by_var = NULL, out_idx_by_var = TRUE) {
 #'  \code{fslmaths}, and to use a similar strategy for the low-pass filter.
 #'
 #' @param dat A numeric matrix of time-series data.
-#' @param HPF_sigma Numeric. The standard deviation of the Gaussian kernel 
+#' @param HP_sigma Numeric. The standard deviation of the Gaussian kernel 
 #'  for the high-pass filter, in time points. Default: \code{NULL} (no 
 #'  high-pass filtering). \code{sigma = 0.5 * cutoff_sec / TR}
-#' @param LPF_sigma Numeric. The standard deviation of the Gaussian kernel
+#' @param LP_sigma Numeric. The standard deviation of the Gaussian kernel
 #'  for the low-pass filter, in time points. Default: \code{NULL} (no low-pass 
 #'  filtering).
 #' @param dat_idx_by_var Is `dat` indices (timepoints) by variables? 
@@ -114,25 +114,25 @@ fmat_mult <- function(dat, fmat, dat_idx_by_var = NULL, out_idx_by_var = TRUE) {
 #' tr <- .72 # in seconds
 #' hp_sigma <- 0.5 * cutoff_sec / tr
 #' dat <- matrix(rnorm(1200 * 70), 1200, 70)
-#' dat_filt <- fsl_bptf(dat, HPF_sigma=hp_sigma)
+#' dat_filt <- fsl_bptf(dat, HP_sigma=hp_sigma)
 #' 
 fsl_bptf <- function(
-  dat, HPF_sigma=NULL, LPF_sigma=NULL, 
+  dat, HP_sigma=NULL, LP_sigma=NULL, 
   dat_idx_by_var = TRUE, out_idx_by_var = TRUE) {
 
   nT <- if (dat_idx_by_var) { nrow(dat) } else { ncol(dat) }
 
-  do_HPF <- !is.null(HPF_sigma) && HPF_sigma > 0
-  do_LPF <- !is.null(LPF_sigma) && LPF_sigma > 0
+  do_HPF <- !is.null(HP_sigma) && HP_sigma > 0
+  do_LPF <- !is.null(LP_sigma) && LP_sigma > 0
 
   if (do_HPF) {
-    mat <- gaussian_hpf_mat(nT, HPF_sigma)
+    mat <- gaussian_hpf_mat(nT, HP_sigma)
     dat <- fmat_mult(dat, mat, dat_idx_by_var, out_idx_by_var)
     dat_idx_by_var <- out_idx_by_var
   }
 
   if (do_LPF) {
-    mat <- gaussian_lpf_mat(nT, LPF_sigma)
+    mat <- gaussian_lpf_mat(nT, LP_sigma)
     dat <- fmat_mult(dat, mat, dat_idx_by_var, out_idx_by_var)
   }
 

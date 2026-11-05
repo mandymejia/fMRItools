@@ -6,8 +6,8 @@
 \usage{
 fsl_bptf(
   dat,
-  HPF_sigma = NULL,
-  LPF_sigma = NULL,
+  HP_sigma = NULL,
+  LP_sigma = NULL,
   dat_idx_by_var = TRUE,
   out_idx_by_var = TRUE
 )
@@ -15,11 +15,11 @@ fsl_bptf(
 \arguments{
 \item{dat}{A numeric matrix of time-series data.}
 
-\item{HPF_sigma}{Numeric. The standard deviation of the Gaussian kernel
+\item{HP_sigma}{Numeric. The standard deviation of the Gaussian kernel
 for the high-pass filter, in time points. Default: \code{NULL} (no
 high-pass filtering). \code{sigma = 0.5 * cutoff_sec / TR}}
 
-\item{LPF_sigma}{Numeric. The standard deviation of the Gaussian kernel
+\item{LP_sigma}{Numeric. The standard deviation of the Gaussian kernel
 for the low-pass filter, in time points. Default: \code{NULL} (no low-pass
 filtering).}
 
@@ -43,7 +43,7 @@ cutoff_sec <- 2000 # filter cutoff in seconds
 tr <- .72 # in seconds
 hp_sigma <- 0.5 * cutoff_sec / tr
 dat <- matrix(rnorm(1200 * 70), 1200, 70)
-dat_filt <- fsl_bptf(dat, HPF_sigma=hp_sigma)
+dat_filt <- fsl_bptf(dat, HP_sigma=hp_sigma)
 
 }
 \references{
