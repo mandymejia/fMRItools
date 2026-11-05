@@ -1,116 +1,161 @@
-#' \code{bptf} function from FSL
-#'
-#' Copy of \code{bptf} highpass filter from FSL. The results are very similar
-#'  but not identical.
-#'
-#' Sources:
-#'  https://cpb-us-w2.wpmucdn.com/sites.udel.edu/dist/7/4542/files/2016/09/fsl_temporal_filt-15sywxn.m
-#'  https://github.com/rordenlab/niimath/blob/master/src/coreFLT.c#L1935
-#'  https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=FSL;f6fd75a6.1709
+
+#' Gaussian HPF matrix
 #' 
+#' Matrix for applying a Gaussian-weighted local linear 
+#'  detrending high-pass filter.
+#' 
+#' @param nT The number of time points in the data.
+#' @param sigma The standard deviation of the Gaussian kernel in time points.
+#' 
+#' @return A matrix of size nT x nT that can be used to apply a Gaussian high-pass filter to data.
+#' @export
+gaussian_hpf_mat <- function(nT, sigma) {
+  half <- as.integer(sigma * 3)
+  L <- matrix(0, nT, nT)
+  for (t in seq_len(nT)) {
+    tt <- max(t - half, 1):min(t + half, nT); dt <- tt - t
+    w  <- exp(-0.5 * dt^2 / sigma^2)
+    A <- sum(w * dt); C <- sum(w * dt^2); N <- sum(w); den <- C * N - A^2
+    L[t, tt] <- w * (C - A * dt) / den # weights giving the fitted line value at t
+  }
+  diag(nT) - L
+}
+
+#' Gaussian LPF matrix
+#' 
+#' Matrix for applying a Gaussian low-pass filter.
+#' 
+#' @param nT The number of time points in the data.
+#' @param sigma The standard deviation of the Gaussian kernel in time points.
+#' 
+#' @return A matrix of size nT x nT that can be used to apply a Gaussian low-pass filter to data.
+#' @export
+gaussian_lpf_mat <- function(nT, sigma) {
+  half <- as.integer(sigma * 20) + 2
+  S <- matrix(0, nT, nT)
+  for (t in seq_len(nT)) {
+    tt <- max(t - half, 1):min(t + half, nT)
+    w  <- exp(-0.5 * (tt - t)^2 / sigma^2)
+    S[t, tt] <- w / sum(w) # re-norm over points actually used
+  }
+  S
+}
+
+#' Filter matrix multiplication
+#' 
+#' Multiplies a data matrix by a filter matrix, efficiently 
+#'  handling orientations of the input and output data to 
+#'  avoid unnecessary transpositions.
+#' 
+#' @param dat The data matrix to multiply.
+#' @param fmat The filter matrix to multiply with. The first and 
+#'  second dimensions match the number of indices in \code{dat}. 
+#' @param dat_idx_by_var Is `dat` indices by variables? 
+#' @param out_idx_by_var Should the result be indices by variables?
+#' 
+#' @return The filtered/multiplied data matrix.
+#' @export
+#' 
+#' @examples 
+#' dat <- matrix(rnorm(7000), 100, 70)
+#' fmat <- gaussian_hpf_mat(100, 2)
+#' # Below all yield the same result.
+#' dat_filt <- fmat_mult(dat, fmat)
+#' dat_filt2 <- fmat_mult(dat, fmat, dat_idx_by_var=TRUE)
+#' dat_filt3 <- fmat_mult(t(dat), fmat)
+#' dat_filt4 <- t(fmat_mult(dat, fmat, out_idx_by_var=FALSE))
+#' 
+fmat_mult <- function(dat, fmat, dat_idx_by_var = NULL, out_idx_by_var = TRUE) {
+  nT <- nrow(fmat)
+  stopifnot(nT == ncol(fmat))
+
+  if (is.null(dat_idx_by_var)) {
+    if (nrow(dat) == nT && ncol(dat) == nT) {
+      stop("Ambiguous: `dat` is square. Set `dat_idx_by_var`.")
+    } else if (nrow(dat) == nT) { dat_idx_by_var <- TRUE
+    } else if (ncol(dat) == nT) { dat_idx_by_var <- FALSE
+    } else stop("Neither dat dim matches nrow(fmat).")
+  }
+
+  out <- if (dat_idx_by_var) { fmat %*% dat } else { dat %*% t(fmat) }
+
+  # return in the requested orientation
+  if (dat_idx_by_var == out_idx_by_var) { out } else { t(out) }
+}
+
+#' Band-Pass temporal filter
 #'
-#' @param orig_data \eqn{T \times V} data matrix whose columns will be detrended
-#' @param HP_sigma The frequency parameter, sigma, for the highpass filter.
-#'  Recommended \code{HP_sigma}: \code{1/(2*f*TR)}, where \code{f} is the cutoff
-#'  filter in Hz and \code{TR} is the time resolution in seconds (See jiscmail
-#'  link in function description).
-#'  Default: \code{2000}.
-#' @param LP_sigma The frequency parameter, sigma, for the lowpass filter. 
-#'  Recommended \code{LP_sigma}: \code{1/(18*f*TR)}.
+#' Apply a band-pass temporal filter to data using Gaussian high-pass and 
+#' low-pass filters. This function is designed to replicate the behavior 
+#'  of the high-pass filter in FSL's \code{-bptf} command from 
+#'  \code{fslmaths}, and to use a similar strategy for the low-pass filter.
 #'
-#' @return The data with detrended columns
+#' @param dat A numeric matrix of time-series data.
+#' @param HPF_sigma Numeric. The standard deviation of the Gaussian kernel 
+#'  for the high-pass filter, in time points. Default: \code{NULL} (no 
+#'  high-pass filtering). \code{sigma = 0.5 * cutoff_sec / TR}
+#' @param LPF_sigma Numeric. The standard deviation of the Gaussian kernel
+#'  for the low-pass filter, in time points. Default: \code{NULL} (no low-pass 
+#'  filtering).
+#' @param dat_idx_by_var Is `dat` indices (timepoints) by variables? 
+#'  Default: \code{TRUE}.
+#' @param out_idx_by_var Should the result be indices (timepoints) by variables?
+#'
+#' @return A filtered numeric object of the same dimensions as \code{dat},
+#'  transposed if \code{out_idx_by_var} and \code{dat_idx_by_var} differ.
+#'
+#' @references 
+#' \href{https://web.mit.edu/fsl_v5.0.10/fsl/doc/wiki/FEAT(2f)UserGuide.html}{FSL FEAT User Guide}
 #'
 #' @export
-#'
-#' @section References:
-#'  \itemize{
-#'    \item{Jenkinson, M., Beckmann, C. F., Behrens, T. E. J., Woolrich, M. W. & Smith, S. M. FSL. NeuroImage 62, 782-790 (2012).}
-#' }
-#'
+#' 
 #' @examples
-#' fsl_bptf(matrix(rnorm(700), nrow=100))
-fsl_bptf <- function(orig_data, HP_sigma=2000, LP_sigma=NULL) {
+#' cutoff_sec <- 2000 # filter cutoff in seconds
+#' tr <- .72 # in seconds
+#' hp_sigma <- 0.5 * cutoff_sec / tr
+#' dat <- matrix(rnorm(1200 * 70), 1200, 70)
+#' dat_filt <- fsl_bptf(dat, HPF_sigma=hp_sigma)
+#' 
+fsl_bptf <- function(
+  dat, HPF_sigma=NULL, LPF_sigma=NULL, 
+  dat_idx_by_var = TRUE, out_idx_by_var = TRUE) {
 
-  orig_data <- as.matrix(orig_data)
-  stopifnot(is.numeric(orig_data))
-  nT <- nrow(orig_data)
+  nT <- if (dat_idx_by_var) { nrow(dat) } else { ncol(dat) }
 
-  # Coerce `HP_sigma` and `LP_sigma` to NULL or a positive number.
-  if (!is.null(HP_sigma)) {
-    stopifnot(is_1(HP_sigma))
-    if (HP_sigma<=0) { HP_sigma <- NULL }
-  }
-  if (!is.null(LP_sigma)) {
-    stopifnot(is_1(LP_sigma))
-    if (LP_sigma<=0) { LP_sigma <- NULL }
-  }
-  do_HPF <- !is.null(HP_sigma)
-  do_LPF <- !is.null(LP_sigma)
+  do_HPF <- !is.null(HPF_sigma) && HPF_sigma > 0
+  do_LPF <- !is.null(LPF_sigma) && LPF_sigma > 0
 
   if (do_HPF) {
-    orig_data <- nuisance_regression(orig_data, cbind(1, seq(nT)))
-    
-    HP_filt_size <- ceiling(HP_sigma*3)#round(HP_sigma*8)
-    HP_lin <- seq(-HP_filt_size/2, HP_filt_size/2, length.out=HP_filt_size)
-    HP_gfilt <- exp( -(HP_lin^2) / (2*(HP_sigma^2)) )
-    HP_gfilt <- HP_gfilt/sum(HP_gfilt)
+    mat <- gaussian_hpf_mat(nT, HPF_sigma)
+    dat <- fmat_mult(dat, mat, dat_idx_by_var, out_idx_by_var)
+    dat_idx_by_var <- out_idx_by_var
   }
 
   if (do_LPF) {
-    LP_filt_size <- ceiling(LP_sigma*3)#round(LP_sigma*8)
-    LP_lin <- seq(-LP_filt_size/2, LP_filt_size/2, length.out=LP_filt_size)
-    LP_gfilt <- exp( -(LP_lin^2) / (2*(LP_sigma^2)) )
-    LP_gfilt <- LP_gfilt/sum(LP_gfilt)
+    mat <- gaussian_lpf_mat(nT, LPF_sigma)
+    dat <- fmat_mult(dat, mat, dat_idx_by_var, out_idx_by_var)
   }
 
-  if (do_HPF) {
-    filt_data <- matrix(NA, nrow=nT, ncol=ncol(orig_data))
-    back <- floor((HP_filt_size-1)/2)
-    front <- ceiling((HP_filt_size-1)/2)
-    for (t in seq(nT)) {
-      if ((t-back < 1) && (t+front > nT)) {
-        trunc_HP_gfilt <- HP_gfilt[seq(back-t+2, HP_filt_size-(t+front-nT))]
-        trunc_HP_gfilt <- trunc_HP_gfilt/sum(trunc_HP_gfilt)
-        filt_data[t,] <- trunc_HP_gfilt %*% orig_data
-      } else if (t-back < 1) {
-        trunc_HP_gfilt <- HP_gfilt[seq(back-t+2, HP_filt_size)]
-        trunc_HP_gfilt <- trunc_HP_gfilt/sum(trunc_HP_gfilt)
-        filt_data[t,] <- trunc_HP_gfilt %*% orig_data[seq(t+front),,drop=FALSE]
-      } else if (t+front > nT) {
-        trunc_HP_gfilt <- HP_gfilt[seq(HP_filt_size-(t+front-nT))]
-        trunc_HP_gfilt <- trunc_HP_gfilt/sum(trunc_HP_gfilt)
-        filt_data[t,] <- trunc_HP_gfilt %*% orig_data[seq(t-back, nT),,drop=FALSE]
-      } else {
-        filt_data[t,] <- HP_gfilt %*% orig_data[seq(t-back, t+front),,drop=FALSE]
-      }
-    }
-    filt_data <- orig_data - filt_data
-  } else {
-    filt_data <- orig_data
-  }
-
-  if (do_LPF) {
-    filt_data_orig <- filt_data
-    back <- floor((LP_filt_size-1)/2)
-    front <- ceiling((LP_filt_size-1)/2)
-    for (t in seq(nT)) {
-      if ((t-back < 1) && (t+front > nT)) {
-        trunc_LP_gfilt <- LP_gfilt[seq(back-t+2, LP_filt_size-(t+front-nT))]
-        trunc_LP_gfilt <- trunc_LP_gfilt/sum(trunc_LP_gfilt)
-        filt_data[t,] <- trunc_LP_gfilt %*% filt_data_orig[seq(t-back, t+front),,drop=FALSE]
-      } else if (t-back < 1) {
-        trunc_LP_gfilt <- LP_gfilt[seq(back-t+2, LP_filt_size)]
-        trunc_LP_gfilt <- trunc_LP_gfilt/sum(trunc_LP_gfilt)
-        filt_data[t,] <- trunc_LP_gfilt %*% filt_data_orig[seq(t+front),,drop=FALSE]
-      } else if (t+front > nT) {
-        trunc_LP_gfilt <- LP_gfilt[seq(LP_filt_size-(t+front-nT))]
-        trunc_LP_gfilt <- trunc_LP_gfilt/sum(trunc_LP_gfilt)
-        filt_data[t,] <- trunc_LP_gfilt %*% filt_data_orig[seq(t-back, nT),,drop=FALSE]
-      } else {
-        filt_data[t,] <- LP_gfilt %*% filt_data_orig[seq(t-back, t+front),,drop=FALSE]
-      }
+  if (!do_HPF && !do_LPF) {
+    if (dat_idx_by_var != out_idx_by_var) {
+      dat <- t(dat)
     }
   }
 
-  filt_data
+  dat
 }
+
+# Same result as `fsl_bptf` for the HPF, but slower and less 
+# memory efficient. Kept for reference.
+# bptf_loclin <- function(Y, sigma) {
+#   Y <- as.matrix(Y); nT <- nrow(Y); idx <- seq_len(nT)
+#   fit <- matrix(0, nT, ncol(Y))
+#   for (t in idx) {
+#     x <- idx - t
+#     w <- exp(-x^2 / (2 * sigma^2))
+#     S0 <- sum(w); S1 <- sum(w * x); S2 <- sum(w * x^2)
+#     Sy <- crossprod(w, Y); Sxy <- crossprod(w * x, Y)
+#     fit[t, ] <- (S2 * Sy - S1 * Sxy) / (S0 * S2 - S1^2)  # intercept = fit at t
+#   }
+#   Y - fit
+# }

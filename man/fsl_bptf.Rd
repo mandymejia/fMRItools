@@ -2,42 +2,50 @@
 % Please edit documentation in R/fsl_bptf.R
 \name{fsl_bptf}
 \alias{fsl_bptf}
-\title{\code{bptf} function from FSL}
+\title{Band-Pass temporal filter}
 \usage{
-fsl_bptf(orig_data, HP_sigma = 2000, LP_sigma = NULL)
+fsl_bptf(
+  dat,
+  HPF_sigma = NULL,
+  LPF_sigma = NULL,
+  dat_idx_by_var = TRUE,
+  out_idx_by_var = TRUE
+)
 }
 \arguments{
-\item{orig_data}{\eqn{T \times V} data matrix whose columns will be detrended}
+\item{dat}{A numeric matrix of time-series data.}
 
-\item{HP_sigma}{The frequency parameter, sigma, for the highpass filter.
-Recommended \code{HP_sigma}: \code{1/(2*f*TR)}, where \code{f} is the cutoff
-filter in Hz and \code{TR} is the time resolution in seconds (See jiscmail
-link in function description).
-Default: \code{2000}.}
+\item{HPF_sigma}{Numeric. The standard deviation of the Gaussian kernel
+for the high-pass filter, in time points. Default: \code{NULL} (no
+high-pass filtering). \code{sigma = 0.5 * cutoff_sec / TR}}
 
-\item{LP_sigma}{The frequency parameter, sigma, for the lowpass filter.
-Recommended \code{LP_sigma}: \code{1/(18*f*TR)}.}
+\item{LPF_sigma}{Numeric. The standard deviation of the Gaussian kernel
+for the low-pass filter, in time points. Default: \code{NULL} (no low-pass
+filtering).}
+
+\item{dat_idx_by_var}{Is \code{dat} indices (timepoints) by variables?
+Default: \code{TRUE}.}
+
+\item{out_idx_by_var}{Should the result be indices (timepoints) by variables?}
 }
 \value{
-The data with detrended columns
+A filtered numeric object of the same dimensions as \code{dat},
+transposed if \code{out_idx_by_var} and \code{dat_idx_by_var} differ.
 }
 \description{
-Copy of \code{bptf} highpass filter from FSL. The results are very similar
-but not identical.
+Apply a band-pass temporal filter to data using Gaussian high-pass and
+low-pass filters. This function is designed to replicate the behavior
+of the high-pass filter in FSL's \code{-bptf} command from
+\code{fslmaths}, and to use a similar strategy for the low-pass filter.
 }
-\details{
-Sources:
-https://cpb-us-w2.wpmucdn.com/sites.udel.edu/dist/7/4542/files/2016/09/fsl_temporal_filt-15sywxn.m
-https://github.com/rordenlab/niimath/blob/master/src/coreFLT.c#L1935
-https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=FSL;f6fd75a6.1709
-}
-\section{References}{
-
-\itemize{
-\item{Jenkinson, M., Beckmann, C. F., Behrens, T. E. J., Woolrich, M. W. & Smith, S. M. FSL. NeuroImage 62, 782-790 (2012).}
-}
-}
-
 \examples{
-fsl_bptf(matrix(rnorm(700), nrow=100))
+cutoff_sec <- 2000 # filter cutoff in seconds
+tr <- .72 # in seconds
+hp_sigma <- 0.5 * cutoff_sec / tr
+dat <- matrix(rnorm(1200 * 70), 1200, 70)
+dat_filt <- fsl_bptf(dat, HPF_sigma=hp_sigma)
+
+}
+\references{
+\href{https://web.mit.edu/fsl_v5.0.10/fsl/doc/wiki/FEAT(2f)UserGuide.html}{FSL FEAT User Guide}
 }
