@@ -4,7 +4,7 @@
 \alias{despike_3D}
 \title{3dDespike from AFNI}
 \usage{
-despike_3D(Yt, c1 = 2.5, c2 = 4)
+despike_3D(Yt, c1 = 2.5, c2 = 4, basis = NULL)
 }
 \arguments{
 \item{Yt}{The data vector.}
@@ -13,6 +13,8 @@ despike_3D(Yt, c1 = 2.5, c2 = 4)
 
 \item{c2}{upper range of the acceptable deviation from the fit. Default:
 \code{4}.}
+
+\item{basis}{Optional precomputed \code{\link{despike_3D.basis}}.}
 }
 \description{
 Identify and interpolate outliers. See
@@ -20,7 +22,7 @@ Identify and interpolate outliers. See
 AFNI documentation for 3dDespike} for additional information.
 }
 \examples{
-if (requireNamespace("fda", quietly=TRUE) && requireNamespace("quantreg", quietly=TRUE)) {
+if (requireNamespace("quantreg", quietly=TRUE)) {
  y <- rnorm(99) + cos(seq(99)/15)*3
  y[20] <- 20
  despike_3D(y)

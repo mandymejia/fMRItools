@@ -27,7 +27,7 @@ bandstop_filter <- function(X, TR, f1, f2, Rs=20){
     stop("Package \"gsignal\" needed for bandstop filter.", call. = FALSE)
   }
 
-  if (is.vector(X)) { X <- as.matrix(X) }
+  if (is.null(dim(X))) { X <- as.matrix(X) }
   stopifnot(nrow(X)>5)
   stopifnot(is_posNum(TR))
   stopifnot(is_posNum(f1))

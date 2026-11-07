@@ -15,6 +15,6 @@ rowMedians2(x, na.rm = FALSE, ...)
 The row medians of \code{x}.
 }
 \description{
-Use \code{robustbase::rowMedians} package if available, \code{apply} if not.
+Use \code{matrixStats::rowMedians} if available, \code{apply} if not.
 }
 \keyword{internal}

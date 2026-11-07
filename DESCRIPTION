@@ -37,14 +37,12 @@ Suggests:
     gifti, 
     knitr,
     rmarkdown,
-    robustbase,
     pesel,
     RNifti,
     oro.nifti,
     gsignal,
     testthat (>= 3.0.0),
     covr,
-    fda,
     quantreg,
     graphics,
     grDevices,
@@ -56,4 +54,4 @@ Suggests:
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/mandymejia/fMRItools
 BugReports: https://github.com/mandymejia/fMRItools/issues
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

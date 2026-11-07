@@ -2,7 +2,7 @@
 % Please edit documentation in R/CompCor_HCP.R
 \name{CompCor_HCP}
 \alias{CompCor_HCP}
-\title{Anatomical CompCor for HCP NIFTI and CIFTI data}
+\title{Anatomical CompCor for HCP NIFTI data}
 \usage{
 CompCor_HCP(
   nii,
@@ -11,39 +11,36 @@ CompCor_HCP(
   noise_nPC = 5,
   noise_erosion = NULL,
   idx = NULL,
-  cii = NULL,
-  brainstructures = c("left", "right"),
   center = TRUE,
   scale = TRUE,
-  DCT = 0,
-  nuisance_too = NULL,
+  prelim_nuisance = NULL,
   verbose = FALSE
 )
 }
 \arguments{
-\item{nii}{\eqn{I} by \eqn{J} by \eqn{K} by \eqn{T}
-NIFTI object or array (or file path to the NIFTI) which contains
-whole-brain data, including the noise ROIs. In the HCP, the corresponding
-file is e.g. "../Results/rfMRI_REST1_LR/rfMRI_REST1_LR.nii.gz"}
+\item{nii}{\eqn{I} by \eqn{J} by \eqn{K} by \eqn{T} NIFTI object or array
+(or file path to the NIFTI) which contains whole-brain data, including the
+noise ROIs. In the HCP, the corresponding file is e.g.
+"../Results/rfMRI_REST1_LR/rfMRI_REST1_LR.nii.gz"}
 
-\item{nii_labels}{\eqn{I} by \eqn{J} by \eqn{K}
-NIFTI object or array (or file path to the NIFTI) which
-contains the corresponding labels to each voxel in \code{nii}. Values should
-be according to this table:
-https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/AnatomicalROI/FreeSurferColorLUT .
+\item{nii_labels}{\eqn{I} by \eqn{J} by \eqn{K} NIFTI object or array (or
+file path to the NIFTI) which contains the corresponding labels to each
+voxel in \code{nii}. Values should be according to this table:
+https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/AnatomicalROI/FreeSurferColorLUT
 In the HCP, the corresponding file is "ROIs/Atlas_wmparc.2.nii.gz".}
 
-\item{ROI_noise}{A list of numeric vectors. Each entry should represent labels
-in \code{nii_labels} belonging to a single noise ROI, named by that entry's
-name. Or, this can be a character vector of at least one of the following:
-\code{"wm_cort"} (cortical white matter), \code{"wm_cblm"} (cerebellar white
-matter), \code{"csf"} (cerebrospinal fluid). In the latter case, these labels
-will be used:
+\item{ROI_noise}{A list of numeric vectors. Each entry should represent
+labels in \code{nii_labels} belonging to a single noise ROI, named by that
+entry's name. Or, this can be a character vector of at least one of the
+following: \code{"wm_cort"} (cortical white matter), \code{"wm_cblm"}
+(cerebellar white matter), \code{"csf"} (cerebrospinal fluid). In the
+latter case, these labels will be used:
 
 \describe{
 \item{\code{"wm_cort"}}{\code{c(3000:4035, 5001, 5002)}}
 \item{\code{"wm_cblm"}}{\code{c(7, 46)}}
-\item{\code{"csf"}}{\code{c(4, 5, 14, 15, 24, 31, 43, 44, 63, 250, 251, 252, 253, 254, 255))}}
+\item{\code{"csf"}}{\code{c(4, 5, 14, 15, 24, 31, 43, 44, 63, 250, 251,
+     252, 253, 254, 255))}}
 }
 
 These default ROIs are based on this forum post:
@@ -51,73 +48,80 @@ https://www.mail-archive.com/hcp-users@humanconnectome.org/msg00931.html
 
 Default: \code{c("wm_cort", "csf")}}
 
-\item{noise_nPC}{The number of principal components to compute for each noise
-ROI. Alternatively, values between 0 and 1, in which case they will
+\item{noise_nPC}{The number of principal components to compute for each
+noise ROI. Alternatively, values between 0 and 1, in which case they will
 represent the minimum proportion of variance explained by the PCs used for
 each noise ROI. The smallest number of PCs will be used to achieve this
 proportion of variance explained.
 
-Should be a list or numeric vector with the same length as \code{ROI_noise}.
-It will be matched to each ROI based on the name of each entry, or if the
-names are missing, the order of entries. If it is an unnamed vector, its
-elements will be recycled. Default: \code{5} (compute the top 5 PCs for
-each noise ROI).}
+Should be a list or numeric vector with the same length as
+\code{ROI_noise}. It will be matched to each ROI based on the name of each
+entry, or if the names are missing, the order of entries. If it is an
+unnamed vector, its elements will be recycled. Default: \code{5} (compute
+the top 5 PCs for each noise ROI).}
 
 \item{noise_erosion}{The number of voxel layers to erode the noise ROIs by.
-Should be a list or numeric vector with the same length as \code{ROI_noise}.
-It will be matched to each ROI based on the name of each entry, or if the
-names are missing, the order of entries. If it is an unnamed vector, its
-elements will be recycled. Default: \code{NULL}, which will use a value of
-0 (do not erode the noise ROIs).}
+Should be a list or numeric vector with the same length as
+\code{ROI_noise}. It will be matched to each ROI based on the name of each
+entry, or if the names are missing, the order of entries. If it is an
+unnamed vector, its elements will be recycled. Default: \code{NULL}, which
+will use a value of 0 (do not erode the noise ROIs).}
 
 \item{idx}{A numeric vector indicating the timepoints to use, or
 \code{NULL} (default) to use all idx. (Indexing begins with 1, so the
-first timepoint has index 1 and the last has the same index as the length of
-the scan.)}
+first timepoint has index 1 and the last has the same index as the length
+of the scan.)
 
-\item{cii}{\code{"xifti"} (or file path to the CIFTI) from which the noise
-ROI components will be regressed. In the HCP, the corresponding file is e.g.
-"../Results/rfMRI_REST1_LR/rfMRI_REST1_LR_Atlas_MSMAll.dtseries.nii". If not
-provided, only the noise components will be returned (no data will be cleaned).}
+Alternatively, a list of such numeric vectors (e.g. one for each scan
+duration of interest). In this case the noise PCs are computed separately
+for each entry (reading the data only once) and a list with one result per
+entry is returned, with the same names as \code{idx}.}
 
-\item{brainstructures}{Choose among "left", "right", and "subcortical".
-Default: \code{c("left", "right")} (cortical data only)}
+\item{center, scale}{Center the columns of the noise ROI data by median, and
+scale the columns of the noise ROI data by MAD? Default: \code{TRUE} for
+both.}
 
-\item{center, scale}{Center the columns of the data by median, and scale the
-columns of the data by MAD? Default: \code{TRUE} for both. Affects both
-\code{X} and the noise data. \code{center} also applies to \code{nuisance_too}
-so if it is \code{FALSE}, \code{nuisance_too} must already be centered.}
+\item{prelim_nuisance}{Nuisance signals to regress from the noise ROIs
+before computing the PCs (see \code{\link{CompCor}}). A \eqn{T} by
+\eqn{P} numeric matrix, where \eqn{T} is the number of timepoints in
+\code{idx}. If \code{idx} is a list, this must be a list of matrices of
+the same length, with the \eqn{k}th matrix having as many rows as the
+\eqn{k}th entry of \code{idx}. Default: \code{NULL} (do not do any
+preliminary nuisance regression).}
 
-\item{DCT}{Add DCT bases to the nuisance regression? Use an integer to
-indicate the number of cosine bases. Use \code{0} (default) to forgo detrending.
-
-The data must be centered, either before input or with \code{center}.}
-
-\item{nuisance_too}{A matrix of nuisance signals to add to the nuisance
-regression. Should have \eqn{T} rows. \code{NULL} to not add additional
-nuisance regressors (default).}
-
-\item{verbose}{Should occasional updates be printed? Default: \code{FALSE}.}
+\item{verbose}{Should occasional updates be printed? Default:
+\code{FALSE}.}
 }
 \value{
-The noise components, and if \code{cii} is provided, the cleaned
-surface-based data as a \code{"xifti"} object.
+A list with entries \code{"PCs"} (the noise PC scores for each
+noise ROI), \code{"var"} (the variance of each PC), and \code{"ROI_noise"}
+(the noise ROI masks, after erosion). If \code{idx} is a list, a list of
+these, one for each entry of \code{idx}.
 }
 \description{
-Wrapper to \code{\link{CompCor}} for HCP-format data. Can be used to clean
-the surface-based CIFTI data with aCompCor using the noise PCs and ROIs
-calculated from the NIFTI fMRI data and NIFTI mask. Can also be used to just
-obtain the noise PCs and ROIs without performing aCompCor, if the CIFTI
-data is not provided.
+Wrapper to \code{\link{CompCor}} for HCP-format data. Obtains the noise
+principal components (PCs) and ROIs from the NIFTI fMRI data and the NIFTI
+labels. To clean the surface-based CIFTI data with aCompCor using these
+noise PCs, see \code{\link{CompCor_HCP_cii}}.
+}
+\details{
+The NIFTI data and labels are read once, and the noise ROI masks (including
+erosion) and noise ROI data are extracted once. If \code{idx} is a list,
+the noise PCs are then computed separately for each entry of \code{idx}
+(e.g., for several scan durations) without re-reading or re-extracting the
+data.
 }
 \section{References}{
 
 \itemize{
-\item{Behzadi, Y., Restom, K., Liau, J. & Liu, T. T. A component based noise correction method (CompCor) for BOLD and perfusion based fMRI. NeuroImage 37, 90-101 (2007).}
-\item{Muschelli, J. et al. Reduction of motion-related artifacts in resting state fMRI using aCompCor. NeuroImage 96, 22-35 (2014).}
+\item{Behzadi, Y., Restom, K., Liau, J. & Liu, T. T. A component based
+noise correction method (CompCor) for BOLD and perfusion based fMRI.
+NeuroImage 37, 90-101 (2007).}
+\item{Muschelli, J. et al. Reduction of motion-related artifacts in
+resting state fMRI using aCompCor. NeuroImage 96, 22-35 (2014).}
 }
 }
 
 \seealso{
-CompCor
+CompCor, CompCor_HCP_cii
 }

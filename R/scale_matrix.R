@@ -26,26 +26,27 @@ scale_med <- function(mat, TOL=1e-8, drop_const=TRUE, doRows=FALSE){
   # Scale.
   mad <- 1.4826 * rowMedians2(abs(mat), na.rm=TRUE)
   mad <- as.numeric(mad)
-  const_mask <- mad < TOL
+  const_mask <- is.na(mad) | mad < TOL
   if (any(const_mask)) {
     if (all(const_mask)) {
-    stop("All columns are zero-variance.\n")
+    stop("All ", if (doRows) { "rows" } else { "columns" }, " are zero-variance.\n")
     } else {
       warning(paste0(
         "Warning: ", sum(const_mask),
-        " constant columns (out of ", length(const_mask),
-        " ). These will be removed.\n"
+        " constant ", if (doRows) { "rows" } else { "columns" },
+        " (out of ", length(const_mask),
+        " ). These will be ", if (drop_const) { "removed" } else { "set to NA" }, ".\n"
       ))
     }
   }
-  mad <- mad[!const_mask]
+  ok <- !const_mask
+  mat[ok,] <- mat[ok,,drop=FALSE] / mad[ok]
   mat[const_mask,] <- NA
-  mat[!const_mask,] <- mat[!const_mask,] / mad
 
-  if (drop_const) { mat <- mat[!const_mask,] }
+  if (drop_const) { mat <- mat[ok,,drop=FALSE] }
 
   # Revert transpose.
-  mat <- t(mat)
+  if (!doRows) { mat <- t(mat) }
 
   mat
 }
@@ -80,13 +81,10 @@ scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transp
 	stopifnot(is_1(transpose, "logical"))
 
 	# Check orientation, send warning message and transpose if necessary.
-	if ((ncol(BOLD) > nrow(BOLD)) & transpose) {
+	if ((ncol(BOLD) > nrow(BOLD)) && transpose) {
 		warning('More columns than rows. Transposing matrix so rows are data locations and columns are time points.')
 		BOLD <- t(BOLD)
 	}
-
-	nvox <- nrow(BOLD)
-	ntime <- ncol(BOLD)
 
 	# Get `v_means`, the mean over time for each location (the mean image)
 	v_means <- rowMeans(BOLD, na.rm=TRUE)
@@ -108,7 +106,9 @@ scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transp
 		}
 		BOLD <- 100*BOLD / v_means
 	} else if (scale == "sd") {
-		v_sd <- sqrt(apply(BOLD, 1, var, na.rm=TRUE))
+		# `BOLD` is centered, so the variance is the sum of squares over (n-1).
+		n_obs <- rowSums(!is.na(BOLD))
+		v_sd <- sqrt(rowSums(BOLD^2, na.rm=TRUE) / (n_obs - 1))
 		v_sd[is.na(v_sd)] <- 0
 		if (min(v_sd) < 1e-6) {
 			stop("Some local sds are less than 1e-6. Please set `scale_BOLD` to `'none'`.")
@@ -140,12 +140,17 @@ scale_design_mat <- function(x, doRows=FALSE) {
 	stopifnot(is.numeric(x))
 	stopifnot(!any(is.na(x)))
 
-	if (!doRows) { x <- t(x) }
-
-	x <- x / apply(x, 1, max)
-	x <- x - apply(x, 1, mean)
-
-	if (!doRows) { x <- t(x) }
+	if (doRows) {
+		mx <- apply(abs(x), 1, max)
+		mx[mx == 0] <- 1
+		x <- x / mx
+		x <- x - rowMeans(x)
+	} else {
+		mx <- apply(abs(x), 2, max)
+		mx[mx == 0] <- 1
+		x <- x / rep(mx, each=nrow(x))
+		x <- x - rep(colMeans(x), each=nrow(x))
+	}
 
 	x
 }

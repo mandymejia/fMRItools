@@ -1,7 +1,7 @@
 #' PCA for tall matrix
 #'
-#' Efficient PCA for a tall matrix (many more rows than columns). Uses the SVD
-#'  of the covariance matrix. The dimensionality of the result can be preset
+#' Efficient PCA for a tall matrix (many more rows than columns). Uses the
+#'  eigendecomposition of the covariance matrix. The dimensionality of the result can be preset
 #'  with \code{Q} or estimated with PESEL.
 #'
 #' @param X The tall numeric matrix for which to compute the PCA. For fMRI data,
@@ -22,7 +22,9 @@
 #'
 #' @importFrom stats cor
 #'
-#' @return The SVD decomposition
+#' @return The decomposition: a list with the eigenvalues \code{d}, the
+#'  eigenvectors \code{u}, and (if \code{Vdim > 0}) the unit-norm principal
+#'  directions \code{v}.
 #'
 #' @examples
 #' U <- matrix(rnorm(900), nrow=300, ncol=3)
@@ -34,7 +36,7 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
   stopifnot(is_1(center, "logical"))
   stopifnot(is.null(Q) || is_1(Q))
   stopifnot(is_1(Q_max))
-  stopifnot(is_1(Vdim) || is_1(Vdim, "character"))
+  stopifnot(is_1(Vdim) || identical(Vdim, "Q"))
 
   nV <- nrow(X) #number of brain locations
   nT <- ncol(X) #number of fMRI volumes (reduce this)
@@ -47,43 +49,55 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
     if (max(abs(colMeans(X))) > TOL) stop('Columns of X must be centered')
   }
 
-  XtX <- crossprod(X)
+  # Covariance matrix (T x T).
+  XtX <- crossprod(X) / (nV - 1)
 
   # Determine PCA dimensionality.
   if (is.null(Q)) {
     if (!requireNamespace("pesel", quietly = TRUE)) {
       stop("Package \"pesel\" needed to read input data. Please install it", call. = FALSE)
     }
-    Q <- suppressWarnings(pesel::pesel(X, npc.max=Q_max, method='homogenous'))$nPCs
+    npc_max <- max(1, min(Q_max, nT - 1))
+    Q <- suppressWarnings(pesel::pesel(X, npc.max=npc_max, method='homogenous'))$nPCs
     if (Q == 0) {
       warning("`pesel` estimated zero components; using the number of components with above-average variance explained.")
-      comps_var_explained <- svd(XtX / (nV-1), nu=0, nv=0)$d
+      comps_var_explained <- eigen(XtX, symmetric=TRUE, only.values=TRUE)$values
       Q <- max(1, sum(comps_var_explained > mean(comps_var_explained)))
     }
   }
-  if (Vdim == "Q") { Vdim <- Q }
+  if (Q > nT) { warning("Q > number of columns, so setting Q to ", nT, "."); Q <- nT }
+  if (identical(Vdim, "Q")) { Vdim <- Q }
   if (Vdim > Q) { warning("Vdim > Q, so setting Vdim to Q."); Vdim <- Q }
 
   # Perform dimension reduction.
   out <- tryCatch(
-    { svd(XtX / (nV-1), nu=Q, nv=0) },
+    {
+      e <- eigen(XtX, symmetric=TRUE)
+      list(d = pmax(e$values, 0), u = e$vectors[, seq_len(Q), drop=FALSE])
+    },
     error = function(cond) {
       message(cond)
-      z <- XtX / (nV-1)
+
+      # If `eigen` fails, try `svd`.
+      z <- tryCatch(svd(XtX, nu=Q, nv=0), error=function(e2) NULL)
+      if (!is.null(z)) { return(z) }
 
       # If `svd` fails:
       # First, try detecting and dropping co-linear columns, and running `svd` again.
+      z <- XtX
       zcor <- stats::cor(z)
       zcor[upper.tri(zcor)] <- 0
       diag(zcor) <- 0
       zdrop <- apply(zcor, 2, function(cc) any(abs(cc) > .99))
       if (any(zdrop)) {
         if (sum(!zdrop) < Q) {
-          stop(cat(sum(zdrop), " co-linear columns detected, but dropping them would result in less than Q columns remaining."))
+          stop(
+            sum(zdrop), " co-linear columns detected, but dropping them would ",
+            "result in less than Q columns remaining.", call. = FALSE
+          )
         }
         cat("Dropping", sum(zdrop), "co-linear columns.\n")
-        z <- z[,!zdrop]
-        z <- svd(z, nu=Q, nv=0)
+        z <- svd(z[,!zdrop], nu=Q, nv=0)
       } else {
         # If no co-linear columns detected, try `corpcor:fast.svd`.
         if (!requireNamespace("corpcor", quietly = TRUE)) {
@@ -94,21 +108,21 @@ PCA <- function(X, center=TRUE, Q=NULL, Q_max=100, Vdim=0) {
           )
         }
         cat("Trying `corpcor::fast.svd`.\n")
-        z <- corpcor::fast.svd(z)[c("u", "d", "v")]
-        names(z) <- toupper(names(z))
-        z$U <- z$U[,seq(Q)]
-        z$V <- NULL
+        z <- corpcor::fast.svd(z)
+        z <- list(d = z$d, u = z$u[, seq_len(Q), drop=FALSE])
       }
       z
     }
   )
 
   # Compute directions. (out$v would have the directions for XtX, not X.)
+  # The directions are scaled to have unit norm.
+  vdir <- NULL
   if (Vdim > 0) {
-    out$v <- X %*% out$u[,seq(Vdim)] %*% diag(1/out$d[seq(Vdim)])
-  } else {
-    out["v"] <- list(NULL)
+    s <- sqrt(pmax(out$d[seq_len(Vdim)], .Machine$double.eps) * (nV - 1))
+    vdir <- (X %*% out$u[, seq_len(Vdim), drop=FALSE]) / rep(s, each=nV)
   }
+  out["v"] <- list(vdir)
 
   out
 }
