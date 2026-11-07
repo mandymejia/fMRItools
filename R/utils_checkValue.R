@@ -105,19 +105,10 @@ match_exactly <- function(
     "\t\"", paste0(expected, collapse="\", \""), "\".\n"
   )
 
-  tryCatch(
-    {
-      if (length(user) != length(expected)) { stop("Different lengths.") }
-      if (!all(user == expected)) { stop("At least one different entry.") }
-    },
-    error = function(e) {
-      unrecognized_FUN(msg)
-      return(FALSE)
-    },
-    finally = {}
-  )
+  matched <- length(user) == length(expected) && isTRUE(all(user == expected))
+  if (!matched) { unrecognized_FUN(msg) }
 
-  return(TRUE)
+  matched
 }
 
 #' Is this object the expected data type, and length one?
@@ -135,7 +126,7 @@ is_1 <- function(x, dtype=c("numeric", "logical", "character")){
     logical=is.logical, 
     character=is.character
   )
-  xFUN(x) && (length(x)==1)
+  xFUN(x) && (length(x)==1) && !is.na(x)
 }
 
 #' Is this object a positive number? (Or non-negative)
@@ -158,13 +149,7 @@ is_posNum <- function(x, zero_ok=FALSE){
 #' 
 #' @export
 is_integer <- function(x, nneg=FALSE){
-  out <- FALSE
-  if (is_1(x)) {
-    if (x%%1==0) {
-      if (x>=0 || !nneg) { out <- TRUE }
-    }
-  } 
-  out
+  is_1(x) && is.finite(x) && (x %% 1 == 0) && (!nneg || x >= 0)
 }
 
 #' All integers?

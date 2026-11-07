@@ -3,6 +3,7 @@
 export(CompCor)
 export(CompCor_HCP)
 export(CompCor_HCP_cii)
+export(Hz2dct)
 export(Mode)
 export(PCA)
 export(UT2mat)
@@ -16,6 +17,7 @@ export(colCenter)
 export(color_palette)
 export(coordlist_to_vol)
 export(crop_vol)
+export(dct2Hz)
 export(dct_bases)
 export(dct_convert)
 export(despike_3D)
@@ -65,6 +67,7 @@ export(validate_design_mat)
 export(var_decomp)
 export(vox_locations)
 importFrom(matrixStats,
+  rowAnyNAs,
   rowMedians,
   rowVars
 )

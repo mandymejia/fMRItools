@@ -4,12 +4,16 @@
 \alias{dct_bases}
 \title{Generate cosine bases for the DCT}
 \usage{
-dct_bases(T_, n)
+dct_bases(T_, n, idx = NULL)
 }
 \arguments{
 \item{T_}{Length of timeseries}
 
-\item{n}{Number of cosine bases}
+\item{n}{Number of cosine bases (indices \code{1:n}). Ignored if \code{idx}
+is provided.}
+
+\item{idx}{Optional integer vector of specific basis indices to compute
+(each in \code{1:T_}). Avoids building the full \eqn{T \times T} matrix.}
 }
 \value{
 Matrix with cosine bases along columns

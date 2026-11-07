@@ -32,23 +32,25 @@
 #' @export
 unvec_mat <- function(x, mask, fill_value=NA) {
   # Check arguments.
-  if (length(dim(x))==1) { x <- as.matrix(x) }
+  if (is.null(dim(x)) || length(dim(x))==1) { x <- as.matrix(x) }
   stopifnot(is.matrix(x))
   stopifnot(is.matrix(mask))
   if (is.numeric(mask)) {
-    class(mask) <- "logical"
+    mask <- mask != 0
   } else {
     stopifnot(is.logical(mask))
   }
   stopifnot(nrow(x) == sum(mask))
   #stopifnot(length(fill_value)==1)
 
-  sapply(split(x, col(x)), function(vd) {
-    out <- mask
-    out[mask] <- vd
-    out[!mask] <- fill_value
-    out
-  }, simplify = F)
+  out <- lapply(seq_len(ncol(x)), function(j) {
+    img <- matrix(fill_value, nrow(mask), ncol(mask))
+    img[mask] <- x[, j]
+    dimnames(img) <- dimnames(mask)
+    img
+  })
+  names(out) <- seq_len(ncol(x))
+  out
 }
 
 #' Center matrix columns
@@ -98,7 +100,7 @@ unmask_mat <- function(x, mask, mask_dim=1, fill=NA){
 
 #' Row medians
 #' 
-#' Use \code{robustbase::rowMedians} package if available, \code{apply} if not.
+#' Use \code{matrixStats::rowMedians} if available, \code{apply} if not.
 #'
 #' @param x The data matrix
 #' @param na.rm Ignore NA values? Default: \code{FALSE}
@@ -108,8 +110,8 @@ unmask_mat <- function(x, mask, mask_dim=1, fill=NA){
 #' @importFrom stats median
 #' @keywords internal
 rowMedians2 <- function(x, na.rm = FALSE, ...) {
-  if (!requireNamespace("robustbase", quietly=TRUE)) {
-    robustbase::rowMedians(x, na.rm=na.rm, ...)
+  if (requireNamespace("matrixStats", quietly=TRUE)) {
+    matrixStats::rowMedians(x, na.rm=na.rm, ...)
   } else {
     apply(x, 1, median, na.rm=na.rm, ...)
   }
@@ -137,14 +139,10 @@ pct_sig <- function(X, center=median, by=c("column", "all")){
   stopifnot(is.function(center))
   by <- match.arg(by, c("column", "all"))
 
-  T_ <- nrow(X); N_ <- ncol(X)
-  X <- t(X)
-
   if (by=="column") {
-    m <- apply(X, 1, center)
+    m <- apply(X, 2, center)
+    X / rep(m, each=nrow(X)) * 100
   } else {
-    m <- center(as.numeric(X))
+    X / center(as.numeric(X)) * 100
   }
-
-  t(X / m * 100)
 }

@@ -4,10 +4,13 @@
 \alias{despike_3D.qreg}
 \title{3dDespike from AFNI, step 1}
 \usage{
-despike_3D.qreg(Yt)
+despike_3D.qreg(Yt, basis = NULL)
 }
 \arguments{
 \item{Yt}{The data vector.}
+
+\item{basis}{Optional precomputed \code{\link{despike_3D.basis}}. Supply
+this when despiking many data vectors of equal length.}
 }
 \value{
 the quantile regression

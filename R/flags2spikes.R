@@ -16,13 +16,19 @@
 #' @export
 flags2spikes <- function(flags, n_time){
   stopifnot(is_posNum(n_time) && n_time==round(n_time))
-  if (is.logical(flags)) { flags <- which(flags) }
-  stopifnot(is.numeric(flags))
+  if (is.logical(flags)) {
+    stopifnot(length(flags) == n_time, !anyNA(flags))
+    flags <- which(flags)
+  }
+  stopifnot(is.numeric(flags), !anyNA(flags))
   stopifnot(all(flags == round(flags)))
-  stopifnot(min(flags) >= 1 && max(flags) <= n_time)
 
+  flags <- sort(unique(flags))
   nF <- length(flags)
+  if (nF == 0) { return(matrix(0, nrow=n_time, ncol=0)) }
+  stopifnot(flags[1] >= 1 && flags[nF] <= n_time)
+
   spikes <- matrix(0, nrow=n_time, ncol=nF)
-  spikes[seq(0, nF-1)*n_time + flags] <- 1
+  spikes[cbind(flags, seq_len(nF))] <- 1
   spikes
 }

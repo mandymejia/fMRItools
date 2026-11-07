@@ -7,38 +7,45 @@
 #'  \code{varTol}.
 #' @param verbose Print messages counting how many locations are removed?
 #'
-#' @importFrom matrixStats rowVars
+#' @importFrom matrixStats rowVars rowAnyNAs
 #' @return A logical vector indicating valid vertices
 #'
 #' @export
 mask_BOLD <- function(BOLD, meanTol=-Inf, varTol=1e-6, verbose=TRUE){
   stopifnot(is.matrix(BOLD))
 
-  mask_na <- mask_mean <- mask_var <- rep(TRUE, nrow(BOLD))
-  # Mark columns with any NA or NaN values for removal.
-  mask_na[apply(is.na(BOLD) | is.nan(BOLD), 1, any)] <- FALSE
-  # Calculate means and variances of columns, except those with any NA or NaN.
-  # Mark columns with mean/var falling under the thresholds for removal.
-  mask_mean[mask_na][rowMeans(BOLD[mask_na,,drop=FALSE]) < meanTol] <- FALSE
-  if (varTol > 0) {
-    mask_var[mask_na][matrixStats::rowVars(BOLD[mask_na,,drop=FALSE]) < varTol] <- FALSE
+  # Mark locations with any NA or NaN values for removal.
+  mask_na <- !matrixStats::rowAnyNAs(BOLD)
+  mask_mean <- mask_var <- rep(TRUE, nrow(BOLD))
+  # Calculate means and variances of locations, except those with any NA or NaN.
+  # Mark locations with mean/var falling under the thresholds for removal.
+  if (any(mask_na)) {
+    BOLD_valid <- if (all(mask_na)) { BOLD } else { BOLD[mask_na,,drop=FALSE] }
+    if (is.finite(meanTol)) {
+      mask_mean[mask_na] <- rowMeans(BOLD_valid) >= meanTol
+    }
+    if (varTol > 0) {
+      v <- matrixStats::rowVars(BOLD_valid)
+      mask_var[mask_na] <- !is.na(v) & v >= varTol
+    }
   }
 
   # Print counts of locations removed, for each reason.
   if (verbose) {
-    warn_part1 <- if (any(!mask_na)) { "additional locations" } else { "locations" }
-    if (any(!mask_na)) {
-      cat(sum(!mask_na), paste0("locations removed due to NA/NaN values.  "))
-    }
+    n_na <- sum(!mask_na)
     # Do not include NA locations in count.
-    mask_mean2 <- mask_mean | (!mask_na)
-    if (any(!mask_mean2)) {
-      cat(sum(!mask_mean2), warn_part1, paste0("removed due to low mean.  "))
-    }
+    n_mean <- sum(!mask_mean)
     # Do not include NA or low-mean locations in count.
-    mask_var2 <- mask_var | (!mask_mean) | (!mask_na)
-    if (any(!mask_var2)) {
-      cat(sum(!mask_var2), warn_part1, paste0("removed due to low variance.  "))
+    n_var <- sum(!mask_var & mask_mean)
+    warn_part1 <- if (n_na > 0) { "additional locations" } else { "locations" }
+    if (n_na > 0) {
+      cat(n_na, paste0("locations removed due to NA/NaN values.  "))
+    }
+    if (n_mean > 0) {
+      cat(n_mean, warn_part1, paste0("removed due to low mean.  "))
+    }
+    if (n_var > 0) {
+      cat(n_var, warn_part1, paste0("removed due to low variance.  "))
     }
   }
 

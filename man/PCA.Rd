@@ -26,11 +26,13 @@ save on memory. Note that the directions will be with respect to \code{X},
 not its covariance matrix.}
 }
 \value{
-The SVD decomposition
+The decomposition: a list with the eigenvalues \code{d}, the
+eigenvectors \code{u}, and (if \code{Vdim > 0}) the unit-norm principal
+directions \code{v}.
 }
 \description{
-Efficient PCA for a tall matrix (many more rows than columns). Uses the SVD
-of the covariance matrix. The dimensionality of the result can be preset
+Efficient PCA for a tall matrix (many more rows than columns). Uses the
+eigendecomposition of the covariance matrix. The dimensionality of the result can be preset
 with \code{Q} or estimated with PESEL.
 }
 \examples{

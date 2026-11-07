@@ -23,11 +23,13 @@ nuisance_regression <- function(Y, design){
 	# return(Y - Z %*% betahat)
 
   Y <- as.matrix(Y); design <- as.matrix(design)
-  I_m_H <- diag(nrow(design)) - hat_matrix(design)
+  # Project out the column space of the design without forming the T x T
+  #  hat matrix.
+  Qd <- hat_Q(design)
   if (nrow(Y)==nrow(design)) {
-    return(I_m_H %*% Y)
+    return(Y - Qd %*% crossprod(Qd, Y))
   } else if (ncol(Y)==nrow(design)) {
-    return(Y %*% I_m_H)
+    return(Y - tcrossprod(Y %*% Qd, Qd))
   } else {
     stop("Y and design are not of compatible dimensions.")
   }

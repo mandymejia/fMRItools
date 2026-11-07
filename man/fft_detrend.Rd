@@ -10,7 +10,8 @@ fft_detrend(X, N)
 \item{X}{\eqn{T \times V} numeric matrix. Each column is a voxel or vertex
 time series.}
 
-\item{N}{Number of FFT entries to remove from each end of the vector}
+\item{N}{Number of low-frequency FFT entries to remove (the mean through
+\code{N-1} cycles per scan), along with their conjugate entries.}
 }
 \value{
 Detrended \code{X}

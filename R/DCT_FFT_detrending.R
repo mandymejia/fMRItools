@@ -3,25 +3,29 @@
 #' https://en.wikipedia.org/wiki/Discrete_cosine_transform "DCT II"
 #'
 #' @param T_ Length of timeseries
-#' @param n Number of cosine bases
+#' @param n Number of cosine bases (indices \code{1:n}). Ignored if \code{idx}
+#'  is provided.
+#' @param idx Optional integer vector of specific basis indices to compute
+#'  (each in \code{1:T_}). Avoids building the full \eqn{T \times T} matrix.
 #'
 #' @return Matrix with cosine bases along columns
 #'
 #' @export
-dct_bases <- function(T_, n){
+dct_bases <- function(T_, n, idx=NULL){
 
   stopifnot(is_posNum(T_))
-  stopifnot(is_posNum(n))
-  stopifnot(n <= T_)
+  if (is.null(idx)) {
+    stopifnot(is_posNum(n))
+    stopifnot(n <= T_)
+    idx <- seq_len(floor(n))
+  }
+  stopifnot(is.numeric(idx), all(idx >= 1), all(idx <= T_))
 
-  b <- matrix(NA, T_, n)
-  idx <- (seq(0, T_-1) + (1/2)) / (T_) # used to be `(seq(0, T_-1)) / (T_-1)`
-  for (ii in seq(n)) {
-    b[,ii] <- if (ii < T_) {
-      cos(idx*pi*ii)
-    } else {
-      rep(c(2/pi, -2/pi), ceiling(T_/2))[seq(T_)] # cosine formula seems to break for this case.
-    }
+  tt <- (seq_len(T_) - 1/2) / T_
+  b <- cos(pi * outer(tt, idx))
+  last <- idx >= T_
+  if (any(last)) {
+    b[, last] <- rep(c(2/pi, -2/pi), length.out=T_) # cosine formula seems to break for this case.
   }
   b
 }
@@ -61,11 +65,13 @@ dct_convert <- function(T_, TR, n=NULL, f=NULL){
 }
 
 #' @rdname dct_convert
+#' @export
 dct2Hz <- function(T_, TR, n){
   dct_convert(T_, TR, n=n)
 }
 
 #' @rdname dct_convert
+#' @export
 Hz2dct <- function(T_, TR, f){
   dct_convert(T_, TR, f=f)
 }
@@ -74,7 +80,8 @@ Hz2dct <- function(T_, TR, f){
 #'
 #' @param X \eqn{T \times V} numeric matrix. Each column is a voxel or vertex
 #'  time series.
-#' @param N Number of FFT entries to remove from each end of the vector
+#' @param N Number of low-frequency FFT entries to remove (the mean through
+#'  \code{N-1} cycles per scan), along with their conjugate entries.
 #'
 #' @return Detrended \code{X}
 #'
@@ -88,8 +95,9 @@ fft_detrend <- function(X, N) {
 
   T_ <- nrow(X)
   Y <- mvfft(X)
-  Y[seq(N),] <- 0
-  Y[seq(T_-N+1, T_),] <- 0
+  # Zero the low frequencies and their conjugates, to keep the result real.
+  Y[seq_len(N),] <- 0
+  if (N > 1) { Y[seq(T_-N+2, T_),] <- 0 }
   Re(stats::mvfft(Y, inverse=TRUE)) / T_
 }
 
@@ -134,7 +142,9 @@ temporal_filter <- function(
   stopifnot(is.null(lpf) || is_posNum(lpf))
   if (!is.null(hpf)) { stopifnot(hpf < 1/TR/2) }
   if (!is.null(hpf) && !is.null(lpf)) { stopifnot(lpf > hpf) }
-  if (is.null(hpf) && is.null(lpf)) { return(colCenter(X)) }
+  if (is.null(hpf) && is.null(lpf)) {
+    return(if (X_int) { matrix(0, nrow=X, ncol=0) } else { colCenter(X) })
+  }
   method <- match.arg(method, c("DCT", "FFT"))
 
   # Get number of timepoints.
@@ -145,11 +155,10 @@ temporal_filter <- function(
     # Get vector of frequencies associated with each DCT basis.
     # 0 and T+1 values used to add opt to skip filtering, or raising error.
     freq_exp <- dct_convert(T_, TR, n=seq(0, T_+1)) 
-    # Compute the bases. 
-    bases <- dct_bases(T_, T_)
 
     # Initialize nuisance matrix.
     nmat <- NULL
+    hpf_idx <- 0
 
     # Collect DCT HPF bases.
     if (!is.null(hpf)) {
@@ -161,8 +170,8 @@ temporal_filter <- function(
       } else {
         if (verbose) { cat(hpf_idx, "bases for HPF.\n") }
         if (hpf_idx == T_) { warning("No DOF left.") }
-        nmat_hpf <- bases[,seq(hpf_idx),drop=FALSE]
-        colnames(nmat_hpf) <- paste(round(freq_exp[1+seq(hpf_idx)], 4), "Hz")
+        nmat_hpf <- dct_bases(T_, idx=seq_len(hpf_idx))
+        colnames(nmat_hpf) <- paste(round(freq_exp[1+seq_len(hpf_idx)], 4), "Hz")
         nmat <- cbind(nmat, nmat_hpf)
       }
     }
@@ -172,7 +181,7 @@ temporal_filter <- function(
       lpf_idx <- which.min(abs(freq_exp - lpf)) - 1 # 0 or T_: error/skip
       # Check redundancy with hpf.
       if (!is.null(hpf)) {
-        if (lpf_idx == hpf_idx) {
+        if (hpf_idx > 0 && lpf_idx == hpf_idx) {
           lpf_idx <- lpf_idx + 1 # avoid regressing same idx twice.
         }
         if (lpf_idx == hpf_idx + 1) {
@@ -186,8 +195,9 @@ temporal_filter <- function(
       } else {
         if (verbose) { cat(T_ - lpf_idx + 1, "bases for LPF.\n") }
         if (lpf_idx == 1) { warning("No DOF left.") }
-        nmat_lpf <- bases[,seq(lpf_idx, T_),drop=FALSE]
-        colnames(nmat_lpf) <- paste(round(freq_exp[1+seq(lpf_idx, T_)], 4), "Hz")
+        lpf_seq <- seq(lpf_idx, T_)
+        nmat_lpf <- dct_bases(T_, idx=lpf_seq)
+        colnames(nmat_lpf) <- paste(round(freq_exp[1+lpf_seq], 4), "Hz")
         nmat <- cbind(nmat, nmat_lpf)
       }
     }
@@ -195,7 +205,7 @@ temporal_filter <- function(
     if (X_int) { return(nmat) } 
 
     # Do nuisance regression with an intercept and the collected DCT bases.
-    nmat <- cbind(1, nmat)
+    nmat <- cbind(rep(1, T_), nmat)
     out <- nuisance_regression(X, nmat)
 
   # FFT ------------------------------------------------------------------------
