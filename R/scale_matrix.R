@@ -76,57 +76,58 @@ scale_med <- function(mat, TOL=1e-8, drop_const=TRUE, doRows=FALSE){
 #' @export
 scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transpose = TRUE){
 
-	BOLD <- as.matrix(BOLD)
-	scale <- match.arg(scale, c("auto", "mean", "sd", "none"))
-	stopifnot(is_1(transpose, "logical"))
+  BOLD <- as.matrix(BOLD)
+  scale <- match.arg(scale, c("auto", "mean", "sd", "none"))
+  stopifnot(is_1(transpose, "logical"))
 
-	# Check orientation, send warning message and transpose if necessary.
-	if ((ncol(BOLD) > nrow(BOLD)) && transpose) {
-		warning('More columns than rows. Transposing matrix so rows are data locations and columns are time points.')
-		BOLD <- t(BOLD)
-	}
+  # Check orientation, send warning message and transpose if necessary.
+  if ((ncol(BOLD) > nrow(BOLD)) && transpose) {
+    warning('More columns than rows. Transposing matrix so rows are data locations and columns are time points.')
+    BOLD <- t(BOLD)
+  }
 
-	# Get `v_means`, the mean over time for each location (the mean image)
-	v_means <- rowMeans(BOLD, na.rm=TRUE)
-	v_means_min <- min(v_means, na.rm = TRUE)
+  # Get `v_means`, the mean over time for each location (the mean image)
+  v_means <- rowMeans(BOLD, na.rm=TRUE)
+  v_means_min <- min(v_means, na.rm = TRUE)
 
-	# Determine `"auto"` scaling.
-	if (scale == "auto") {
-		scale <- if (v_means_min > 1) { "mean" } else { "sd" }
-		# cat("Using", scale, "scaling.\n")
-	}
+  # Determine `"auto"` scaling.
+  if (scale == "auto") {
+    scale <- if (v_means_min > 1) { "mean" } else { "sd" }
+    # cat("Using", scale, "scaling.\n")
+  }
 
-	# Center and scale.
-	BOLD <- BOLD - v_means
-	if (scale == "mean") {
-		if (v_means_min < .1) {
-			stop("Some local means are less than 0.1. Please set `scale_BOLD` to `'none'` or `'sd'`.")
-		} else if (v_means_min < 1) {
-			warning("Scaling to percent signal change when locations have means less than 1 may cause errors or produce aberrant results.")
-		}
-		BOLD <- 100*BOLD / v_means
-	} else if (scale == "sd") {
-		# `BOLD` is centered, so the variance is the sum of squares over (n-1).
-		n_obs <- rowSums(!is.na(BOLD))
-		v_sd <- sqrt(rowSums(BOLD^2, na.rm=TRUE) / (n_obs - 1))
-		v_sd[is.na(v_sd)] <- 0
-		if (min(v_sd) < 1e-6) {
-			stop("Some local sds are less than 1e-6. Please set `scale_BOLD` to `'none'`.")
-		}
-		BOLD <- BOLD / v_sd
-	}
+  # Center and scale.
+  BOLD <- BOLD - v_means
+  if (scale == "mean") {
+    if (v_means_min < .1) {
+      stop("Some local means are less than 0.1. Please set `scale_BOLD` to `'none'` or `'sd'`.")
+    } else if (v_means_min < 1) {
+      warning("Scaling to percent signal change when locations have means less than 1 may cause errors or produce aberrant results.")
+    }
+    BOLD <- 100*BOLD / v_means
+  } else if (scale == "sd") {
+    # `BOLD` is centered, so the variance is the sum of squares over (n-1).
+    n_obs <- rowSums(!is.na(BOLD))
+    v_sd <- sqrt(rowSums(BOLD^2, na.rm=TRUE) / (n_obs - 1))
+    v_sd[is.na(v_sd)] <- 0
+    if (min(v_sd) < 1e-6) {
+      stop("Some local sds are less than 1e-6. Please set `scale_BOLD` to `'none'`.")
+    }
+    BOLD <- BOLD / v_sd
+  }
 
-	BOLD
+  BOLD
 }
 
 #' Scale a design matrix
 #' 
 #' Scale the columns of a matrix by dividing each column by its 
-#' 	highest-magnitude value, and then subtracting its mean.
+#'   highest-magnitude value, and then subtracting its mean. Constant
+#'   columns will not be de-meaned; all values will become 1.
 #'
 #' @param x A \eqn{T \times K} numeric matrix. In the context of a
-#' 	design matrix for a GLM analysis of task fMRI, \eqn{T} is the number of time
-#' 	points and \eqn{K} is the number of task covariates.
+#'   design matrix for a GLM analysis of task fMRI, \eqn{T} is the number of time
+#'   points and \eqn{K} is the number of task covariates.
 #' @param doRows Scale the rows instead? Default: \code{FALSE}.
 #'
 #' @return The scaled design matrix
@@ -136,21 +137,25 @@ scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transp
 #' @examples 
 #' scale_design_mat(cbind(seq(7), 1, rnorm(7)))
 scale_design_mat <- function(x, doRows=FALSE) {
-	stopifnot(is.matrix(x))
-	stopifnot(is.numeric(x))
-	stopifnot(!any(is.na(x)))
+  stopifnot(is.matrix(x))
+  stopifnot(is.numeric(x))
+  stopifnot(!any(is.na(x)))
 
-	if (doRows) {
-		mx <- apply(abs(x), 1, max)
-		mx[mx == 0] <- 1
-		x <- x / mx
-		x <- x - rowMeans(x)
-	} else {
-		mx <- apply(abs(x), 2, max)
-		mx[mx == 0] <- 1
-		x <- x / rep(mx, each=nrow(x))
-		x <- x - rep(colMeans(x), each=nrow(x))
-	}
+  if (doRows) {
+    mx <- apply(abs(x), 1, max)
+    mx[mx == 0] <- 1
+    x <- x / mx
+    x_constant <- apply(x, 1, function(r) all(r == r[1]))
+    x <- x - rowMeans(x)
+    x[x_constant,] <- 1
+  } else {
+    mx <- apply(abs(x), 2, max)
+    mx[mx == 0] <- 1
+    x <- x / rep(mx, each=nrow(x))
+    x_constant <- apply(x, 2, function(c) all(c == c[1]))
+    x <- x - rep(colMeans(x), each=nrow(x))
+    x[,x_constant] <- 1
+  }
 
-	x
+  x
 }

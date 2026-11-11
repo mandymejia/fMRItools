@@ -456,10 +456,10 @@ test_that("scale_design_mat divides by the largest magnitude and centers", {
   set.seed(12)
   X <- cbind(1, rnorm(20), -abs(rnorm(20)) - 5, 0, seq_len(20))
   Z <- scale_design_mat(X)
-  expect_equal(colMeans(Z), rep(0, 5))
-  expect_equal(Z[,1], rep(0, 20))                 # intercept becomes zero
+  expect_equal(colMeans(Z), c(1, 0, 0, 1, 0))
+  expect_equal(Z[,1], rep(1, 20))                 # intercept becomes 1
   expect_equal(Z[,3], (X[,3] - mean(X[,3])) / max(abs(X[,3])))  # sign preserved
-  expect_equal(Z[,4], rep(0, 20))                 # all-zero column: no NaN
+  expect_equal(Z[,4], rep(1, 20))                 # all-zero col. also becomes 1
   expect_equal(scale_design_mat(t(X), doRows=TRUE), t(Z))
   expect_error(scale_design_mat(1:5))
   expect_error(scale_design_mat(cbind(1, NA)))

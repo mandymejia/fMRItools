@@ -18,7 +18,8 @@ The scaled design matrix
 }
 \description{
 Scale the columns of a matrix by dividing each column by its
-highest-magnitude value, and then subtracting its mean.
+highest-magnitude value, and then subtracting its mean. Constant
+columns will not be de-meaned; all values will become 1.
 }
 \examples{
 scale_design_mat(cbind(seq(7), 1, rnorm(7)))
