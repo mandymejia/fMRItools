@@ -2,18 +2,23 @@
 % Please edit documentation in R/despike_3D.R
 \name{despike_3D.basis}
 \alias{despike_3D.basis}
-\title{3dDespike from AFNI, step 0}
+\title{3dDespike from AFNI, step 0: reference functions}
 \usage{
-despike_3D.basis(nT)
+despike_3D.basis(nT, corder = round(nT/30))
 }
 \arguments{
 \item{nT}{The number of timepoints.}
+
+\item{corder}{The number of sine/cosine pairs. Default: \code{round(nT/30)},
+as in AFNI.}
 }
 \value{
-The \eqn{nT \times (2K+1)} basis matrix.
+The \eqn{nT \times (3 + 2 \times corder)} matrix of reference
+functions.
 }
 \description{
-Fourier basis for the smooth curve that \code{\link{despike_3D}} is based on.
-The number of basis functions is \code{2*round(nT/30/2)+1}.
+The smooth curve that \code{\link{despike_3D}} fits to a time series, as in
+AFNI's \code{3dDespike}: a constant, a linear term, a quadratic term, and
+\code{corder} pairs of sines and cosines with period \code{nT}.
 }
 \keyword{internal}

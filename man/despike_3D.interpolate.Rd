@@ -4,17 +4,36 @@
 \alias{despike_3D.interpolate}
 \title{3dDespike from AFNI, step 2}
 \usage{
-despike_3D.interpolate(qreg, c1 = 2.5, c2 = 4)
+despike_3D.interpolate(Yt, fit, c1 = 2.5, c2 = 4, localedit = FALSE)
 }
 \arguments{
-\item{qreg}{the quantile regression from \code{\link{despike_3D.qreg}}}
+\item{Yt}{The data vector.}
+
+\item{fit}{The fitted values.}
 
 \item{c1}{spike threshold. Default: \code{2.5}.}
 
 \item{c2}{upper range of the acceptable deviation from the fit. Default:
 \code{4}.}
+
+\item{localedit}{Instead, replace each value with \code{|s| >= c2} with the
+average of the nearest values on each side with \code{|s| < c2}. (\code{c1}
+is not used.) Default: \code{FALSE}.}
+}
+\value{
+The despiked data vector.
 }
 \description{
 Identify and interpolate the outliers for \code{\link{despike_3D}}.
+}
+\details{
+The residuals' standard deviation is estimated as
+\code{sqrt(pi/2) * median(abs(residuals))}, as in AFNI, and
+\code{s = residual / sigma}. By default, values with \code{|s| > c1} are
+replaced by the fitted value plus the compressed deviation
+\code{sign(s) * (c1 + (c2-c1)*tanh((|s|-c1)/(c2-c1))) * sigma}. (The AFNI
+documentation describes only \code{s > c1}, but the AFNI code edits both
+tails.) Only edited values change. If the residuals' scale is zero, the
+data are returned unchanged.
 }
 \keyword{internal}

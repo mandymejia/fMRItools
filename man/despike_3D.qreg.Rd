@@ -2,7 +2,7 @@
 % Please edit documentation in R/despike_3D.R
 \name{despike_3D.qreg}
 \alias{despike_3D.qreg}
-\title{3dDespike from AFNI, step 1}
+\title{3dDespike from AFNI, step 1 (L1 fit; AFNI's "OLD" method)}
 \usage{
 despike_3D.qreg(Yt, basis = NULL)
 }
@@ -16,6 +16,6 @@ this when despiking many data vectors of equal length.}
 the quantile regression
 }
 \description{
-Compute the quantile regression that \code{\link{despike_3D}} is based on.
+Fit the reference functions to the data with L1 (median) regression.
 }
 \keyword{internal}

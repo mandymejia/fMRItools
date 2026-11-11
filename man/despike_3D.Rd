@@ -4,28 +4,72 @@
 \alias{despike_3D}
 \title{3dDespike from AFNI}
 \usage{
-despike_3D(Yt, c1 = 2.5, c2 = 4, basis = NULL)
+despike_3D(
+  Yt,
+  c1 = 2.5,
+  c2 = 4,
+  basis = NULL,
+  method = c("auto", "OLD", "NEW"),
+  localedit = FALSE,
+  corder = NULL
+)
 }
 \arguments{
-\item{Yt}{The data vector.}
+\item{Yt}{The data vector (at least 15 time points).}
 
-\item{c1}{spike threshold. Default: \code{2.5}.}
+\item{c1}{spike threshold (AFNI's \code{-cut}). Default: \code{2.5}. Must be
+at least \code{1}.}
 
 \item{c2}{upper range of the acceptable deviation from the fit. Default:
-\code{4}.}
+\code{4}. Must be at least \code{c1 + 0.5}.}
 
-\item{basis}{Optional precomputed \code{\link{despike_3D.basis}}.}
+\item{basis}{Optional precomputed \code{\link{despike_3D.basis}}, to avoid
+recomputing it for many data vectors of equal length.}
+
+\item{method}{How to fit the curve: \code{"OLD"} for the L1 fit (requires
+the \code{quantreg} package), \code{"NEW"} for the faster least-squares fit
+after a simple outlier removal (the results are similar, not identical), or
+\code{"auto"} (default) to use \code{"NEW"} if there are more than 500 time
+points and \code{"OLD"} otherwise, as AFNI does.}
+
+\item{localedit}{Use AFNI's \code{-localedit} method to replace spikes?
+Default: \code{FALSE}.}
+
+\item{corder}{The number of sine/cosine pairs in the curve (AFNI's
+\code{-corder}). Default: \code{NULL} to use \code{round(length(Yt)/30)}
+(at most 50 for the \code{"OLD"} method). Ignored if \code{basis} is
+provided.}
+}
+\value{
+The despiked data vector.
 }
 \description{
 Identify and interpolate outliers. See
 \href{https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html}{the
 AFNI documentation for 3dDespike} for additional information.
 }
+\details{
+Follows \code{3dDespike}: a smooth curve is fit to the time series
+(\code{\link{despike_3D.basis}}), the residuals' scale is estimated, and
+values far from the curve are pulled in (\code{\link{despike_3D.interpolate}}).
+Not implemented: AFNI's \code{-NEW25} and \code{-ignore} options, and
+voxel masking.
+}
 \examples{
+y <- rnorm(99) + cos(seq(99)/15)*3
+y[20] <- 20
+despike_3D(y, method="NEW")
 if (requireNamespace("quantreg", quietly=TRUE)) {
- y <- rnorm(99) + cos(seq(99)/15)*3
- y[20] <- 20
  despike_3D(y)
 }
 
+}
+\references{
+Cox RW (1996). AFNI: software for analysis and visualization of functional
+magnetic resonance neuroimages. \emph{Computers and Biomedical Research},
+29(3), 162-173. \doi{10.1006/cbmr.1996.0014}
+
+Cox RW, Hyde JS (1997). Software tools for analysis and visualization of
+fMRI data. \emph{NMR in Biomedicine}, 10(4-5), 171-178.
+\doi{10.1002/(SICI)1099-1492(199706/08)10:4/5<171::AID-NBM453>3.0.CO;2-L}
 }
