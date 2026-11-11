@@ -11,3 +11,4 @@
 ^tests/testWithData$
 ^codecov\.yml$
 ^R/harmonize\.R$
+^dev$
