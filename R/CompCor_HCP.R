@@ -58,12 +58,15 @@ get_NIFTI_ROI_masks <- function(nii_labels, ROI_noise=c("wm_cort", "csf")){
   )
 }
 
-#' Anatomical CompCor for HCP NIFTI data
+#' Anatomical CompCor for HCP NIFTI data: noise PCs
 #'
-#' Wrapper to \code{\link{CompCor}} for HCP-format data. Obtains the noise
-#'  principal components (PCs) and ROIs from the NIFTI fMRI data and the NIFTI
-#'  labels. To clean the surface-based CIFTI data with aCompCor using these
-#'  noise PCs, see \code{\link{CompCor_HCP_cii}}.
+#' Computes the noise principal components (PCs) for aCompCor from HCP-format
+#'  data. Obtains the noise ROIs from the NIFTI fMRI data and the NIFTI labels,
+#'  and then the PCs of each ROI (see \code{\link{noise_PCs}}). This function
+#'  only computes the noise PCs: it does not clean any data. To clean the
+#'  surface-based CIFTI data with aCompCor using these noise PCs, see
+#'  \code{\link{CompCor_HCP_apply}}. (To clean other data, see
+#'  \code{\link{CompCor_clean}}.) For general data, see \code{\link{CompCor}}.
 #'
 #' The noise ROI data is extracted from the full NIFTI array (rather than from a
 #'  copy of the array subsetted to \code{idx}), which avoids duplicating the
@@ -106,9 +109,11 @@ get_NIFTI_ROI_masks <- function(nii_labels, ROI_noise=c("wm_cort", "csf")){
 #' @param verbose Should occasional updates be printed? Default:
 #'  \code{FALSE}.
 #'
-#' @return A list with entries \code{"PCs"} (the noise PC scores for each
-#'  noise ROI), \code{"var"} (the variance of each PC), and \code{"ROI_noise"}
-#'  (the noise ROI masks, after erosion).
+#' @return A \code{"CompCor_noise"} object: a list with entries \code{"PCs"}
+#'  (the noise PC scores for each noise ROI), \code{"var"} (the variance of
+#'  each PC), and \code{"ROI_noise"} (the noise ROI masks, after erosion). This
+#'  is the same form as the \code{"noise"} entry of the result of
+#'  \code{\link{CompCor}}.
 #'
 #' @section References:
 #'  \itemize{
@@ -121,8 +126,8 @@ get_NIFTI_ROI_masks <- function(nii_labels, ROI_noise=c("wm_cort", "csf")){
 #'
 #' @export
 #'
-#' @seealso CompCor, CompCor_HCP_cii
-CompCor_HCP <- function(
+#' @seealso CompCor, CompCor_clean, CompCor_HCP_apply
+CompCor_HCP_calc <- function(
   nii, nii_labels,
   ROI_noise=c("wm_cort", "csf"), noise_nPC=5, noise_erosion=NULL,
   idx=NULL, center = TRUE, scale = TRUE,
@@ -167,33 +172,26 @@ CompCor_HCP <- function(
   rm(nii)
   X_noise <- lapply(fmt$X_noise, function(x){ x[idx, , drop=FALSE] })
 
-  # Preliminary nuisance regression: project out the column space of the
-  #   design. `hat_Q` gives an orthonormal basis for it (handling rank-deficient
-  #   designs, as `hat_matrix` does), which is cheaper than the T x T hat matrix
-  #   and is only computed once for all ROIs.
-  if (!is.null(prelim_nuisance)) {
-    Qd <- hat_Q(prelim_nuisance)
-    X_noise <- lapply(X_noise, function(x){ x - Qd %*% crossprod(Qd, x) })
-  }
-
-  # Compute the noise components.
+  # Compute the noise components (with the preliminary nuisance regression).
   if (verbose) { cat("Computing noise components.\n") }
-  out <- CompCor.noise_comps(
-    X_noise=X_noise, center=center, scale=scale, noise_nPC=fmt$noise_nPC
+  out <- noise_PCs(
+    X_noise=X_noise, center=center, scale=scale, noise_nPC=fmt$noise_nPC,
+    prelim_nuisance=prelim_nuisance
   )
-  list(PCs=out$noise_comps, var=out$noise_var, ROI_noise=fmt$ROI_noise)
+  new_CompCor_noise(out$PCs, out$var, fmt$ROI_noise)
 }
 
 #' Clean HCP CIFTI data with aCompCor
 #'
 #' Regresses noise PCs from HCP CIFTI data. The PCs can be calculated from the
-#'  NIFTI fMRI data and NIFTI labels with \code{\link{CompCor_HCP}}.
+#'  NIFTI fMRI data and NIFTI labels with \code{\link{CompCor_HCP_calc}}. This is
+#'  a wrapper to \code{\link{CompCor_clean}} which handles the CIFTI data.
 #'
 #' @param cii \code{"xifti"} (or file path to the CIFTI) from which the noise
 #'  ROI components will be regressed. In the HCP, the corresponding file is
 #'  e.g.
 #'  "../Results/rfMRI_REST1_LR/rfMRI_REST1_LR_Atlas_MSMAll.dtseries.nii".
-#' @param noise The noise components, as returned by \code{\link{CompCor_HCP}}
+#' @param noise The noise components, as returned by \code{\link{CompCor_HCP_calc}}
 #'  for a single \code{idx} (i.e. a list with an entry named \code{"PCs"}).
 #' @param idx A numeric vector indicating the timepoints of \code{cii} to use,
 #'  or \code{NULL} (default) to use all timepoints. This should match the
@@ -205,7 +203,8 @@ CompCor_HCP <- function(
 #'  indicate the number of cosine bases. Use \code{0} (default) to forgo
 #'  detrending.
 #'
-#'  The data must be centered, either before input or with \code{center}.
+#'  An intercept is always included in the regression, so the data does not
+#'  need to be centered.
 #' @param nuisance_too A matrix of nuisance signals to add to the nuisance
 #'  regression. Should have \eqn{T} rows. \code{NULL} to not add additional
 #'  nuisance regressors (default).
@@ -216,8 +215,8 @@ CompCor_HCP <- function(
 #'
 #' @export
 #'
-#' @seealso CompCor_HCP
-CompCor_HCP_cii <- function(
+#' @seealso CompCor_HCP_calc, CompCor_clean
+CompCor_HCP_apply <- function(
   cii, noise, idx=NULL, brainstructures=c("left", "right"),
   DCT = 0, nuisance_too = NULL, verbose=FALSE){
 
@@ -236,24 +235,9 @@ CompCor_HCP_cii <- function(
 
   # Drop idx.
   if (!is.null(idx)) { cii <- ciftiTools::select_xifti(cii, idx) }
-  cii_mat <- as.matrix(cii)
-  T_ <- ncol(cii_mat)
 
-  # Make design matrix.
-  design <- do.call(cbind, noise$PCs)
-  if (!is.null(design) && nrow(design) != T_) {
-    stop(
-      "The noise PCs have ", nrow(design), " timepoints, but `cii` has ", T_,
-      " (after applying `idx`)."
-    )
-  }
-  if (DCT > 0) { design <- cbind(design, dct_bases(T_, DCT)) }
-  if (!is.null(nuisance_too)) {
-    nuisance_too <- validate_design_mat(nuisance_too, T_)
-    design <- cbind(design, nuisance_too)
-  }
-  design <- validate_design_mat(cbind(1, design), T_)
-
-  # Return data in "xifti" format.
-  ciftiTools::newdata_xifti(cii, nuisance_regression(cii_mat, design))
+  # Clean the data (V x T) with the noise PCs, then return in "xifti" format.
+  ciftiTools::newdata_xifti(
+    cii, CompCor_clean(as.matrix(cii), noise, DCT=DCT, nuisance=nuisance_too)
+  )
 }

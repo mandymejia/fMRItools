@@ -114,13 +114,15 @@ Default: \code{NULL}.}
 A list with entries \code{"data"}, \code{"noise"}, and potentially
 \code{"ROI_data"}.
 
-The entry \code{"data"} will be a \code{V x T} matrix where each row corresponds to a
-data location (if it was originally an array, the locations will be voxels in spatial
-order). Each row will be a time series with each noise PC regressed from it. This entry
-will be \code{NULL} if there was no data.
+The entry \code{"data"} will be a matrix where each row or column
+corresponds to a data location (if it was originally an array, the locations
+will be voxels in spatial order). Each location's time series will have each
+noise PC regressed from it. This entry will be \code{NULL} if there was no
+data.
 
-The entry \code{"noise"} is a list of noise PC scores, their corresponding variance,
-and their ROI mask, for each noise ROI.
+The entry \code{"noise"} is a \code{"CompCor_noise"} object: a list with the
+noise PC scores (\code{"PCs"}), their corresponding variance (\code{"var"}),
+and their ROI mask (\code{"ROI_noise"}), for each noise ROI.
 
 If the data ROI is not all \code{TRUE}, the entry \code{"ROI_data"} will have
 the ROI mask for the data.
@@ -129,17 +131,23 @@ the ROI mask for the data.
 The aCompCor algorithm for denoising fMRI data using noise ROIs data
 }
 \details{
-First, the principal components (PCs) of each noise region of interest (ROI)
-are calculated. For each ROI, voxels are centered and scaled
-(can be disabled with the arguments \code{center} and \code{scale}),
-and then the PCs are calculated via the singular value decomposition.
+This function performs two steps, each of which is available as a separate
+function. First, the principal components (PCs) of each noise region of
+interest (ROI) are calculated. For each ROI, voxels are centered and scaled
+(can be disabled with the arguments \code{center} and \code{scale}), and then
+the PCs are calculated via the singular value decomposition.
 
 Next, aCompCor is performed to remove the shared variation between the noise ROI
 PCs and each location in the data. This is accomplished by a nuisance regression
 using a design matrix with the noise ROI PCs, any additional regressors specified
-by \code{nuisance}, and an intercept term. (To detrend the data and perform aCompCor
+by \code{nuisance}, and an intercept term, which is done by
+\code{\link{CompCor_clean}}. (To detrend the data and perform aCompCor
 in the same regression, \code{nuisance} can be set to DCT bases obtained with
 the function \code{\link{dct_bases}}.)
+
+If \code{prelim_nuisance} includes an intercept, note that the PCs may retain
+a small component along the constant, because the centering of each noise
+ROI voxel is by the median (see \code{\link{noise_PCs}}).
 }
 \section{References}{
 
@@ -150,5 +158,5 @@ the function \code{\link{dct_bases}}.)
 }
 
 \seealso{
-CompCor_HCP
+CompCor_clean, CompCor_HCP_calc
 }
