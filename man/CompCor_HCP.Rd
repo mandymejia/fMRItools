@@ -68,14 +68,9 @@ unnamed vector, its elements will be recycled. Default: \code{NULL}, which
 will use a value of 0 (do not erode the noise ROIs).}
 
 \item{idx}{A numeric vector indicating the timepoints to use, or
-\code{NULL} (default) to use all idx. (Indexing begins with 1, so the
-first timepoint has index 1 and the last has the same index as the length
-of the scan.)
-
-Alternatively, a list of such numeric vectors (e.g. one for each scan
-duration of interest). In this case the noise PCs are computed separately
-for each entry (reading the data only once) and a list with one result per
-entry is returned, with the same names as \code{idx}.}
+\code{NULL} (default) to use all timepoints. (Indexing begins with 1, so
+the first timepoint has index 1 and the last has the same index as the
+length of the scan.)}
 
 \item{center, scale}{Center the columns of the noise ROI data by median, and
 scale the columns of the noise ROI data by MAD? Default: \code{TRUE} for
@@ -84,10 +79,8 @@ both.}
 \item{prelim_nuisance}{Nuisance signals to regress from the noise ROIs
 before computing the PCs (see \code{\link{CompCor}}). A \eqn{T} by
 \eqn{P} numeric matrix, where \eqn{T} is the number of timepoints in
-\code{idx}. If \code{idx} is a list, this must be a list of matrices of
-the same length, with the \eqn{k}th matrix having as many rows as the
-\eqn{k}th entry of \code{idx}. Default: \code{NULL} (do not do any
-preliminary nuisance regression).}
+\code{idx}. Default: \code{NULL} (do not do any preliminary nuisance
+regression).}
 
 \item{verbose}{Should occasional updates be printed? Default:
 \code{FALSE}.}
@@ -95,8 +88,7 @@ preliminary nuisance regression).}
 \value{
 A list with entries \code{"PCs"} (the noise PC scores for each
 noise ROI), \code{"var"} (the variance of each PC), and \code{"ROI_noise"}
-(the noise ROI masks, after erosion). If \code{idx} is a list, a list of
-these, one for each entry of \code{idx}.
+(the noise ROI masks, after erosion).
 }
 \description{
 Wrapper to \code{\link{CompCor}} for HCP-format data. Obtains the noise
@@ -105,11 +97,9 @@ labels. To clean the surface-based CIFTI data with aCompCor using these
 noise PCs, see \code{\link{CompCor_HCP_cii}}.
 }
 \details{
-The NIFTI data and labels are read once, and the noise ROI masks (including
-erosion) and noise ROI data are extracted once. If \code{idx} is a list,
-the noise PCs are then computed separately for each entry of \code{idx}
-(e.g., for several scan durations) without re-reading or re-extracting the
-data.
+The noise ROI data is extracted from the full NIFTI array (rather than from a
+copy of the array subsetted to \code{idx}), which avoids duplicating the
+whole 4D array in memory.
 }
 \section{References}{
 

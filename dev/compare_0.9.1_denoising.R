@@ -3,7 +3,7 @@
 # using Claude, after Commit 3057439 on 9.0 (shortly after 0.8 pushed to CRAN)
 #
 # Usage (paths default to locations relative to this script, which lives in dev/):
-#   Rscript compare_0_9_1_0_9_0.R [new_R_dir] [old_R_dir]
+#   Rscript compare_0.9.1_denoising.R [new_R_dir] [old_R_dir]
 # defaults: new = ../R          (current package source)
 #           old = 0.9.0/R       (frozen copy of the previous release's R/)
 #

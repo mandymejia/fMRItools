@@ -65,11 +65,9 @@ get_NIFTI_ROI_masks <- function(nii_labels, ROI_noise=c("wm_cort", "csf")){
 #'  labels. To clean the surface-based CIFTI data with aCompCor using these
 #'  noise PCs, see \code{\link{CompCor_HCP_cii}}.
 #'
-#' The NIFTI data and labels are read once, and the noise ROI masks (including
-#'  erosion) and noise ROI data are extracted once. If \code{idx} is a list,
-#'  the noise PCs are then computed separately for each entry of \code{idx}
-#'  (e.g., for several scan durations) without re-reading or re-extracting the
-#'  data.
+#' The noise ROI data is extracted from the full NIFTI array (rather than from a
+#'  copy of the array subsetted to \code{idx}), which avoids duplicating the
+#'  whole 4D array in memory.
 #'
 #' @inheritParams get_NIFTI_ROI_masks
 #' @param nii \eqn{I} by \eqn{J} by \eqn{K} by \eqn{T} NIFTI object or array
@@ -94,31 +92,23 @@ get_NIFTI_ROI_masks <- function(nii_labels, ROI_noise=c("wm_cort", "csf")){
 #'  unnamed vector, its elements will be recycled. Default: \code{NULL}, which
 #'  will use a value of 0 (do not erode the noise ROIs).
 #' @param idx A numeric vector indicating the timepoints to use, or
-#'  \code{NULL} (default) to use all idx. (Indexing begins with 1, so the
-#'  first timepoint has index 1 and the last has the same index as the length
-#'  of the scan.)
-#'
-#'  Alternatively, a list of such numeric vectors (e.g. one for each scan
-#'  duration of interest). In this case the noise PCs are computed separately
-#'  for each entry (reading the data only once) and a list with one result per
-#'  entry is returned, with the same names as \code{idx}.
+#'  \code{NULL} (default) to use all timepoints. (Indexing begins with 1, so
+#'  the first timepoint has index 1 and the last has the same index as the
+#'  length of the scan.)
 #' @param center,scale Center the columns of the noise ROI data by median, and
 #'  scale the columns of the noise ROI data by MAD? Default: \code{TRUE} for
 #'  both.
 #' @param prelim_nuisance Nuisance signals to regress from the noise ROIs
 #'  before computing the PCs (see \code{\link{CompCor}}). A \eqn{T} by
 #'  \eqn{P} numeric matrix, where \eqn{T} is the number of timepoints in
-#'  \code{idx}. If \code{idx} is a list, this must be a list of matrices of
-#'  the same length, with the \eqn{k}th matrix having as many rows as the
-#'  \eqn{k}th entry of \code{idx}. Default: \code{NULL} (do not do any
-#'  preliminary nuisance regression).
+#'  \code{idx}. Default: \code{NULL} (do not do any preliminary nuisance
+#'  regression).
 #' @param verbose Should occasional updates be printed? Default:
 #'  \code{FALSE}.
 #'
 #' @return A list with entries \code{"PCs"} (the noise PC scores for each
 #'  noise ROI), \code{"var"} (the variance of each PC), and \code{"ROI_noise"}
-#'  (the noise ROI masks, after erosion). If \code{idx} is a list, a list of
-#'  these, one for each entry of \code{idx}.
+#'  (the noise ROI masks, after erosion).
 #'
 #' @section References:
 #'  \itemize{
@@ -138,7 +128,7 @@ CompCor_HCP <- function(
   idx=NULL, center = TRUE, scale = TRUE,
   prelim_nuisance = NULL, verbose=FALSE){
 
-  # Get NIFTI data (read only once).
+  # Get NIFTI data.
   if (is.character(nii)) {
     if (verbose) { cat("Reading data NIFTI.\n") }
     nii <- read_nifti(nii)
@@ -151,86 +141,47 @@ CompCor_HCP <- function(
   ROI_noise <- get_NIFTI_ROI_masks(nii_labels, ROI_noise)
   stopifnot(all( dim(ROI_noise[[1]]) == dim(nii)[1:3] ))
 
-  # Standardize `idx` to a list of index vectors.
-  multi_idx <- is.list(idx)
-  if (is.null(idx)) {
-    idx <- list(seq(T_nii))
-  } else if (!multi_idx) {
-    idx <- list(idx)
+  # Check `idx`.
+  if (is.null(idx)) { idx <- seq(T_nii) }
+  stopifnot(is.numeric(idx))
+  stopifnot(all(idx %in% seq(T_nii)))
+  if (length(idx) < 10) {
+    warning("There are very few `idx`.\n")
   }
-  for (kk in seq_along(idx)) {
-    stopifnot(is.numeric(idx[[kk]]))
-    stopifnot(all(idx[[kk]] %in% seq(T_nii)))
-    if (length(idx[[kk]]) < 10) {
-      warning("There are very few `idx`.\n")
+
+  # Check `prelim_nuisance`.
+  if (!is.null(prelim_nuisance)) {
+    prelim_nuisance <- as.matrix(prelim_nuisance)
+    if (nrow(prelim_nuisance) != length(idx)) {
+      stop("`prelim_nuisance` must have as many rows as the length of `idx`.")
     }
   }
 
-  # Standardize `prelim_nuisance` to a list with one entry per `idx` entry.
-  if (is.null(prelim_nuisance)) {
-    prelim_nuisance <- vector("list", length(idx))
-  } else {
-    if (!is.list(prelim_nuisance) || is.data.frame(prelim_nuisance)) {
-      prelim_nuisance <- list(as.matrix(prelim_nuisance))
-    }
-    if (length(prelim_nuisance) != length(idx)) {
-      stop(
-        "`prelim_nuisance` must be a matrix, or a list with one matrix per ",
-        "entry of `idx`."
-      )
-    }
-    for (kk in seq_along(idx)) {
-      if (nrow(prelim_nuisance[[kk]]) != length(idx[[kk]])) {
-        stop(
-          "`prelim_nuisance` entry ", kk, " does not have the same number of ",
-          "rows as the length of `idx` entry ", kk, "."
-        )
-      }
-    }
-  }
-
-  # Get the noise ROI data (with erosion) once, for all timepoints.
+  # Get the noise ROI data (with erosion) for all timepoints, then drop the
+  #   timepoints not in `idx`.
   if (verbose) { cat("Extracting noise ROIs.\n") }
   fmt <- format_data(
     X=nii, ROI_data=NULL, ROI_noise=ROI_noise,
     noise_nPC=noise_nPC, noise_erosion=noise_erosion
   )
   rm(nii)
+  X_noise <- lapply(fmt$X_noise, function(x){ x[idx, , drop=FALSE] })
 
-  # Compute the noise components for each `idx`.
-  noise <- vector("list", length(idx))
-  names(noise) <- names(idx)
-  for (kk in seq_along(idx)) {
-    if (verbose) {
-      cat("Computing noise components (", kk, " of ", length(idx), ").\n",
-        sep="")
-    }
-
-    # Subset timepoints.
-    X_noise <- lapply(fmt$X_noise, function(x){ x[idx[[kk]], , drop=FALSE] })
-
-    # Preliminary nuisance regression. This is the same projection as
-    #   `nuisance_regression` (rank-deficient designs are handled in the same
-    #   way as in `hat_matrix`), but it uses the thin QR factor of the design
-    #   matrix instead of the T x T hat matrix, and only computes it once for
-    #   all ROIs.
-    if (!is.null(prelim_nuisance[[kk]])) {
-      design <- as.matrix(prelim_nuisance[[kk]])
-      qrd <- qr(design)
-      design <- design[, qrd$pivot[seq_len(qrd$rank)], drop=FALSE]
-      Qd <- qr.Q(qr(design))
-      X_noise <- lapply(X_noise, function(x){ x - Qd %*% crossprod(Qd, x) })
-    }
-
-    out <- CompCor.noise_comps(
-      X_noise=X_noise, center=center, scale=scale, noise_nPC=fmt$noise_nPC
-    )
-    noise[[kk]] <- list(
-      PCs=out$noise_comps, var=out$noise_var, ROI_noise=fmt$ROI_noise
-    )
+  # Preliminary nuisance regression: project out the column space of the
+  #   design. `hat_Q` gives an orthonormal basis for it (handling rank-deficient
+  #   designs, as `hat_matrix` does), which is cheaper than the T x T hat matrix
+  #   and is only computed once for all ROIs.
+  if (!is.null(prelim_nuisance)) {
+    Qd <- hat_Q(prelim_nuisance)
+    X_noise <- lapply(X_noise, function(x){ x - Qd %*% crossprod(Qd, x) })
   }
 
-  if (multi_idx) { noise } else { noise[[1]] }
+  # Compute the noise components.
+  if (verbose) { cat("Computing noise components.\n") }
+  out <- CompCor.noise_comps(
+    X_noise=X_noise, center=center, scale=scale, noise_nPC=fmt$noise_nPC
+  )
+  list(PCs=out$noise_comps, var=out$noise_var, ROI_noise=fmt$ROI_noise)
 }
 
 #' Clean HCP CIFTI data with aCompCor
