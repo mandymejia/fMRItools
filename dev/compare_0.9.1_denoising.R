@@ -798,7 +798,7 @@ if (any(res$status == "SKIP")) {
   cat("\n---------------- SKIPPED -----------------\n")
   print(res[res$status == "SKIP", c("label", "detail")], row.names = FALSE, right = FALSE)
 }
-out_csv <- file.path(script_dir, "compare_0_9_1_0_9_0_results.csv")
+out_csv <- file.path(script_dir, "compare_0.9.1_denoising_results.csv")
 utils::write.csv(res, out_csv, row.names = FALSE)
 cat("\nFull table written to", out_csv, "\n")
 if (!interactive() && nrow(bad) > 0) quit(status = 1)
