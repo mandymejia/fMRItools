@@ -2,6 +2,8 @@ library(fMRItools)
 library(testthat)
 
 # NOTE: mostly written by Claude, edited by Damon
+# Data sizes are kept small for speed. nV is kept above nT so the
+#  "More time points than voxels" warning is not triggered.
 
 # ---- Data-generating helpers -----------------------------------------------
 
@@ -40,7 +42,7 @@ test_that("warns when there are more timepoints than voxels", {
 # =============================================================================
 
 test_that("drop_first removes exactly the first N volumes and they cannot influence the output", {
-  nV <- 90; nT <- 80; nd <- 8
+  nV <- 50; nT <- 40; nd <- 8
   BOLD <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = 5)
   BOLD_corrupt <- add_spikes(BOLD, seq(nd), magnitude = 1e6)
 
@@ -62,7 +64,7 @@ test_that("drop_first errors if it would leave too few timepoints", {
 # =============================================================================
 
 test_that("nuisance regression exactly removes a known regressor", {
-  nV <- 400; nT <- 120
+  nV <- 80; nT <- 60
   BOLD <- make_bold(nV = nV, nT = nT, mu = 500, sigma = 8)
   x    <- sin(seq(nT) / 5)
   beta <- rnorm(nV, mean = 20, sd = 5)
@@ -75,7 +77,7 @@ test_that("nuisance regression exactly removes a known regressor", {
 })
 
 test_that("a nuisance matrix with the wrong number of rows errors", {
-  BOLD <- make_bold(nV = 100, nT = 50)
+  BOLD <- make_bold(nV = 60, nT = 50)
   bad_nuisance <- matrix(rnorm(40), ncol = 1) # 40 rows, need 50
   expect_error(norm_BOLD(BOLD, nuisance = bad_nuisance, hpf = NULL, scale_by = "none"))
 })
@@ -85,9 +87,9 @@ test_that("a nuisance matrix with the wrong number of rows errors", {
 # =============================================================================
 
 test_that("scrub removes exactly the flagged volumes and does not distort the rest", {
-  nV <- 500; nT <- 100
+  nV <- 80; nT <- 60
   BOLD <- make_bold(nV = nV, nT = nT, mu = 800, sigma = 6)
-  idx  <- c(10, 45, 46, 90)
+  idx  <- c(10, 30, 31, 55)
   BOLD_spiked <- add_spikes(BOLD, idx, magnitude = 1e6)
 
   out_scrub  <- norm_BOLD(BOLD_spiked, scrub = idx, hpf = NULL, scale_by = "none")
@@ -100,7 +102,7 @@ test_that("scrub removes exactly the flagged volumes and does not distort the re
 })
 
 test_that("scrub indices (given in original, pre-drop_first numbering) are adjusted correctly", {
-  nV <- 300; nT <- 60; nd <- 5
+  nV <- 70; nT <- 50; nd <- 5
   BOLD <- make_bold(nV = nV, nT = nT, mu = 700, sigma = 4)
   spike_idx_original <- nd + 3 # 3rd retained volume, in ORIGINAL indexing
   BOLD_spiked <- add_spikes(BOLD, spike_idx_original, magnitude = 1e6)
@@ -115,8 +117,8 @@ test_that("scrub indices (given in original, pre-drop_first numbering) are adjus
 })
 
 test_that("a filtered spike regressor exactly cancels an outlier's lpf-smeared contribution", {
-  nV <- 200; nT <- 150; TR <- 1
-  t0 <- 75 # interior volume, away from edge-truncation effects
+  nV <- 120; nT <- 100; TR <- 1
+  t0 <- 50 # interior volume (middle of the scan), away from edge-truncation effects
 
   BOLD_clean   <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = 3)
   BOLD_outlier <- add_spikes(BOLD_clean, t0, magnitude = 5000)
@@ -134,8 +136,8 @@ test_that("sanity check: without scrubbing, the same outlier visibly contaminate
   # Companion to the test above -- confirms the outlier's lpf-smeared spread
   # is large enough to matter, so the exact-cancellation result isn't
   # trivially true just because the spread was negligible to begin with.
-  nV <- 200; nT <- 150; TR <- 1
-  t0 <- 75
+  nV <- 120; nT <- 100; TR <- 1
+  t0 <- 50
 
   BOLD_clean   <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = 3)
   BOLD_outlier <- add_spikes(BOLD_clean, t0, magnitude = 5000)
@@ -153,7 +155,9 @@ test_that("sanity check: without scrubbing, the same outlier visibly contaminate
 # =============================================================================
 
 test_that("hpf removes a slow linear drift", {
-  nV <- 300; nT <- 200; TR <- 2
+  # (Kept at nT = 200: the residual drift correlation depends on the number
+  #  of high-pass DCT bases, so shrinking nT would change this check.)
+  nV <- 210; nT <- 200; TR <- 2
   t <- seq(nT)
   BOLD <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = 3)
   BOLD_drift <- BOLD + outer(rep(5, nV), t)
@@ -184,7 +188,7 @@ test_that("lpf without TR errors", {
 })
 
 test_that("lpf attenuates high-frequency content", {
-  nV <- 200; nT <- 200; TR <- 0.8
+  nV <- 120; nT <- 100; TR <- 0.8
   t <- seq(nT)
   BOLD <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = 2)
   hf_signal <- (-1)^t * 50 # near-Nyquist alternating wiggle
@@ -201,20 +205,20 @@ test_that("lpf attenuates high-frequency content", {
 # =============================================================================
 
 test_that("center_rows=TRUE (default) removes each voxel's mean over time", {
-  BOLD <- make_bold(nV = 300, nT = 80, mu = 1000, sigma = 5)
+  BOLD <- make_bold(nV = 100, nT = 50, mu = 1000, sigma = 5)
   out <- norm_BOLD(BOLD, hpf = NULL, center_rows = TRUE, center_cols = FALSE, scale_by = "none")
   expect_true(all(abs(rowMeans(out)) < 1e-6))
 })
 
 test_that("center_rows=FALSE preserves each voxel's original mean", {
-  mu_vec <- seq(500, 1500, length.out = 300)
-  BOLD <- make_bold(nV = 300, nT = 80, mu = mu_vec, sigma = 5)
+  mu_vec <- seq(500, 1500, length.out = 100)
+  BOLD <- make_bold(nV = 100, nT = 50, mu = mu_vec, sigma = 5)
   out <- norm_BOLD(BOLD, hpf = NULL, center_rows = FALSE, center_cols = FALSE, scale_by = "none")
   expect_equal(rowMeans(out), mu_vec, tolerance = 1)
 })
 
 test_that("center_cols=TRUE removes each timepoint's spatial mean", {
-  BOLD <- make_bold(nV = 500, nT = 40, mu = 1000, sigma = 5)
+  BOLD <- make_bold(nV = 100, nT = 40, mu = 1000, sigma = 5)
   out <- norm_BOLD(BOLD, hpf = NULL, center_rows = TRUE, center_cols = TRUE, scale_by = "none")
   expect_true(all(abs(colMeans(out)) < 1e-6))
 })
@@ -224,13 +228,13 @@ test_that("center_cols=TRUE removes each timepoint's spatial mean", {
 # =============================================================================
 
 test_that("scale_by='none' leaves data at (centered) native scale", {
-  BOLD <- make_bold(nV = 200, nT = 60, mu = 1000, sigma = 10)
+  BOLD <- make_bold(nV = 100, nT = 50, mu = 1000, sigma = 10)
   out_none <- norm_BOLD(BOLD, hpf = NULL, scale_by = "none")
-  expect_equal(rowMeans(out_none), rep(0, 200), tolerance = 1e-6)
+  expect_equal(rowMeans(out_none), rep(0, 100), tolerance = 1e-6)
 })
 
 test_that("scale_by='mean' recovers percent signal change of a known task effect", {
-  nV <- 200; nT <- 150
+  nV <- 100; nT <- 80
   mu_vec <- rep(1000, nV)
   BOLD <- make_bold(nV = nV, nT = nT, mu = mu_vec, sigma = 1) # low noise, isolate effect
   task <- rep(c(0, 1), each = nT / 2)
@@ -243,7 +247,7 @@ test_that("scale_by='mean' recovers percent signal change of a known task effect
 })
 
 test_that("scale_by='sd' yields approximately unit variance per voxel", {
-  nV <- 330; nT <- 300
+  nV <- 120; nT <- 100
   sigma_vec <- seq(2, 10, length.out = nV)
   BOLD <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = sigma_vec)
   out <- norm_BOLD(BOLD, hpf = NULL, scale_by = "sd", scale_sm_FWHM=0)
@@ -252,11 +256,11 @@ test_that("scale_by='sd' yields approximately unit variance per voxel", {
 })
 
 test_that("scale_by='FUN' scales by a user-supplied measure", {
-  BOLD <- make_bold(nV = 150, nT = 100, mu = 1000, sigma = 20)
+  BOLD <- make_bold(nV = 100, nT = 60, mu = 1000, sigma = 20)
   out <- norm_BOLD(BOLD, hpf = NULL, scale_by = "FUN", scale_sm_FWHM=0,
                     scale_FUN = function(x) apply(abs(x), 1, max))
   row_max <- apply(abs(out), 1, max)
-  expect_equal(row_max, rep(1, 150), tolerance = 1e-6)
+  expect_equal(row_max, rep(1, 100), tolerance = 1e-6)
 })
 
 test_that("scale_by='mean' errors when the estimated mean is near zero", {
@@ -269,7 +273,7 @@ test_that("scale_by='mean' errors when the estimated mean is near zero", {
 # =============================================================================
 
 test_that("scale_sm_FWHM=Inf applies one global scale factor to every voxel", {
-  nV <- 250; nT <- 150
+  nV <- 100; nT <- 80
   mu_vec <- seq(500, 2000, length.out = nV)
   BOLD <- make_bold(nV = nV, nT = nT, mu = mu_vec, sigma = 1)
 
@@ -282,7 +286,7 @@ test_that("scale_sm_FWHM=Inf applies one global scale factor to every voxel", {
 })
 
 test_that("finite scale_sm_FWHM without scale_sm_xifti warns and falls back to no smoothing", {
-  BOLD <- make_bold(nV = 200, nT = 60)
+  BOLD <- make_bold(nV = 100, nT = 60)
   expect_warning(
     out <- norm_BOLD(BOLD, hpf = NULL, scale_by = "mean", scale_sm_FWHM = 4),
     "Skipping smoothing"
@@ -296,7 +300,7 @@ test_that("finite scale_sm_FWHM without scale_sm_xifti warns and falls back to n
 # =============================================================================
 
 test_that("give_stats returns mu/sd matching known generative parameters", {
-  nV <- 250; nT <- 200
+  nV <- 120; nT <- 100
   mu_vec <- seq(800, 1200, length.out = nV)
   sigma_vec <- seq(5, 15, length.out = nV)
   BOLD <- make_bold(nV = nV, nT = nT, mu = mu_vec, sigma = sigma_vec)
@@ -312,13 +316,13 @@ test_that("give_stats returns mu/sd matching known generative parameters", {
 # =============================================================================
 
 test_that("combined: drop_first + scrub + hpf + scale_by='mean' produces a finite, correctly-sized result", {
-  nV <- 250; nT <- 220; nd <- 10; TR <- 1.5
+  nV <- 120; nT <- 100; nd <- 10; TR <- 1.5
   mu_vec <- rep(1000, nV)
   BOLD <- make_bold(nV = nV, nT = nT, mu = mu_vec, sigma = 2)
 
   BOLD <- add_spikes(BOLD, seq(nd), magnitude = 1e6)             # burn-in artifact
   BOLD <- BOLD + outer(rep(3, nV), seq(nT))                      # slow drift
-  spike_idx <- c(nd + 20, nd + 21, 180)
+  spike_idx <- c(nd + 20, nd + 21, 90)
   BOLD <- add_spikes(BOLD, spike_idx, magnitude = 1e6)                # motion spikes
   task <- rep(c(0, 1), length.out = nT)
   BOLD <- BOLD + outer(mu_vec * 0.02, task)                          # 2% task effect
@@ -332,12 +336,12 @@ test_that("combined: drop_first + scrub + hpf + scale_by='mean' produces a finit
 })
 
 test_that("combined: nuisance regression still exactly removes the regressor when scrubbing is also applied", {
-  nV <- 200; nT <- 150
+  nV <- 100; nT <- 60
   BOLD <- make_bold(nV = nV, nT = nT, mu = 900, sigma = 4)
   x <- cos(seq(nT) / 7)
   beta <- rnorm(nV, 10, 2)
   BOLD <- add_nuisance_effect(BOLD, x, beta)
-  spike_idx <- c(30, 75, 76)
+  spike_idx <- c(15, 30, 31)
   BOLD <- add_spikes(BOLD, spike_idx, magnitude = 1e6)
 
   out <- norm_BOLD(BOLD, nuisance = matrix(x, ncol = 1), scrub = spike_idx,
@@ -348,7 +352,7 @@ test_that("combined: nuisance regression still exactly removes the regressor whe
 })
 
 test_that("combined: center_cols + scale_by='sd' + give_stats interact sensibly", {
-  nV <- 300; nT <- 150
+  nV <- 150; nT <- 100
   sigma_vec <- seq(3, 9, length.out = nV)
   BOLD <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = sigma_vec)
 
@@ -360,8 +364,11 @@ test_that("combined: center_cols + scale_by='sd' + give_stats interact sensibly"
 })
 
 test_that("combined: hpf + lpf band-pass removes both drift and high-frequency noise", {
-  nV <- 1050; nT <- 400; TR <- 1
-  hpf <- 0.005; lpf <- 0.015
+  # nT = 200 with hpf = .01 / lpf = .03 gives the same DCT indices (4 and 12)
+  #  as nT = 400 with hpf = .005 / lpf = .015, so the drift-correlation
+  #  check below is unchanged.
+  nV <- 220; nT <- 200; TR <- 1
+  hpf <- 0.01; lpf <- 0.03
   t <- seq_len(nT)
 
   BOLD <- make_bold(nV = nV, nT = nT, mu = 1000, sigma = 2)
@@ -416,7 +423,7 @@ test_that("comparing mean/sd scaling", {
       rowVars_from_norm(150, "mean"),
       rowVars_from_norm(Inf, "mean")
     ))
-    plot(xii4, idx=seq(4))
+    # plot(xii4, idx=seq(4))
 
     # Data with variable mean, constant SD + SD scaling:
     #   expect SD always similar across locations
@@ -426,7 +433,7 @@ test_that("comparing mean/sd scaling", {
       rowVars_from_norm(150, "sd"),
       rowVars_from_norm(Inf, "sd")
     ))
-    plot(xii4, idx=seq(4))
+    # plot(xii4, idx=seq(4))
 
     BOLD <- make_bold(nV=nV, nT=nT, mu=88, sigma=scale_vec)
     xii2 <- newdata_xifti(xii, BOLD)
@@ -439,7 +446,7 @@ test_that("comparing mean/sd scaling", {
       rowVars_from_norm(150, "mean"),
       rowVars_from_norm(Inf, "mean")
     ))
-    plot(xii4, idx=seq(4))
+    # plot(xii4, idx=seq(4))
 
     # Data with constant mean, variable SD + SD scaling:
     #   expect normalization, decreasing fit w/ smoothing
@@ -449,6 +456,6 @@ test_that("comparing mean/sd scaling", {
       rowVars_from_norm(150, "sd"),
       rowVars_from_norm(Inf, "sd")
     ))
-    plot(xii4, idx=seq(4))
+    # plot(xii4, idx=seq(4))
   }
 })

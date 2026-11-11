@@ -71,7 +71,7 @@ test_that("Miscellaneous functions are working", {
     matrixStats::rowVars(nBOLD_mean_sm),
     matrixStats::rowVars(nBOLD_mean_Inf)
   )
-  plot(bvars, idx=seq(3))
+  # plot(bvars, idx=seq(3))
 
   nBOLD_sd_0 <- norm_BOLD(BOLD2, scale_by="sd", hpf=NULL, scale_sm_FWHM=0)
   nBOLD_sd_sm <- norm_BOLD(BOLD2, scale_by="sd", hpf=NULL, scale_sm_xifti=xiiL)
@@ -83,6 +83,6 @@ test_that("Miscellaneous functions are working", {
     matrixStats::rowVars(nBOLD_sd_sm),
     matrixStats::rowVars(nBOLD_sd_Inf)
   )
-  plot(bvars, idx=seq(3))
+  # plot(bvars, idx=seq(3))
 
 })
