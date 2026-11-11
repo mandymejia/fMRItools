@@ -73,11 +73,8 @@ importFrom(matrixStats,
 )
 importFrom(stats,
   cor,
-  fitted,
-  mad,
   median,
   mvfft,
   quantile,
-  residuals,
   var
 )
