@@ -108,6 +108,9 @@ scale_timeseries <- function(BOLD, scale=c("auto", "mean", "sd", "none"), transp
   } else if (scale == "sd") {
     # `BOLD` is centered, so the variance is the sum of squares over (n-1).
     n_obs <- rowSums(!is.na(BOLD))
+    if (any(n_obs < 2)) {
+      stop("Some locations have fewer than 2 non-missing observations for `sd` scaling. Please set `scale` to `'none'` or provide more time points.")
+    }
     v_sd <- sqrt(rowSums(BOLD^2, na.rm=TRUE) / (n_obs - 1))
     v_sd[is.na(v_sd)] <- 0
     if (min(v_sd) < 1e-6) {

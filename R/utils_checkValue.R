@@ -181,9 +181,11 @@ all_integers <- function(x){
 #'
 all_binary <- function(x, logical_ok=TRUE){
   stopifnot(is_1(logical_ok, "logical"))
-  if (is.logical(x)) { return(logical_ok) }
+  if (is.logical(x)) {
+    return(logical_ok && !anyNA(x))
+  }
   if (!is.numeric(x)) { stop("`x` is not numeric or logical.") }
-  if (any(is.na(x))) { return(FALSE) }
+  if (anyNA(x) || any(!is.finite(x))) { return(FALSE) }
   !(max(x) > 1 || min(x) < 0 || any(x != round(x)))
 }
 

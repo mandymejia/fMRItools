@@ -449,6 +449,8 @@ test_that("scale_timeseries scales to percent signal, sd units, or just centers"
   expect_error(scale_timeseries(B3, "sd"), "sds")
   B4 <- matrix(rnorm(V * T_, .05, .001), V, T_)
   expect_error(scale_timeseries(B4, "mean"), "less than 0.1")
+  B5 <- matrix(c(1, 2, 3, NA), 2, 2)
+  expect_error(scale_timeseries(B5, "sd"), "fewer than 2 non-missing observations")
   expect_error(scale_timeseries(B, transpose="yes"))
 })
 
@@ -592,6 +594,7 @@ test_that("is_1, is_posNum and is_integer reject NA and non-finite values", {
   expect_false(all_binary(c(0, 2)))
   expect_true(all_binary(c(TRUE, FALSE)))
   expect_false(all_binary(c(TRUE, FALSE), logical_ok=FALSE))
+  expect_false(all_binary(c(TRUE, NA)))
   expect_true(is_constant(rep(2, 5)))
   expect_false(is_constant(c(1, 2)))
 })
