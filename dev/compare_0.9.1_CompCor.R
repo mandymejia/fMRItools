@@ -654,7 +654,7 @@ if (any(vapply(scale_rules, is.null, TRUE))) {
   cat("\nNOTE: `scale_rules` has NULL entries, so the rescaling was only ",
     "measured (INFO lines), not verified.\n", sep="")
 }
-write.csv(results, "check_CompCor_pkg_results.csv", row.names=FALSE)
-cat("\nResults written to check_CompCor_pkg_results.csv\n")
+write.csv(results, "compare_0.9.1_CompCor_results.csv", row.names=FALSE)
+cat("\nResults written to compare_0.9.1_CompCor_results.csv\n")
 if (!interactive() && any(results$status == "FAIL")) { quit(status=1) }
 invisible(results)
