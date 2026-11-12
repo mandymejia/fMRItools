@@ -858,7 +858,7 @@ test_that("CompCor_HCP_apply (CIFTI) == CompCor_clean == manual regression", {
   nz <- noise_PCs(list(a=make_roi(T_, 30), b=make_roi(T_, 20)), noise_nPC=3)
   Yc <- matrix(rnorm(nV * T_), nV, T_)                              # vertices x time
   xii <- tryCatch(
-    ciftiTools::make_xifti(cortexL=Yc[1:12, ], cortexR=Yc[13:24, ]),
+    ciftiTools::as_xifti(cortexL=Yc[1:12, ], cortexR=Yc[13:24, ]),
     error=function(e) skip(paste("could not build a xifti:", conditionMessage(e)))
   )
   N <- cbind(rnorm(T_), rnorm(T_))
@@ -877,7 +877,7 @@ test_that("CompCor_HCP_apply (CIFTI) == CompCor_clean == manual regression", {
   # `idx`: select timepoints of the CIFTI that match the noise PCs.
   T_big <- 50
   Ybig <- matrix(rnorm(nV * T_big), nV, T_big)
-  xbig <- ciftiTools::make_xifti(cortexL=Ybig[1:12, ], cortexR=Ybig[13:24, ])
+  xbig <- ciftiTools::as_xifti(cortexL=Ybig[1:12, ], cortexR=Ybig[13:24, ])
   idx <- 6:45                                                       # 40 timepoints
   out <- as.matrix(CompCor_HCP_apply(xbig, nz, idx=idx))
   expect_lt(max(abs(out - CompCor_clean(Ybig[, idx], nz))), 1e-8)

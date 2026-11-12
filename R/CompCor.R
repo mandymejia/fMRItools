@@ -66,11 +66,21 @@ noise_PCs <- function(
   noise_vartotal <- vector("list", N); names(noise_vartotal) <- names(X_noise)
 
   if (length(noise_nPC) == 1) {
-    noise_nPC <- as.list(rep(noise_nPC, N))
-  } else {
-    noise_nPC <- as.list(noise_nPC)
+    noise_nPC <- rep(noise_nPC, N)
   }
-  names(noise_nPC) <- names(X_noise)
+  noise_nPC <- as.list(noise_nPC)
+  if (is.null(names(noise_nPC))) {
+    if (length(noise_nPC) < N) {
+      stop("The length of `noise_nPC` is less than the number of noise ROIs.")
+    }
+    noise_nPC <- noise_nPC[seq_len(N)]
+    names(noise_nPC) <- names(X_noise)
+  } else {
+    if (!all(names(X_noise) %in% names(noise_nPC))) {
+      stop("The names of `noise_nPC` do not match those of the noise ROIs.")
+    }
+    noise_nPC <- noise_nPC[names(X_noise)]
+  }
 
   # Preliminary nuisance regression: project out the column space of the
   #   design. `hat_Q` gives an orthonormal basis for it, which is cheaper than

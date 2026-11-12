@@ -399,7 +399,7 @@ if (is.function(NEW$CompCor_HCP_apply) && requireNamespace("ciftiTools", quietly
   tryCatch({
     Tn <- length(d$idx)
     Yc <- matrix(rnorm(40 * Tn), 40, Tn)                    # vertices x time
-    xii <- ciftiTools::make_xifti(cortexL=Yc[1:20, ], cortexR=Yc[21:40, ])
+    xii <- ciftiTools::as_xifti(cortexL=Yc[1:20, ], cortexR=Yc[21:40, ])
     for (ndct in c(0, 3)) {
       out <- NEW$CompCor_HCP_apply(xii, new$hcp_noprelim, DCT=ndct)
       X <- cbind(1, do.call(cbind, new$hcp_noprelim$PCs))

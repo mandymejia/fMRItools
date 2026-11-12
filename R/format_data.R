@@ -126,42 +126,47 @@ format_data <- function(X, ROI_data="infer", ROI_noise=NULL, noise_nPC=5, noise_
 
     # noise_nPC
     if (length(noise_nPC) == 1) {
-      noise_nPC <- as.list(rep(noise_nPC, length(ROI_noise)))
-    } else {
-      noise_nPC <- as.list(noise_nPC)
+      noise_nPC <- rep(noise_nPC, length(ROI_noise))
     }
-    names(noise_nPC) <- names(ROI_noise)
-
+    noise_nPC <- as.list(noise_nPC)
     if (is.null(names(noise_nPC))) {
-      noise_nPC <- noise_nPC[rep(1:length(noise_nPC), length(ROI_noise))[1:length(ROI_noise)]]
+      if (length(noise_nPC) < length(ROI_noise)) {
+        stop("The length of `noise_nPC` is less than the number of noise ROIs.")
+      }
+      noise_nPC <- noise_nPC[seq_len(length(ROI_noise))]
       names(noise_nPC) <- names(ROI_noise)
-    }
-    else {
-      if (all(sort(names(noise_nPC)) != sort(names(ROI_noise)))) {
+    } else {
+      if (!all(names(ROI_noise) %in% names(noise_nPC))) {
         stop("The names of `noise_nPC` do not match those of `ROI_noise`.")
       }
-    }  
-    noise_nPC <- noise_nPC[names(ROI_noise)]
+      noise_nPC <- noise_nPC[names(ROI_noise)]
+    }
 
     # noise_erosion
     if (X_type == "volume") {
-      if (is.null(noise_erosion)) { 
+      if (is.null(noise_erosion)) {
         noise_erosion = 0
       } else {
         if (!all(noise_erosion==0) & !any(sapply(ROI_noise, is.array))) {
           warning("`noise_erosion` was provided, but there are no array/NIFTI noise ROIs to erode.\n")
         }
       }
+      if (length(noise_erosion) == 1) {
+        noise_erosion <- rep(noise_erosion, length(ROI_noise))
+      }
       noise_erosion <- as.list(noise_erosion)
       if (is.null(names(noise_erosion))) {
-        noise_erosion <- noise_erosion[rep(1:length(noise_erosion), length(ROI_noise))[1:length(ROI_noise)]]
+        if (length(noise_erosion) < length(ROI_noise)) {
+          stop("The length of `noise_erosion` is less than the number of noise ROIs.")
+        }
+        noise_erosion <- noise_erosion[seq_len(length(ROI_noise))]
         names(noise_erosion) <- names(ROI_noise)
       } else {
-        if (all(sort(names(noise_erosion)) != sort(names(ROI_noise)))) {
+        if (!all(names(ROI_noise) %in% names(noise_erosion))) {
           stop("The names of `noise_erosion` do not match those of `ROI_noise`.")
         }
+        noise_erosion <- noise_erosion[names(ROI_noise)]
       }
-      noise_erosion <- noise_erosion[names(ROI_noise)]
       
     } else {
       if (!is.null(noise_erosion)) { 
