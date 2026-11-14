@@ -1,3 +1,14 @@
+# 0.9.0
+
+* Refactor aCompCor into noise-PC calculation and data-cleaning steps. 
+* Add `prelim_nuisance` support before PC calculation.
+* Replace `CompCor_HCP()` and `CompCor_HCP_cii()` with `CompCor_HCP_calc()` and `CompCor_HCP_apply()`. Rename `CompCor.noise_comps()` to `noise_PCs()` and standardize the noise-PC result format.
+* Correct `fsl_bptf()` and use efficient matrix multiplication to apply the filter.
+* Revamp `despike_3D()`.
+* Preserve the intercept when scaling design matrices, and fix edge cases in
+  `scale_timeseries()` and `all_binary()`.
+* More efficient CompCor and nuisance regression code.
+
 # 0.8.0
 
 * `norm_BOLD` overhaul: big regression; update scaling.
