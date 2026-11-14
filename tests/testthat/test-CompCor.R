@@ -636,7 +636,7 @@ test_that("CompCor: `noise_nPC` is matched to ROIs by order when unnamed; erosio
   expect_equal(vapply(out$noise$PCs, ncol, 1L), c(wm_cort=2L, csf=4L, wm_cblm=3L))
 
   # Erosion: 0/NULL leave the masks alone; more erosion = fewer voxels, nested.
-  n_vox <- function(o) vapply(o$noise$ROI_noise, sum, 1)
+  n_vox <- function(o) vapply(o$noise$ROI_noise, function(mask) sum(mask > 0), 1)
   e0 <- CompCor(v$nii, ROI_data=NULL, ROI_noise=v$masks, noise_erosion=NULL)
   e00 <- CompCor(v$nii, ROI_data=NULL, ROI_noise=v$masks, noise_erosion=0)
   e1 <- CompCor(v$nii, ROI_data=NULL, ROI_noise=v$masks, noise_erosion=1)
