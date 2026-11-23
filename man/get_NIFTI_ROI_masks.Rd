@@ -11,7 +11,7 @@ get_NIFTI_ROI_masks(nii_labels, ROI_noise = c("wm_cort", "csf"))
 file path to the NIFTI) which contains the corresponding labels to each
 voxel in \code{nii}. Values should be according to this table:
 https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/AnatomicalROI/FreeSurferColorLUT
-In the HCP, the corresponding file is "ROIs/Atlas_wmparc.2.nii.gz".}
+In the HCP, the corresponding file is "ROIs/wmparc.2.nii.gz".}
 
 \item{ROI_noise}{A list of numeric vectors. Each entry should represent
 labels in \code{nii_labels} belonging to a single noise ROI, named by that
