@@ -4,7 +4,7 @@
 \alias{fmat_mult}
 \title{Filter matrix multiplication}
 \usage{
-fmat_mult(dat, fmat, dat_idx_by_var = NULL, out_idx_by_var = TRUE)
+fmat_mult(dat, fmat, dat_idx_by_var = NULL, out_idx_by_var = NULL)
 }
 \arguments{
 \item{dat}{The data matrix to multiply.}
@@ -12,9 +12,11 @@ fmat_mult(dat, fmat, dat_idx_by_var = NULL, out_idx_by_var = TRUE)
 \item{fmat}{The filter matrix to multiply with. The first and
 second dimensions match the number of indices in \code{dat}.}
 
-\item{dat_idx_by_var}{Is \code{dat} indices by variables?}
+\item{dat_idx_by_var}{Is \code{dat} indices by variables? Default: \code{NULL}
+(infer from the dimensions of \code{dat}; an error if \code{dat} is square).}
 
-\item{out_idx_by_var}{Should the result be indices by variables?}
+\item{out_idx_by_var}{Should the result be indices by variables? Default:
+the same orientation as \code{dat}.}
 }
 \value{
 The filtered/multiplied data matrix.
@@ -30,7 +32,8 @@ fmat <- gaussian_hpf_mat(100, 2)
 # Below all yield the same result.
 dat_filt <- fmat_mult(dat, fmat)
 dat_filt2 <- fmat_mult(dat, fmat, dat_idx_by_var=TRUE)
-dat_filt3 <- fmat_mult(t(dat), fmat)
-dat_filt4 <- t(fmat_mult(dat, fmat, out_idx_by_var=FALSE))
+dat_filt3 <- t(fmat_mult(t(dat), fmat))
+dat_filt4 <- fmat_mult(t(dat), fmat, out_idx_by_var=TRUE)
+dat_filt5 <- t(fmat_mult(dat, fmat, out_idx_by_var=FALSE))
 
 }

@@ -18,3 +18,9 @@ A matrix of size nT x nT that can be used to apply a Gaussian high-pass filter t
 Matrix for applying a Gaussian-weighted local linear
 detrending high-pass filter.
 }
+\examples{
+cutoff_sec <- 2000 # filter cutoff in seconds (HCP convention)
+tr <- .72 # in seconds
+hp_sigma <- 0.5 * cutoff_sec / tr (FSL convention)
+hp_mat <- gaussian_hpf_mat(nT=500, sigma=hp_sigma)
+}

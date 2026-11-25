@@ -17,3 +17,8 @@ A matrix of size nT x nT that can be used to apply a Gaussian low-pass filter to
 \description{
 Matrix for applying a Gaussian low-pass filter.
 }
+\examples{
+tr <- .72 # in seconds
+lp_sigma <- 2.8 / tr # FSL FEAT's (optional, default off) low-pass sigma
+lp_mat <- gaussian_lpf_mat(nT=500, sigma=lp_sigma)
+}

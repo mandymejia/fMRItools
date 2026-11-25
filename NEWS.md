@@ -1,3 +1,9 @@
+# 0.10.0
+
+* `fsl_bptf()` and `fmat_mult()`: `out_idx_by_var` now defaults to the orientation of the input data, so the output is no longer transposed by default when `dat_idx_by_var=FALSE`. To get the old behavior, set `out_idx_by_var=TRUE`.
+* Fix the examples for `gaussian_hpf_mat()` and `gaussian_lpf_mat()`, which used the wrong argument names.
+* Document the FSL and HCP conventions for choosing `HP_sigma` and `LP_sigma` in the function examples.
+
 # 0.9.0
 
 * Refactor aCompCor into noise-PC calculation and data-cleaning steps. 

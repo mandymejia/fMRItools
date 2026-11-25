@@ -9,7 +9,7 @@ fsl_bptf(
   HP_sigma = NULL,
   LP_sigma = NULL,
   dat_idx_by_var = TRUE,
-  out_idx_by_var = TRUE
+  out_idx_by_var = dat_idx_by_var
 )
 }
 \arguments{
@@ -17,16 +17,18 @@ fsl_bptf(
 
 \item{HP_sigma}{Numeric. The standard deviation of the Gaussian kernel
 for the high-pass filter, in time points. Default: \code{NULL} (no
-high-pass filtering). \code{sigma = 0.5 * cutoff_sec / TR}}
+high-pass filtering). Following FSL, \code{sigma = 0.5 * cutoff_sec / TR}.}
 
 \item{LP_sigma}{Numeric. The standard deviation of the Gaussian kernel
 for the low-pass filter, in time points. Default: \code{NULL} (no low-pass
-filtering).}
+filtering). FSL FEAT's optional low-pass filter (off by default) used a
+sigma of 2.8 seconds, i.e. \code{LP_sigma = 2.8 / TR}.}
 
 \item{dat_idx_by_var}{Is \code{dat} indices (timepoints) by variables?
 Default: \code{TRUE}.}
 
-\item{out_idx_by_var}{Should the result be indices (timepoints) by variables?}
+\item{out_idx_by_var}{Should the result be indices (timepoints) by variables?
+Default: \code{dat_idx_by_var} (same orientation as \code{dat}).}
 }
 \value{
 A filtered numeric object of the same dimensions as \code{dat},
@@ -39,7 +41,7 @@ of the high-pass filter in FSL's \code{-bptf} command from
 \code{fslmaths}, and to use a similar strategy for the low-pass filter.
 }
 \examples{
-cutoff_sec <- 2000 # filter cutoff in seconds
+cutoff_sec <- 2000 # filter cutoff in seconds (HCP convention)
 tr <- .72 # in seconds
 hp_sigma <- 0.5 * cutoff_sec / tr
 dat <- matrix(rnorm(1200 * 70), 1200, 70)
